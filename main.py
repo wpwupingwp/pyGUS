@@ -11,6 +11,7 @@ formatter = logging.Formatter(fmt=FMT, datefmt=DATEFMT)
 default_level = logging.INFO
 import coloredlogs
 coloredlogs.install(level=default_level, fmt=FMT, datefmt=DATEFMT)
+log = logging.getLogger('pyGUS')
 
 
 def test_1():
@@ -25,7 +26,7 @@ def test_1():
     cv2.polylines(black, [polygon], True, (255, 255, 255), 2)
     cv2.putText(black, 'OpenCV', (10, 500), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
     cv2.imshow('link', black)
-    key = cv2.waitKey(0)
+    cv2.waitKey(0)
     cv2.destroyWindow('link')
 
 
@@ -55,7 +56,7 @@ def test_2():
 
 
 def test_3():
-    flags = [i for i in dir(cv) if i.startswith('COLOR_')]
+    flags = [i for i in dir(cv2) if i.startswith('COLOR_')]
     # print(flags)
     img = cv2.imread('example/example.png')
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -109,11 +110,7 @@ def test_4():
     cv2.imshow('edge', edge)
     cv2.imshow('dilate', dilate)
     cv2.imshow('erode', erode)
-    # cv2.RETR_EXTERNAL for biggest?
-    # todo: use polygon instead of retangle
     contours, hierarchy = cv2.findContours(erode, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    # contours, hierarchy = cv2.findContours(erode, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    # cv2.drawContours(img, contours, -1, (0, 255, 0), 2)
     img2 = img.copy()
     img3 = img.copy()
     img4 = img.copy()
@@ -137,16 +134,16 @@ def test_4():
     # https://github.com/18150167970/image_process_tool/blob/master/lighting_enhancement.py
 
 
-def get_input(input_path='example/0-1.tif'):
-    # example = 'example/example.png'
-    example = 'example/0-1.tif'
-    # example = 'example/75-2.tif'
-    img = cv2.imread(example)
+def get_input(input_file='example/0-1.tif'):
+    # input_path = 'example/example.png'
+    input_file = 'example/0-1.tif'
+    # input_file = 'example/75-2.tif'
+    img = cv2.imread(input_file)
     print(img.shape)
-    return input_path
+    return input_file
 
 
-def auto_Canny(image, sigma=0.23):
+def auto_Canny(image, sigma=0.33):
     # compute the median of the single channel pixel intensities
     v = np.median(image)
     # apply automatic Canny edge detection using the computed median
@@ -172,7 +169,7 @@ def split_channel(img):
     # opencv use BGR
     b, g, r = cv2.split(img)
     for title, value in zip(['b', 'g', 'r'], [b, g, r]):
-        cv2.imshow(title, value)
+        cv2.imshow(title, 255-value)
 
 
 def filter_contours(contours, hierarchy):
@@ -214,7 +211,7 @@ def get_arc_epsilon(max_contour, ratio=0.0001):
 
 
 def drawing(contours_info, arc_epsilon, img_rectangle, img_polyline, img_fill, color):
-    line_width = 2
+    line_width = 1
     for cnt, area, level in contours_info:
         rect = cv2.minAreaRect(cnt)
         rect_2 = np.int0(cv2.boxPoints(rect))
@@ -226,28 +223,54 @@ def drawing(contours_info, arc_epsilon, img_rectangle, img_polyline, img_fill, c
     return img_rectangle, img_polyline, img_fill
 
 
+def get_contour_area(cnt):
+    # fill contour with (255,255,255)
+    pass
+
+
 def main():
     input_file = get_input()
     # .png .jpg .tiff
     img = cv2.imread(input_file)
+    split_channel(img)
+    b, g, r = cv2.split(img)
     # reverse to get better edge
+    # revert_img = revert(img)
     revert_img = revert(img)
     erode = get_edge(revert_img)
-    # APPROX_NONE to avoid omitting dox
+    # APPROX_NONE to avoid omitting dots
     contours, hierarchy = cv2.findContours(erode, cv2.RETR_TREE,
                                            cv2.CHAIN_APPROX_NONE)
     (big_external_contours, small_external_contours,
      inner_contours) = filter_contours(contours, hierarchy)
+    if len(big_external_contours) != 2:
+        log.error('Bad image.')
+        raise SystemExit(-1)
     # cnt, area, level
     arc_epsilon = get_arc_epsilon(big_external_contours[0][0])
     img_rectangle = img.copy()
     img_polyline = img.copy()
     img_fill = img.copy()
+    # use mask
+    # todo: split image to left and right according to boundingrect of external contours
+    left, right = split_region(img)
+    for i in left, right:
+        mask = np.zeros(img.shape[:2], dtype='uint8')
+        cv2.fillPoly(mask, [big_external_contours[0][0]], (255, 255, 255))
+        t = cv2.bitwise_and(255-b, 255-b, mask=mask)
+        cv2.imshow('mask', mask)
+        cv2.imshow('on mask', t)
+        # todo: calculate mean of masked region and remove false negative (yellow) according to "x>mean"
+        pass
+    # todo: use histogram
+    # todo:calculate blue values, then divide by blue region and total region
     # b,g,r
-    drawing(big_external_contours, arc_epsilon, img_rectangle, img_polyline, img_fill, (0, 255, 0))
-    drawing(small_external_contours, arc_epsilon, img_rectangle, img_polyline, img_fill, (0, 0, 255))
-    drawing(inner_contours, arc_epsilon, img_rectangle, img_polyline, img_fill, (0, 255, 255))
-    # todo 根据内外关系排除空洞
+    green = (0, 255, 0)
+    red = (0, 0, 255)
+    yellow = (0, 255, 255)
+    drawing(big_external_contours, arc_epsilon, img_rectangle, img_polyline, img_fill, green)
+    drawing(small_external_contours, arc_epsilon, img_rectangle, img_polyline, img_fill, red)
+    drawing(inner_contours, arc_epsilon, img_rectangle, img_polyline, img_fill, yellow)
     # cv2.fillPoly(img4, contours, (255, 255, 0))
     cv2.imshow('raw', img)
     cv2.imshow('erode', erode)
