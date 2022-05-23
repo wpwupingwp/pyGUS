@@ -180,11 +180,11 @@ def filter_contours(contours, hierarchy):
     Args:
         contours:
         hierarchy:
-    Returns: big, small, inner
+    Returns: big[contour, area, level], small[...], inner[...]
     """
-    # hierarchy is [[[1,1,1,1]]]
     external_contours = list()
     inner_contours = list()
+    # hierarchy is [[[1,1,1,1]]]
     for cnt, level in zip(contours, hierarchy[0]):
         area = cv2.contourArea(cnt)
         next_, previous_, first_child, parent = level
@@ -208,8 +208,22 @@ def revert(img):
 
 
 def get_arc_epsilon(max_contour, ratio=0.0001):
+    print(max_contour)
     arc_epsilon = cv2.arcLength(max_contour, True) * ratio
     return arc_epsilon
+
+
+def drawing(contours_info, arc_epsilon, img_rectangle, img_polyline, img_fill, color):
+    line_width = 2
+    for cnt, area, level in contours_info:
+        rect = cv2.minAreaRect(cnt)
+        rect_2 = np.int0(cv2.boxPoints(rect))
+        approx = cv2.approxPolyDP(cnt, arc_epsilon, True)
+        # b,g,r
+        cv2.drawContours(img_rectangle, [rect_2], 0, color, line_width)
+        cv2.polylines(img_polyline, [approx], True, color, line_width)
+        cv2.fillPoly(img_fill, [approx], color)
+    return img_rectangle, img_polyline, img_fill
 
 
 def main():
@@ -219,37 +233,27 @@ def main():
     # reverse to get better edge
     revert_img = revert(img)
     erode = get_edge(revert_img)
-    # APPROX_NONE to avoid omitting dots
+    # APPROX_NONE to avoid omitting dox
     contours, hierarchy = cv2.findContours(erode, cv2.RETR_TREE,
                                            cv2.CHAIN_APPROX_NONE)
     (big_external_contours, small_external_contours,
      inner_contours) = filter_contours(contours, hierarchy)
-    img2 = img.copy()
-    img3 = img.copy()
-    img4 = img.copy()
-    for cnt in contours:
-        rect = cv2.minAreaRect(cnt)
-        area = cv2.contourArea(cnt)
-        rect_2 = np.int0(cv2.boxPoints(rect))
-        approx = cv2.approxPolyDP(cnt, arc_epsilon, True)
-        if area < area_threshold:
-            # b,g,r
-            cv2.drawContours(img2, [rect_2], 0, (0, 0, 255), 1)
-            cv2.polylines(img3, [approx], True, (0, 0, 255), 1)
-        else:
-            cv2.drawContours(img2, [rect_2], 0, (255, 255, 0), 1)
-            cv2.polylines(img3, [approx], True, (255, 255, 0), 1)
-            # cv2.fillPoly(img5, [approx], (255, 255, 0))
-            # cv2.drawContours(img4, approx, -1, (255, 255, 0),)
-    # todo: 第一层级只取最大的两个（假设只摆放两个物体）
-    # 根据内外关系排除空洞
-    # 参照选择EXTERNAL
-    cv2.fillPoly(img4, contours, (255, 255, 0))
+    # cnt, area, level
+    arc_epsilon = get_arc_epsilon(big_external_contours[0][0])
+    img_rectangle = img.copy()
+    img_polyline = img.copy()
+    img_fill = img.copy()
+    # b,g,r
+    drawing(big_external_contours, arc_epsilon, img_rectangle, img_polyline, img_fill, (0, 255, 0))
+    drawing(small_external_contours, arc_epsilon, img_rectangle, img_polyline, img_fill, (0, 0, 255))
+    drawing(inner_contours, arc_epsilon, img_rectangle, img_polyline, img_fill, (0, 255, 255))
+    # todo 根据内外关系排除空洞
+    # cv2.fillPoly(img4, contours, (255, 255, 0))
     cv2.imshow('raw', img)
     cv2.imshow('erode', erode)
-    cv2.imshow('rectangle (red for small area)', img2)
-    cv2.imshow('polyline', img3)
-    cv2.imshow('fill', img4)
+    cv2.imshow('rectangle', img_rectangle)
+    cv2.imshow('polyline', img_polyline)
+    cv2.imshow('fill', img_fill)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
