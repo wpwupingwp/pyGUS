@@ -231,30 +231,41 @@ def drawing(levels, level_cnt, arc_epsilon, img_rectangle, img_polyline,
     return img_rectangle, img_polyline, img_fill
 
 
-def get_contour_area(cnt):
-    # fill contour with (255,255,255)
-    pass
-
-
 def split_region(img):
     left = None
     right = None
     return left, right
 
 
+def get_contour_value(img, cnt):
+    # fill contour with (255,255,255)
+    mask = np.zeros(img.shape[:2], dtype='uint8')
+    cv2.fillPoly(mask, [cnt], (255, 255, 255))
+    revert_b = revert(img)
+    masked = cv2.bitwise_and(revert_b, revert_b, mask=mask)
+    mean = cv2.mean(revert_b, mask=mask)
+    return mean, masked
+
+
 def remove_fake_inner_cnt(img, level_cnt, big_external_contours, inner_contours):
     b, g, r = cv2.split(img)
+    fake_inner = list()
     for big in big_external_contours:
-        # [next, previous, child, parent]
-        related_inner = [i for i in inner_contours if i[3]] is
+        # [next, previous, child, parent, self]
+        self_index = big[4]
+        related_inner = [i for i in inner_contours if i[3] == self_index]
         mask = np.zeros(img.shape[:2], dtype='uint8')
         cv2.fillPoly(mask, [level_cnt[big]], (255, 255, 255))
         revert_b = revert(b)
         masked = cv2.bitwise_and(revert_b, revert_b, mask=mask)
         cv2.imshow('masked', masked)
-        mean = cv2.mean(revert_b, mask=mask)
-        print('raw mean', mean, cv2.mean(revert_b))
-    pass
+        big_mean = cv2.mean(revert_b, mask=mask)
+        print('raw mean', big_mean, cv2.mean(revert_b))
+        for inner in related_inner:
+            inner_mean, _ = get_contour_value(revert_b, inner)
+            if inner_mean >= big_mean:
+                fake_inner.append(inner)
+    return fake_inner
 
 
 def main():
@@ -283,14 +294,16 @@ def main():
      inner_contours) = filter_contours(level_cnt)
     # cnt, area, level
     arc_epsilon = get_arc_epsilon(level_cnt[big_external_contours[0]])
+    img_dict = dict()
+
+
     img_rectangle = img.copy()
     img_polyline = img.copy()
     img_fill = img.copy()
     # use mask
     # todo: split image to left and right according to boundingrect of external contours
     left, right = split_region(img)
-    remove_fake_inner_cnt(img, level_cnt, big_external_contours, inner_contours)
-    # todo: calculate mean of masked region and remove false negative (yellow) according to "x>mean"
+    fake_inner = remove_fake_inner_cnt(img, level_cnt, big_external_contours, inner_contours)
     pass
     # todo: use histogram
     # todo:calculate blue values, then divide by blue region and total region
@@ -302,6 +315,8 @@ def main():
             img_polyline, img_fill, green)
     drawing(small_external_contours, level_cnt, arc_epsilon, img_rectangle,
             img_polyline, img_fill, red)
+    drawing(inner_contours, level_cnt, arc_epsilon, img_rectangle,
+            img_polyline, img_fill, yellow)
     drawing(inner_contours, level_cnt, arc_epsilon, img_rectangle,
             img_polyline, img_fill, yellow)
     # cv2.fillPoly(img4, contours, (255, 255, 0))
