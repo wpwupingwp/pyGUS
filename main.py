@@ -38,11 +38,8 @@ def test_2():
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-    print(Path().cwd())
     img_file = Path('example/example.png').absolute()
     img = cv2.imread(str(img_file))
-    print(img.shape)
-    print(img[0, 0])
     # set value of first (0) channel
     img.itemset((10, 10, 0), 50)
     # set area
@@ -87,7 +84,6 @@ def test_4():
     example = 'example/example.png'
     # example = 'example/0-1.tif'
     img = cv2.imread(example)
-    print(img.shape)
     black = cv2.inRange(img, (0, 0, 0), (0, 0, 0))
     res = cv2.bitwise_and(img, img, mask=black)
     img[res] = [255, 255, 255]
@@ -141,6 +137,7 @@ def get_input(input_file='example/0-1.tif'):
     input_file = 'example/0-1.tif'
     # input_file = 'example/75-2.tif'
     img = cv2.imread(input_file)
+    log.info(f'Image size: {img.shape}')
     print(img.shape)
     return input_file
 
@@ -211,8 +208,9 @@ def revert(img):
 
 
 def get_arc_epsilon(max_contour, ratio=0.0001):
-    print(max_contour)
+    log.info(f'Max contour area: {cv2.contourArea(max_contour)}')
     arc_epsilon = cv2.arcLength(max_contour, True) * ratio
+    log.info(f'Set arc epsilon: {arc_epsilon}')
     return arc_epsilon
 
 
@@ -250,15 +248,19 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours, inner_contours)
     fake_inner = list()
     for big in big_external_contours:
         # [next, previous, child, parent, self]
+        big_cnt = level_cnt[big]
         self_index = big[4]
         related_inner = [i for i in inner_contours if i[3] == self_index]
         mask = np.zeros(img.shape[:2], dtype='uint8')
-        cv2.fillPoly(mask, [level_cnt[big]], (255, 255, 255))
+        cv2.fillPoly(mask, [big_cnt], (255, 255, 255))
         revert_b = revert(b)
         masked = cv2.bitwise_and(revert_b, revert_b, mask=mask)
         cv2.imshow('masked', masked)
         big_mean = cv2.mean(revert_b, mask=mask)
-        print('raw mean', big_mean, cv2.mean(revert_b))
+        log.info(f'Big region: {big[-1]}')
+        log.info(f'Raw area: {img.size}\t'
+                 f'Masked area: {cv2.contourArea(big_cnt)}')
+        log.info(f'Raw mean: {cv2.mean(revert_b)}\tMasked mean: {big_mean}')
         for inner in related_inner:
             inner_mean, _ = get_contour_value(revert_b, level_cnt[inner])
             if inner_mean >= big_mean:
