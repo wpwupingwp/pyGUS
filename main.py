@@ -171,9 +171,10 @@ def split_channel(img):
         cv2.imshow(title, 255 - value)
 
 
-def filter_contours(level_cnt: dict) -> (list, list, list):
+def filter_contours(img, level_cnt: dict) -> (list, list, list):
     """
     Args:
+        img: original image
         level_cnt(dict):
     Returns:
         big:
@@ -200,7 +201,10 @@ def filter_contours(level_cnt: dict) -> (list, list, list):
         small_external_contours = external_contours[2:]
     except IndexError:
         small_external_contours = list()
-    return big_external_contours, small_external_contours, inner_contours
+    fake_inner = remove_fake_inner_cnt(img, level_cnt, big_external_contours,
+                                       inner_contours)
+    return (big_external_contours, small_external_contours, inner_contours,
+            fake_inner)
 
 
 def revert(img):
@@ -281,6 +285,7 @@ def main():
     # .png .jpg .tiff
     img = cv2.imread(input_file)
     # split_channel(img)
+    # todo: use blue revert or whole revert
     b, g, r = cv2.split(img)
     # reverse to get better edge
     # revert_img = revert(img)
@@ -289,8 +294,8 @@ def main():
     # APPROX_NONE to avoid omitting dots
     contours, raw_hierarchy = cv2.findContours(edge, cv2.RETR_TREE,
                                                cv2.CHAIN_APPROX_NONE)
-    # raw hierarchy is [[[1,1,1,1]]]
     hierarchy = list()
+    # raw hierarchy is [[[1,1,1,1]]]
     for index, value in enumerate(raw_hierarchy[0]):
         # [next, previous, child, parent, self]
         new_value = np.array([*value, index], dtype=value.dtype)
@@ -299,8 +304,13 @@ def main():
     for key, value in zip(hierarchy, contours):
         level_cnt[tuple(key)] = value
     (big_external_contours, small_external_contours,
-     inner_contours) = filter_contours(level_cnt)
-    # cnt, area, level
+     inner_contours, fake_inner) = filter_contours(img, level_cnt)
+    # use mask
+    # todo: split image to left and right according to boundingrect of external contours
+    left, right = split_region(img)
+    # todo: use histogram
+    # todo:calculate blue values, then divide by blue region and total region
+    # show
     arc_epsilon = get_arc_epsilon(level_cnt[big_external_contours[0]])
     img_dict = dict()
     img_dict['raw'] = img
@@ -309,13 +319,6 @@ def main():
     img_dict['fill'] = img.copy()
     img_dict['edge'] = edge
     img_dict['revert_blue'] = 255 - b
-    # use mask
-    # todo: split image to left and right according to boundingrect of external contours
-    left, right = split_region(img)
-    fake_inner = remove_fake_inner_cnt(img, level_cnt, big_external_contours, inner_contours)
-    # todo: use histogram
-    # todo:calculate blue values, then divide by blue region and total region
-    # b,g,r
     color_blue = hex2bgr('#4d96ff')
     color_green = hex2bgr('#6bcb77')
     color_red = hex2bgr('#ff6b6b')
