@@ -201,10 +201,10 @@ def filter_contours(img, level_cnt: dict) -> (list, list, list):
         small_external_contours = external_contours[2:]
     except IndexError:
         small_external_contours = list()
-    fake_inner = remove_fake_inner_cnt(img, level_cnt, big_external_contours,
-                                       inner_contours)
+    fake_inner, real_background = remove_fake_inner_cnt(
+        img, level_cnt, big_external_contours, inner_contours)
     return (big_external_contours, small_external_contours, inner_contours,
-            fake_inner)
+            fake_inner, real_background)
 
 
 def revert(img):
@@ -255,34 +255,44 @@ def get_background_value(img, big_external_contours, level_cnt):
         cv2.fillPoly(mask, [cnt], (0, 0, 0))
     masked = cv2.bitwise_and(img, img, mask=mask)
     mean = cv2.mean(img, mask=mask)
-    cv2.imshow('masked', masked)
-    log.info(f'Background mean: {mean}')
-    return cv2.mean(img)
+    cv2.imshow('Background masked', masked)
+    return mean
 
 
 def remove_fake_inner_cnt(img, level_cnt, big_external_contours, inner_contours):
-    b, g, r = cv2.split(img)
     fake_inner = list()
+    real_background = list()
+    b, g, r = cv2.split(img)
+    revert_b = revert(b)
+    white_mean = get_background_value(revert_b, big_external_contours, level_cnt)
+    white_size = img.size
+    log.info(f'Whole image: Area {img.size}\t '
+             f'Whole blue mean {cv2.mean(revert_b)}')
+    log.info(f'Background masked: Area {white_size}\t Blue mean {white_mean}')
     for big in big_external_contours:
         # [next, previous, child, parent, self]
         big_cnt = level_cnt[big]
+        big_area = cv2.contourArea(big_cnt)
+        white_size -= big_area
         self_index = big[4]
         related_inner = [i for i in inner_contours if i[3] == self_index]
         mask = np.zeros(img.shape[:2], dtype='uint8')
         cv2.fillPoly(mask, [big_cnt], (255, 255, 255))
-        revert_b = revert(b)
         masked = cv2.bitwise_and(revert_b, revert_b, mask=mask)
-        cv2.imshow('masked', masked)
-        big_mean = cv2.mean(revert_b, mask=mask)
-        log.info(f'Big region: No.{big[-1]}')
-        log.info(f'Raw area: {img.size}\t'
-                 f'Masked area: {cv2.contourArea(big_cnt)}')
-        log.info(f'Raw mean: {cv2.mean(revert_b)}\tMasked mean: {big_mean}')
+        cv2.imshow('Masked big', masked)
+        big_blue_mean = cv2.mean(revert_b, mask=mask)
+        log.info(f'Big region: No.{big[-1]}\t '
+                 f'Area: {big_area}\t Blue mean: {big_blue_mean}')
         for inner in related_inner:
-            inner_mean, _ = get_contour_value(revert_b, level_cnt[inner])
-            if inner_mean >= big_mean:
+            inner_blue_mean, _ = get_contour_value(revert_b, level_cnt[inner])
+            if inner_blue_mean >= big_blue_mean:
                 fake_inner.append(inner)
-    return fake_inner
+            elif inner_blue_mean < white_mean:
+                # todo: detect real background inner contour
+                real_background.append(inner)
+            elif inner_blue_mean > white_mean:
+                fake_inner.append(inner)
+    return fake_inner, real_background
 
 
 def hex2bgr(hex: str):
@@ -316,8 +326,8 @@ def main():
     level_cnt = dict()
     for key, value in zip(hierarchy, contours):
         level_cnt[tuple(key)] = value
-    (big_external_contours, small_external_contours,
-     inner_contours, fake_inner) = filter_contours(img, level_cnt)
+    (big_external_contours, small_external_contours, inner_contours,
+     fake_inner, real_background) = filter_contours(img, level_cnt)
     # use mask
     # todo: split image to left and right according to boundingrect of external contours
     left, right = split_region(img)
@@ -338,6 +348,7 @@ def main():
     color_yellow = hex2bgr('#ffd93d')
     drawing(big_external_contours, level_cnt, arc_epsilon, img_dict, color_blue)
     drawing(small_external_contours, level_cnt, arc_epsilon, img_dict, color_red)
+    drawing(real_background, level_cnt, arc_epsilon, img_dict, color_red)
     drawing(inner_contours, level_cnt, arc_epsilon, img_dict, color_yellow)
     drawing(fake_inner, level_cnt, arc_epsilon, img_dict, color_green)
     for title, image in img_dict.items():
