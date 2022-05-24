@@ -216,8 +216,7 @@ def get_arc_epsilon(max_contour, ratio=0.0001):
     return arc_epsilon
 
 
-def drawing(levels, level_cnt, arc_epsilon, img_rectangle, img_polyline,
-            img_fill, color):
+def drawing(levels, level_cnt, arc_epsilon, img_dict, color):
     line_width = 1
     for level in levels:
         cnt = level_cnt[level]
@@ -225,10 +224,10 @@ def drawing(levels, level_cnt, arc_epsilon, img_rectangle, img_polyline,
         rect_2 = np.int0(cv2.boxPoints(rect))
         approx = cv2.approxPolyDP(cnt, arc_epsilon, True)
         # b,g,r
-        cv2.drawContours(img_rectangle, [rect_2], 0, color, line_width)
-        cv2.polylines(img_polyline, [approx], True, color, line_width)
-        cv2.fillPoly(img_fill, [approx], color)
-    return img_rectangle, img_polyline, img_fill
+        cv2.drawContours(img_dict['rectangle'], [rect_2], 0, color, line_width)
+        cv2.polylines(img_dict['polyline'], [approx], True, color, line_width)
+        cv2.fillPoly(img_dict['fill'], [approx], color)
+    return img_dict
 
 
 def split_region(img):
@@ -295,11 +294,11 @@ def main():
     # cnt, area, level
     arc_epsilon = get_arc_epsilon(level_cnt[big_external_contours[0]])
     img_dict = dict()
-
-
-    img_rectangle = img.copy()
-    img_polyline = img.copy()
-    img_fill = img.copy()
+    img_dict['raw'] = img
+    img_dict['rectangle'] = img.copy()
+    img_dict['polyline'] = img.copy()
+    img_dict['fill'] = img.copy()
+    img_dict['edge'] = img.copy()
     # use mask
     # todo: split image to left and right according to boundingrect of external contours
     left, right = split_region(img)
@@ -311,20 +310,13 @@ def main():
     green = (0, 255, 0)
     red = (0, 0, 255)
     yellow = (0, 255, 255)
-    drawing(big_external_contours, level_cnt, arc_epsilon, img_rectangle,
-            img_polyline, img_fill, green)
-    drawing(small_external_contours, level_cnt, arc_epsilon, img_rectangle,
-            img_polyline, img_fill, red)
-    drawing(inner_contours, level_cnt, arc_epsilon, img_rectangle,
-            img_polyline, img_fill, yellow)
-    drawing(inner_contours, level_cnt, arc_epsilon, img_rectangle,
-            img_polyline, img_fill, yellow)
-    # cv2.fillPoly(img4, contours, (255, 255, 0))
-    cv2.imshow('raw', img)
-    cv2.imshow('erode', erode)
-    cv2.imshow('rectangle', img_rectangle)
-    cv2.imshow('polyline', img_polyline)
-    cv2.imshow('fill', img_fill)
+    orange = (0, 128, 255)
+    drawing(big_external_contours, level_cnt, arc_epsilon, img_dict, green)
+    drawing(small_external_contours, level_cnt, arc_epsilon, img_dict, red)
+    drawing(inner_contours, level_cnt, arc_epsilon, img_dict, yellow)
+    drawing(fake_inner, level_cnt, arc_epsilon, img_dict, orange)
+    for title, image in img_dict.items():
+        cv2.imshow(title, image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
