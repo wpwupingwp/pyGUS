@@ -3,6 +3,7 @@ import cv2
 import logging
 import numpy as np
 from pathlib import Path
+
 # from matplotlib import pyplot as plt
 # define logger
 FMT = '%(asctime)s %(levelname)-8s %(message)s'
@@ -10,6 +11,7 @@ DATEFMT = '%Y-%m-%d %H:%M:%S'
 formatter = logging.Formatter(fmt=FMT, datefmt=DATEFMT)
 default_level = logging.INFO
 import coloredlogs
+
 coloredlogs.install(level=default_level, fmt=FMT, datefmt=DATEFMT)
 log = logging.getLogger('pyGUS')
 
@@ -169,30 +171,34 @@ def split_channel(img):
     # opencv use BGR
     b, g, r = cv2.split(img)
     for title, value in zip(['b', 'g', 'r'], [b, g, r]):
-        cv2.imshow(title, 255-value)
+        cv2.imshow(title, 255 - value)
 
 
-def filter_contours(contours, hierarchy):
+def filter_contours(level_cnt: dict) -> (list, list, list):
     """
     Args:
-        contours:
-        hierarchy:
-    Returns: big[contour, area, level], small[...], inner[...]
+        level_cnt(dict):
+    Returns:
+        big:
+        small:
+        inner
     """
     external_contours = list()
     inner_contours = list()
-    # hierarchy is [[[1,1,1,1]]]
-    for cnt, level in zip(contours, hierarchy[0]):
-        area = cv2.contourArea(cnt)
-        next_, previous_, first_child, parent = level
+    for level, cnt in level_cnt.items():
+        next_, previous_, first_child, parent, self_ = level
         # -1 means no parent -> external
         if parent == -1:
-            external_contours.append((cnt, area, level))
+            external_contours.append(level)
         else:
-            inner_contours.append((cnt, area, level))
-    external_contours.sort(key=lambda x: x[1], reverse=True)
+            inner_contours.append(level)
+    external_contours.sort(key=lambda key: cv2.contourArea(level_cnt[key]),
+                           reverse=True)
     # a picture only contains at most TWO target (sample and reference)
     big_external_contours = external_contours[:2]
+    if len(big_external_contours) == 0:
+        log.error('Cannot detect objects in the image.')
+        raise SystemExit(-1)
     try:
         small_external_contours = external_contours[2:]
     except IndexError:
@@ -210,9 +216,11 @@ def get_arc_epsilon(max_contour, ratio=0.0001):
     return arc_epsilon
 
 
-def drawing(contours_info, arc_epsilon, img_rectangle, img_polyline, img_fill, color):
+def drawing(levels, level_cnt, arc_epsilon, img_rectangle, img_polyline,
+            img_fill, color):
     line_width = 1
-    for cnt, area, level in contours_info:
+    for level in levels:
+        cnt = level_cnt[level]
         rect = cv2.minAreaRect(cnt)
         rect_2 = np.int0(cv2.boxPoints(rect))
         approx = cv2.approxPolyDP(cnt, arc_epsilon, True)
@@ -228,49 +236,74 @@ def get_contour_area(cnt):
     pass
 
 
+def split_region(img):
+    left = None
+    right = None
+    return left, right
+
+
+def remove_fake_inner_cnt(img, level_cnt, big_external_contours, inner_contours):
+    b, g, r = cv2.split(img)
+    for big in big_external_contours:
+        # [next, previous, child, parent]
+        related_inner = [i for i in inner_contours if i[3]] is
+        mask = np.zeros(img.shape[:2], dtype='uint8')
+        cv2.fillPoly(mask, [level_cnt[big]], (255, 255, 255))
+        revert_b = revert(b)
+        masked = cv2.bitwise_and(revert_b, revert_b, mask=mask)
+        cv2.imshow('masked', masked)
+        mean = cv2.mean(revert_b, mask=mask)
+        print('raw mean', mean, cv2.mean(revert_b))
+    pass
+
+
 def main():
     input_file = get_input()
     # .png .jpg .tiff
     img = cv2.imread(input_file)
-    split_channel(img)
+    # split_channel(img)
     b, g, r = cv2.split(img)
     # reverse to get better edge
     # revert_img = revert(img)
     revert_img = revert(img)
     erode = get_edge(revert_img)
     # APPROX_NONE to avoid omitting dots
-    contours, hierarchy = cv2.findContours(erode, cv2.RETR_TREE,
+    contours, raw_hierarchy = cv2.findContours(erode, cv2.RETR_TREE,
                                            cv2.CHAIN_APPROX_NONE)
+    # raw hierarchy is [[[1,1,1,1]]]
+    hierarchy = list()
+    for index, i in raw_hierarchy[0]:
+        # [next, previous, child, parent, self]
+        i.append(index)
+        hierarchy.append(i)
+    level_cnt = dict()
+    for key, value in zip(hierarchy, contours):
+        level_cnt[tuple(key)] = value
     (big_external_contours, small_external_contours,
-     inner_contours) = filter_contours(contours, hierarchy)
-    if len(big_external_contours) != 2:
-        log.error('Bad image.')
-        raise SystemExit(-1)
+     inner_contours) = filter_contours(level_cnt)
     # cnt, area, level
-    arc_epsilon = get_arc_epsilon(big_external_contours[0][0])
+    arc_epsilon = get_arc_epsilon(level_cnt[big_external_contours[0]])
     img_rectangle = img.copy()
     img_polyline = img.copy()
     img_fill = img.copy()
     # use mask
     # todo: split image to left and right according to boundingrect of external contours
     left, right = split_region(img)
-    for i in left, right:
-        mask = np.zeros(img.shape[:2], dtype='uint8')
-        cv2.fillPoly(mask, [big_external_contours[0][0]], (255, 255, 255))
-        t = cv2.bitwise_and(255-b, 255-b, mask=mask)
-        cv2.imshow('mask', mask)
-        cv2.imshow('on mask', t)
-        # todo: calculate mean of masked region and remove false negative (yellow) according to "x>mean"
-        pass
+    remove_fake_inner_cnt(img, level_cnt, big_external_contours, inner_contours)
+    # todo: calculate mean of masked region and remove false negative (yellow) according to "x>mean"
+    pass
     # todo: use histogram
     # todo:calculate blue values, then divide by blue region and total region
     # b,g,r
     green = (0, 255, 0)
     red = (0, 0, 255)
     yellow = (0, 255, 255)
-    drawing(big_external_contours, arc_epsilon, img_rectangle, img_polyline, img_fill, green)
-    drawing(small_external_contours, arc_epsilon, img_rectangle, img_polyline, img_fill, red)
-    drawing(inner_contours, arc_epsilon, img_rectangle, img_polyline, img_fill, yellow)
+    drawing(big_external_contours, level_cnt, arc_epsilon, img_rectangle,
+            img_polyline, img_fill, green)
+    drawing(small_external_contours, level_cnt, arc_epsilon, img_rectangle,
+            img_polyline, img_fill, red)
+    drawing(inner_contours, level_cnt, arc_epsilon, img_rectangle,
+            img_polyline, img_fill, yellow)
     # cv2.fillPoly(img4, contours, (255, 255, 0))
     cv2.imshow('raw', img)
     cv2.imshow('erode', erode)
