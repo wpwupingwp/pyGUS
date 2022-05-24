@@ -3,6 +3,7 @@ import cv2
 import logging
 import numpy as np
 from pathlib import Path
+from itertools import chain
 
 # from matplotlib import pyplot as plt
 # define logger
@@ -153,6 +154,7 @@ def auto_Canny(image, sigma=0.33):
 
 
 def get_edge(image):
+    # edge->blur->dilate->erode->contours
     edge = auto_Canny(image)
     blur = cv2.GaussianBlur(edge, (3, 3), 0)
     dilate = cv2.dilate(blur, None)
@@ -202,7 +204,7 @@ def filter_contours(img, level_cnt: dict) -> (list, list, list):
     except IndexError:
         small_external_contours = list()
     fake_inner, real_background = remove_fake_inner_cnt(
-        img, level_cnt, big_external_contours, inner_contours)
+        img, level_cnt, big_external_contours, external_contours, inner_contours)
     return (big_external_contours, small_external_contours, inner_contours,
             fake_inner, real_background)
 
@@ -243,55 +245,63 @@ def get_contour_value(img, cnt):
     mask = np.zeros(img.shape[:2], dtype='uint8')
     cv2.fillPoly(mask, [cnt], (255, 255, 255))
     masked = cv2.bitwise_and(img, img, mask=mask)
-    mean = cv2.mean(img, mask=mask)
-    return mean, masked
+    mean, std = cv2.meanStdDev(img, mask=mask)
+    return mean[0][0], std[0][0]
 
 
-def get_background_value(img, big_external_contours, level_cnt):
-    # exclude big contour
+def get_background_value(img, external_contours, level_cnt):
     mask = np.ones(img.shape[:2], dtype='uint8')
-    for big in big_external_contours:
-        cnt = level_cnt[big]
+    for external in external_contours:
+        cnt = level_cnt[external]
         cv2.fillPoly(mask, [cnt], (0, 0, 0))
     masked = cv2.bitwise_and(img, img, mask=mask)
-    mean = cv2.mean(img, mask=mask)
+    mean, std = cv2.meanStdDev(img, mask=mask)
+    print(mean)
     cv2.imshow('Background masked', masked)
-    return mean
+    return mean[0][0], std[0][0]
 
 
-def remove_fake_inner_cnt(img, level_cnt, big_external_contours, inner_contours):
+def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
+                          external_contours, inner_contours):
     fake_inner = list()
     real_background = list()
     b, g, r = cv2.split(img)
     revert_b = revert(b)
-    white_mean = get_background_value(revert_b, big_external_contours, level_cnt)
-    white_size = img.size
+    revert_g = revert(g)
+    # todo: use green channle to detect real background
+    cv2.imshow('Revert g', revert_g)
+    # background blue mean
+    bg_blue_mean, bg_blue_std = get_background_value(revert_b, external_contours, level_cnt)
+    bg_green_mean, bg_green_std = get_background_value(revert_g, external_contours, level_cnt)
+    bg_size = img.size
     log.info(f'Whole image: Area {img.size}\t '
-             f'Whole blue mean {cv2.mean(revert_b)}')
-    log.info(f'Background masked: Area {white_size}\t Blue mean {white_mean}')
+             f'Whole blue mean {cv2.meanStdDev(revert_b)}')
+    log.info(f'Background masked: Area {bg_size}\t Blue mean {bg_blue_mean}+-std{bg_blue_std}\tGreen mean {bg_green_mean}+-std{bg_green_std}')
     for big in big_external_contours:
         # [next, previous, child, parent, self]
         big_cnt = level_cnt[big]
         big_area = cv2.contourArea(big_cnt)
-        white_size -= big_area
         self_index = big[4]
         related_inner = [i for i in inner_contours if i[3] == self_index]
-        mask = np.zeros(img.shape[:2], dtype='uint8')
-        cv2.fillPoly(mask, [big_cnt], (255, 255, 255))
-        masked = cv2.bitwise_and(revert_b, revert_b, mask=mask)
-        cv2.imshow('Masked big', masked)
-        big_blue_mean = cv2.mean(revert_b, mask=mask)
+        # cv2.imshow('Masked big', masked)
+        big_blue_mean, big_blue_std = get_contour_value(revert_b, big_cnt)
         log.info(f'Big region: No.{big[-1]}\t '
                  f'Area: {big_area}\t Blue mean: {big_blue_mean}')
         for inner in related_inner:
-            inner_blue_mean, _ = get_contour_value(revert_b, level_cnt[inner])
+            inner_cnt = level_cnt[inner]
+            inner_cnt_area = cv2.contourArea(inner_cnt)
+            inner_blue_mean, _ = get_contour_value(revert_b, inner_cnt)
+            inner_green_mean, _ = get_contour_value(revert_g, inner_cnt)
             if inner_blue_mean >= big_blue_mean:
                 fake_inner.append(inner)
-            elif inner_blue_mean < white_mean:
+            elif inner_blue_mean < bg_blue_mean+bg_blue_std:
                 # todo: detect real background inner contour
                 real_background.append(inner)
-            elif inner_blue_mean > white_mean:
-                fake_inner.append(inner)
+            elif inner_green_mean < bg_green_mean+bg_green_std:
+                real_background.append(inner)
+            if inner_cnt_area > 500:
+                log.info(f'Inner region: No.{inner[-1]}\t Area: {inner_cnt_area}\tBlue mean: {inner_blue_mean}\tGreen mean: {inner_green_mean}')
+                print(_)
     return fake_inner, real_background
 
 
@@ -312,7 +322,7 @@ def main():
     b, g, r = cv2.split(img)
     # reverse to get better edge
     # revert_img = revert(img)
-    revert_img = revert(img)
+    revert_img = revert(g)
     edge = get_edge(revert_img)
     # APPROX_NONE to avoid omitting dots
     contours, raw_hierarchy = cv2.findContours(edge, cv2.RETR_TREE,
