@@ -240,9 +240,8 @@ def get_contour_value(img, cnt):
     # fill contour with (255,255,255)
     mask = np.zeros(img.shape[:2], dtype='uint8')
     cv2.fillPoly(mask, [cnt], (255, 255, 255))
-    revert_b = revert(img)
-    masked = cv2.bitwise_and(revert_b, revert_b, mask=mask)
-    mean = cv2.mean(revert_b, mask=mask)
+    masked = cv2.bitwise_and(img, img, mask=mask)
+    mean = cv2.mean(img, mask=mask)
     return mean, masked
 
 
@@ -261,10 +260,18 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours, inner_contours)
         big_mean = cv2.mean(revert_b, mask=mask)
         print('raw mean', big_mean, cv2.mean(revert_b))
         for inner in related_inner:
-            inner_mean, _ = get_contour_value(revert_b, inner)
+            inner_mean, _ = get_contour_value(revert_b, level_cnt[inner])
             if inner_mean >= big_mean:
                 fake_inner.append(inner)
     return fake_inner
+
+
+def hex2bgr(hex: str):
+    hex2 = hex.removeprefix('#')
+    r = int('0x'+hex2[0:2].lower(), base=16)
+    g = int('0x'+hex2[2:4].lower(), base=16)
+    b = int('0x'+hex2[4:6].lower(), base=16)
+    return b, g, r
 
 
 def main():
@@ -276,9 +283,9 @@ def main():
     # reverse to get better edge
     # revert_img = revert(img)
     revert_img = revert(img)
-    erode = get_edge(revert_img)
+    edge = get_edge(revert_img)
     # APPROX_NONE to avoid omitting dots
-    contours, raw_hierarchy = cv2.findContours(erode, cv2.RETR_TREE,
+    contours, raw_hierarchy = cv2.findContours(edge, cv2.RETR_TREE,
                                                cv2.CHAIN_APPROX_NONE)
     # raw hierarchy is [[[1,1,1,1]]]
     hierarchy = list()
@@ -298,23 +305,23 @@ def main():
     img_dict['rectangle'] = img.copy()
     img_dict['polyline'] = img.copy()
     img_dict['fill'] = img.copy()
-    img_dict['edge'] = img.copy()
+    img_dict['edge'] = edge
+    img_dict['revert_blue'] = 255 - b
     # use mask
     # todo: split image to left and right according to boundingrect of external contours
     left, right = split_region(img)
     fake_inner = remove_fake_inner_cnt(img, level_cnt, big_external_contours, inner_contours)
-    pass
     # todo: use histogram
     # todo:calculate blue values, then divide by blue region and total region
     # b,g,r
-    green = (0, 255, 0)
-    red = (0, 0, 255)
-    yellow = (0, 255, 255)
-    orange = (0, 128, 255)
-    drawing(big_external_contours, level_cnt, arc_epsilon, img_dict, green)
-    drawing(small_external_contours, level_cnt, arc_epsilon, img_dict, red)
-    drawing(inner_contours, level_cnt, arc_epsilon, img_dict, yellow)
-    drawing(fake_inner, level_cnt, arc_epsilon, img_dict, orange)
+    color_blue = hex2bgr('#4d96ff')
+    color_green = hex2bgr('#6bcb77')
+    color_red = hex2bgr('#ff6b6b')
+    color_yellow = hex2bgr('#ffd93d')
+    drawing(big_external_contours, level_cnt, arc_epsilon, img_dict, color_blue)
+    drawing(small_external_contours, level_cnt, arc_epsilon, img_dict, color_red)
+    drawing(inner_contours, level_cnt, arc_epsilon, img_dict, color_yellow)
+    drawing(fake_inner, level_cnt, arc_epsilon, img_dict, color_green)
     for title, image in img_dict.items():
         cv2.imshow(title, image)
     cv2.waitKey(0)
