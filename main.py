@@ -279,13 +279,13 @@ def main():
     erode = get_edge(revert_img)
     # APPROX_NONE to avoid omitting dots
     contours, raw_hierarchy = cv2.findContours(erode, cv2.RETR_TREE,
-                                           cv2.CHAIN_APPROX_NONE)
+                                               cv2.CHAIN_APPROX_NONE)
     # raw hierarchy is [[[1,1,1,1]]]
     hierarchy = list()
-    for index, i in raw_hierarchy[0]:
+    for index, value in enumerate(raw_hierarchy[0]):
         # [next, previous, child, parent, self]
-        i.append(index)
-        hierarchy.append(i)
+        new_value = np.array([*value, index], dtype=value.dtype)
+        hierarchy.append(new_value)
     level_cnt = dict()
     for key, value in zip(hierarchy, contours):
         level_cnt[tuple(key)] = value
