@@ -247,6 +247,19 @@ def get_contour_value(img, cnt):
     return mean, masked
 
 
+def get_background_value(img, big_external_contours, level_cnt):
+    # exclude big contour
+    mask = np.ones(img.shape[:2], dtype='uint8')
+    for big in big_external_contours:
+        cnt = level_cnt[big]
+        cv2.fillPoly(mask, [cnt], (0, 0, 0))
+    masked = cv2.bitwise_and(img, img, mask=mask)
+    mean = cv2.mean(img, mask=mask)
+    cv2.imshow('masked', masked)
+    log.info(f'Background mean: {mean}')
+    return cv2.mean(img)
+
+
 def remove_fake_inner_cnt(img, level_cnt, big_external_contours, inner_contours):
     b, g, r = cv2.split(img)
     fake_inner = list()
@@ -261,7 +274,7 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours, inner_contours)
         masked = cv2.bitwise_and(revert_b, revert_b, mask=mask)
         cv2.imshow('masked', masked)
         big_mean = cv2.mean(revert_b, mask=mask)
-        log.info(f'Big region: {big[-1]}')
+        log.info(f'Big region: No.{big[-1]}')
         log.info(f'Raw area: {img.size}\t'
                  f'Masked area: {cv2.contourArea(big_cnt)}')
         log.info(f'Raw mean: {cv2.mean(revert_b)}\tMasked mean: {big_mean}')
