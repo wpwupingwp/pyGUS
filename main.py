@@ -93,7 +93,7 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
     bg_size = img.size
     log.info(f'Whole image: Area {img.size}\t '
              f'Whole blue mean {cv2.meanStdDev(revert_b)}')
-    log.debug(f'Background masked: Area {bg_size}\t Blue mean {bg_blue_mean}+-std{bg_blue_std}\tGreen mean {bg_green_mean}+-std{bg_green_std}')
+    log.info(f'Background masked: Area {bg_size}\t Blue mean {bg_blue_mean}+-std{bg_blue_std}\tGreen mean {bg_green_mean}+-std{bg_green_std}')
     for big in big_external_contours:
         # [next, previous, child, parent, self]
         big_cnt = level_cnt[big]
@@ -109,11 +109,14 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
             inner_cnt_area = cv2.contourArea(inner_cnt)
             inner_blue_mean, _ = get_contour_value(revert_b, inner_cnt)
             inner_green_mean, _ = get_contour_value(revert_g, inner_cnt)
-            if inner_blue_mean >= big_blue_mean:
-                fake_inner.append(inner)
             if inner_blue_mean < bg_blue_mean+bg_blue_std:
-                log.info(f'Inner region: No.{inner[-1]}\t Area: {inner_cnt_area}\tBlue mean: {inner_blue_mean}\tGreen mean: {inner_green_mean}')
+                log.debug(f'Real background region: No.{inner[-1]}\t '
+                          f'Area: {inner_cnt_area}\t'
+                          f'Blue mean: {inner_blue_mean}\tGreen mean: '
+                          f'{inner_green_mean}')
                 real_background.append(inner)
+            elif inner_blue_mean >= big_blue_mean:
+                fake_inner.append(inner)
     return fake_inner, real_background
 
 
@@ -150,12 +153,43 @@ def filter_contours(img, level_cnt: dict) -> (list, list, list):
             fake_inner, real_background)
 
 
-def get_left_right(big_external_contours):
-    if len(big_external_contours) == 0:
-        log.error('Cannot find targets in the image.')
-        raise SystemExit(-1)
+def get_left_right(big_external_contours, level_cnt):
+    """
+    Left is target, right is ref
+    Split images to left and right according to bounding rectangle of
+    external contours.
+    Args:
+        big_external_contours:
+        level_cnt:
+    Returns:
+        left:
+        right:
+    Return None for errors.
+    """
     left = None
     right = None
+    if len(big_external_contours) == 0:
+        log.error('Cannot find targets in the image.')
+        return left, right
+    elif len(big_external_contours) == 1:
+        left = big_external_contours[0]
+        log.info('Only detected one target in the image.')
+        return left, right
+    else:
+        left, right = big_external_contours
+        x1, y1, w1, h1 = cv2.boundingRect(level_cnt[left])
+        x2, y2, w2, h2 = cv2.boundingRect(level_cnt[right])
+        # opencv axis: 0->x, 0|vy
+        if x1 > x2:
+            left, right = right, left
+            log.debug('Exchange left and right.')
+            x1, y1, w1, h1, x2, y2, w2, h2 = x2, y2, w2, h2, x1, y1, w1, h1
+        if x1 + w1 > x2:
+            if y1 > y2:
+                y1, h1, y2, h2 = y2, h2, y1, h1
+            if y1 + h1 > y2:
+                log.error('Target and reference are overlapped!')
+                left = right = None
     return left, right
 
 
@@ -182,20 +216,49 @@ def hex2bgr(hex_str: str):
     return b, g, r
 
 
-def drawing(levels, level_cnt, arc_epsilon, img_dict, color):
-    line_width = 1
-    for level in levels:
-        cnt = level_cnt[level]
-        min_rect = cv2.minAreaRect(cnt)
-        min_rect_points = np.int0(cv2.boxPoints(min_rect))
-        x, y, w, h = cv2.boundingRect(cnt)
-        approx = cv2.approxPolyDP(cnt, arc_epsilon, True)
-        # b,g,r
-        cv2.rectangle(img_dict['rectangle'], (x, y), (x+w, y+h), color, line_width)
-        cv2.drawContours(img_dict['min_area_rectangle'], [min_rect_points], 0,
-                         color, line_width)
-        cv2.polylines(img_dict['polyline'], [approx], True, color, line_width)
-        cv2.fillPoly(img_dict['fill'], [approx], color)
+def draw_images(filtered_result, level_cnt, img):
+    def drawing(levels, color):
+        line_width = 2
+        for level in levels:
+            cnt = level_cnt[level]
+            min_rect = cv2.minAreaRect(cnt)
+            min_rect_points = np.int0(cv2.boxPoints(min_rect))
+            x, y, w, h = cv2.boundingRect(cnt)
+            approx = cv2.approxPolyDP(cnt, arc_epsilon, True)
+            # b,g,r
+            cv2.rectangle(img_dict['rectangle'], (x, y), (x + w, y + h),
+                          color, line_width)
+            cv2.drawContours(img_dict['min_area_rectangle'],
+                             [min_rect_points], 0, color, line_width)
+            cv2.polylines(img_dict['polyline'], [approx], True, color,
+                          line_width)
+            cv2.fillPoly(img_dict['fill'], [approx], color)
+
+    (big_external_contours, small_external_contours, inner_contours,
+     fake_inner, real_background) = filtered_result
+    arc_epsilon = get_arc_epsilon(level_cnt[big_external_contours[0]])
+    b, g, r = cv2.split(img)
+    img_dict = dict()
+    img_dict['raw'] = img
+    img_dict['rectangle'] = img.copy()
+    img_dict['min_area_rectangle'] = img.copy()
+    img_dict['polyline'] = img.copy()
+    img_dict['fill'] = img.copy()
+    # img_dict['edge'] = edge
+    img_dict['revert_blue'] = 255 - b
+    color_blue = hex2bgr('#4d96ff')
+    color_green = hex2bgr('#6bcb77')
+    color_red = hex2bgr('#ff6b6b')
+    color_yellow = hex2bgr('#ffd93d')
+    drawing(big_external_contours, color_blue)
+    drawing(small_external_contours, color_red)
+    drawing(inner_contours, color_yellow)
+    drawing(fake_inner, color_green)
+    drawing(real_background, color_red)
+    for title, image in img_dict.items():
+        cv2.imshow(title, image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
     return img_dict
 
 
@@ -221,36 +284,15 @@ def main():
     level_cnt = dict()
     for key, value in zip(hierarchy, contours):
         level_cnt[tuple(key)] = value
+    filtered_result = filter_contours(img, level_cnt)
     (big_external_contours, small_external_contours, inner_contours,
-     fake_inner, real_background) = filter_contours(img, level_cnt)
+     fake_inner, real_background) = filtered_result
+    img_dict = draw_images(filtered_result, level_cnt, img)
     # use mask
-    # todo: split image to left and right according to boundingrect of external contours
-    left, right = get_left_right(big_external_contours)
+    target, ref = get_left_right(big_external_contours, level_cnt)
     # todo: use histogram
     # todo:calculate blue values, then divide by blue region and total region
     # show
-    arc_epsilon = get_arc_epsilon(level_cnt[big_external_contours[0]])
-    img_dict = dict()
-    img_dict['raw'] = img
-    img_dict['rectangle'] = img.copy()
-    img_dict['min_area_rectangle'] = img.copy()
-    img_dict['polyline'] = img.copy()
-    img_dict['fill'] = img.copy()
-    # img_dict['edge'] = edge
-    img_dict['revert_blue'] = 255 - b
-    color_blue = hex2bgr('#4d96ff')
-    color_green = hex2bgr('#6bcb77')
-    color_red = hex2bgr('#ff6b6b')
-    color_yellow = hex2bgr('#ffd93d')
-    drawing(big_external_contours, level_cnt, arc_epsilon, img_dict, color_blue)
-    drawing(small_external_contours, level_cnt, arc_epsilon, img_dict, color_red)
-    drawing(inner_contours, level_cnt, arc_epsilon, img_dict, color_yellow)
-    drawing(fake_inner, level_cnt, arc_epsilon, img_dict, color_green)
-    drawing(real_background, level_cnt, arc_epsilon, img_dict, color_red)
-    for title, image in img_dict.items():
-        cv2.imshow(title, image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
