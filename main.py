@@ -82,18 +82,15 @@ def get_background_value(img, external_contours, level_cnt):
 def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
                           external_contours, inner_contours):
     fake_inner = list()
-    real_background = list()
+    inner_background = list()
     b, g, r = cv2.split(img)
     revert_b = revert(b)
-    #  use green channel to detect real background
-    revert_g = revert(g)
     # background blue mean
     bg_blue_mean, bg_blue_std = get_background_value(revert_b, external_contours, level_cnt)
-    bg_green_mean, bg_green_std = get_background_value(revert_g, external_contours, level_cnt)
     bg_size = img.size
     log.info(f'Whole image: Area {img.size}\t '
              f'Whole blue mean {cv2.meanStdDev(revert_b)}')
-    log.info(f'Background masked: Area {bg_size}\t Blue mean {bg_blue_mean}+-std{bg_blue_std}\tGreen mean {bg_green_mean}+-std{bg_green_std}')
+    log.info(f'Background masked: Area {bg_size}\t Blue mean {bg_blue_mean}+-std{bg_blue_std}')
     for big in big_external_contours:
         # [next, previous, child, parent, self]
         big_cnt = level_cnt[big]
@@ -108,16 +105,16 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
             inner_cnt = level_cnt[inner]
             inner_cnt_area = cv2.contourArea(inner_cnt)
             inner_blue_mean, _ = get_contour_value(revert_b, inner_cnt)
-            inner_green_mean, _ = get_contour_value(revert_g, inner_cnt)
+            # inner_green_mean, _ = get_contour_value(revert_g, inner_cnt)
+            assert big_blue_mean > bg_blue_mean
             if inner_blue_mean < bg_blue_mean+bg_blue_std:
                 log.debug(f'Real background region: No.{inner[-1]}\t '
                           f'Area: {inner_cnt_area}\t'
-                          f'Blue mean: {inner_blue_mean}\tGreen mean: '
-                          f'{inner_green_mean}')
-                real_background.append(inner)
+                          f'Blue mean: {inner_blue_mean}')
+                inner_background.append(inner)
             elif inner_blue_mean >= big_blue_mean:
                 fake_inner.append(inner)
-    return fake_inner, real_background
+    return fake_inner, inner_background
 
 
 def filter_contours(img, level_cnt: dict) -> (list, list, list):
@@ -147,10 +144,10 @@ def filter_contours(img, level_cnt: dict) -> (list, list, list):
         small_external_contours = external_contours[2:]
     except IndexError:
         small_external_contours = list()
-    fake_inner, real_background = remove_fake_inner_cnt(
+    fake_inner, inner_background = remove_fake_inner_cnt(
         img, level_cnt, big_external_contours, external_contours, inner_contours)
     return (big_external_contours, small_external_contours, inner_contours,
-            fake_inner, real_background)
+            fake_inner, inner_background)
 
 
 def get_left_right(big_external_contours, level_cnt):
@@ -262,6 +259,13 @@ def draw_images(filtered_result, level_cnt, img):
     return img_dict
 
 
+def calculate(inner_contours, fake_inner, inner_background, target, ref,
+              level_cnt, img):
+    # todo
+    result = None
+    return result
+
+
 def main():
     input_file = get_input()
     # .png .jpg .tiff
@@ -286,10 +290,11 @@ def main():
         level_cnt[tuple(key)] = value
     filtered_result = filter_contours(img, level_cnt)
     (big_external_contours, small_external_contours, inner_contours,
-     fake_inner, real_background) = filtered_result
+     fake_inner, inner_background) = filtered_result
     img_dict = draw_images(filtered_result, level_cnt, img)
     # use mask
     target, ref = get_left_right(big_external_contours, level_cnt)
+    result = calculate(inner_contours, fake_inner, inner_background, target, ref, level_cnt, img)
     # todo: use histogram
     # todo:calculate blue values, then divide by blue region and total region
     # show
