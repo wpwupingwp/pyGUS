@@ -48,6 +48,7 @@ def get_edge(image):
     img_equalize = image
     cv2.imshow('sharp', img_equalize)
     edge = auto_Canny(img_equalize)
+    # blur edge, not original image
     blur = cv2.GaussianBlur(edge, (5, 5), 0)
     dilate = cv2.dilate(blur, None)
     erode_edge = cv2.erode(dilate, None)
