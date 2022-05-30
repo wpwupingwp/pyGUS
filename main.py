@@ -18,8 +18,11 @@ log = logging.getLogger('pyGUS')
 
 def get_input(input_file='example/0-1.tif'):
     # input_path = 'example/example.png'
-    input_file = 'example/0-1.tif'
-    # input_file = 'example/75-2.tif'
+    input_file = 'example/ninanjie-0-1.tif'
+    # input_file = 'example/ninanjie-75-2.tif'
+    # input_file = 'example/ersuiduanbingcao-BD15-27.png'
+    # input_file = 'example/ersuiduanbingcao-DH39-5.png'
+    # input_file = 'example/ersuiduanbingcao-BD7-4.png'
     img = cv2.imread(input_file)
     log.info(f'Image size: {img.shape}')
     print(img.shape)
@@ -38,13 +41,19 @@ def auto_Canny(image, sigma=0.33):
 
 def get_edge(image):
     # edge->blur->dilate->erode->contours
-    edge = auto_Canny(image)
-    blur = cv2.GaussianBlur(edge, (3, 3), 0)
+    # img_equalize = cv2.equalizeHist(image)
+    # img_equalize = cv2.equalizeHist(bl)
+    # clahe = cv2.createCLAHE()
+    # sharped = clahe.apply(image)
+    img_equalize = image
+    cv2.imshow('sharp', img_equalize)
+    edge = auto_Canny(img_equalize)
+    blur = cv2.GaussianBlur(edge, (5, 5), 0)
     dilate = cv2.dilate(blur, None)
     erode_edge = cv2.erode(dilate, None)
-    # cv2.imshow('edge', edge)
-    # cv2.imshow('dilate', dilate)
-    # cv2.imshow('blur', blur)
+    cv2.imshow('edge', edge)
+    cv2.imshow('dilate', dilate)
+    cv2.imshow('blur', blur)
     return erode_edge
 
 
@@ -242,7 +251,7 @@ def draw_images(filtered_result, level_cnt, img):
     img_dict['polyline'] = img.copy()
     img_dict['fill'] = img.copy()
     # img_dict['edge'] = edge
-    img_dict['revert_blue'] = 255 - b
+    # img_dict['revert_blue'] = 255 - b
     color_blue = hex2bgr('#4d96ff')
     color_green = hex2bgr('#6bcb77')
     color_red = hex2bgr('#ff6b6b')
@@ -270,11 +279,12 @@ def main():
     input_file = get_input()
     # .png .jpg .tiff
     img = cv2.imread(input_file)
-    # split_channel(img)
+    show_channel(img)
     b, g, r = cv2.split(img)
     # reverse to get better edge
     # use green channel
-    revert_img = revert(g)
+    # todo: g or b
+    revert_img = revert(g//2+r//2)
     edge = get_edge(revert_img)
     # APPROX_NONE to avoid omitting dots
     contours, raw_hierarchy = cv2.findContours(edge, cv2.RETR_TREE,
