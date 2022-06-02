@@ -16,13 +16,17 @@ coloredlogs.install(level=default_level, fmt=FMT, datefmt=DATEFMT)
 log = logging.getLogger('pyGUS')
 
 
-def get_input(input_file='example/0-1.tif'):
+def get_input(input_file='example/ninanjie-ok-75-2.tif'):
     # input_path = 'example/example.png'
-    input_file = 'example/ninanjie-0-1.tif'
+    # input_file = 'example/ninanjie-0-1.tif'
     # input_file = 'example/ninanjie-75-2.tif'
+    # input_file = 'example/ninanjie-50-1.tif'
+    input_file = 'example/ninanjie-ok-75-2.tif'
+    # input_file = 'example/ninanjie-100-1.tif'
+    # input_file = 'example/ninanjie-2h-3.tif'
     # input_file = 'example/ersuiduanbingcao-BD15-27.png'
     # input_file = 'example/ersuiduanbingcao-DH39-5.png'
-    # input_file = 'example/ersuiduanbingcao-BD7-4.png'
+    # input_file = 'example/ersuiduanbingcao-ok-BD7-4.png'
     img = cv2.imread(input_file)
     log.info(f'Image size: {img.shape}')
     print(img.shape)
@@ -42,19 +46,20 @@ def auto_Canny(image, sigma=0.33):
 def get_edge(image):
     # edge->blur->dilate->erode->contours
     # img_equalize = cv2.equalizeHist(image)
-    # img_equalize = cv2.equalizeHist(bl)
     # clahe = cv2.createCLAHE()
     # sharped = clahe.apply(image)
+    # blur1 = cv2.GaussianBlur(img_equalize, (3, 3), 0)
+    # cv2.imshow('equalize', img_equalize)
+    # cv2.imshow('blur1', blur1)
+    # img_equalize = cv2.equalizeHist(bl)
     img_equalize = image
-    cv2.imshow('sharp', img_equalize)
     edge = auto_Canny(img_equalize)
     # blur edge, not original image
     blur = cv2.GaussianBlur(edge, (5, 5), 0)
     dilate = cv2.dilate(blur, None)
     erode_edge = cv2.erode(dilate, None)
     cv2.imshow('edge', edge)
-    cv2.imshow('dilate', dilate)
-    cv2.imshow('blur', blur)
+    # cv2.imshow('dilate', dilate)
     return erode_edge
 
 
@@ -85,7 +90,7 @@ def get_background_value(img, external_contours, level_cnt):
         cv2.fillPoly(mask, [cnt], (0, 0, 0))
     masked = cv2.bitwise_and(img, img, mask=mask)
     mean, std = cv2.meanStdDev(img, mask=mask)
-    cv2.imshow('Background masked', masked)
+    # cv2.imshow('Background masked', masked)
     return mean[0][0], std[0][0]
 
 
@@ -116,7 +121,7 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
             inner_cnt_area = cv2.contourArea(inner_cnt)
             inner_blue_mean, _ = get_contour_value(revert_b, inner_cnt)
             # inner_green_mean, _ = get_contour_value(revert_g, inner_cnt)
-            assert big_blue_mean > bg_blue_mean
+            # assert big_blue_mean > bg_blue_mean
             if inner_blue_mean < bg_blue_mean+bg_blue_std:
                 log.debug(f'Real background region: No.{inner[-1]}\t '
                           f'Area: {inner_cnt_area}\t'
@@ -280,12 +285,13 @@ def main():
     input_file = get_input()
     # .png .jpg .tiff
     img = cv2.imread(input_file)
-    show_channel(img)
+    # show_channel(img)
     b, g, r = cv2.split(img)
     # reverse to get better edge
     # use green channel
     # todo: g or b
     revert_img = revert(g//2+r//2)
+    # revert_img = revert(g)
     edge = get_edge(revert_img)
     # APPROX_NONE to avoid omitting dots
     contours, raw_hierarchy = cv2.findContours(edge, cv2.RETR_TREE,
