@@ -5,7 +5,7 @@ import logging
 import numpy as np
 from pathlib import Path
 
-# from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 # define logger
 FMT = '%(asctime)s %(levelname)-8s %(message)s'
 DATEFMT = '%Y-%m-%d %H:%M:%S'
@@ -20,8 +20,8 @@ def get_input(input_file='example/ninanjie-ok-75-2.tif'):
     # input_path = 'example/example.png'
     # input_file = 'example/ninanjie-0-1.tif'
     # input_file = 'example/ninanjie-75-2.tif'
-    # input_file = 'example/ninanjie-50-1.tif'
-    input_file = 'example/ninanjie-ok-75-2.tif'
+    input_file = 'example/ninanjie-50-1.tif'
+    # input_file = 'example/ninanjie-ok-75-2.tif'
     # input_file = 'example/ninanjie-100-1.tif'
     # input_file = 'example/ninanjie-2h-3.tif'
     # input_file = 'example/ersuiduanbingcao-BD15-27.png'
@@ -43,6 +43,25 @@ def auto_Canny(image, sigma=0.33):
     return edge
 
 
+def threshold(img):
+    # todo: split target and then use different threshold to detect edge
+    ret1, th1 = cv2.threshold(img, 16, 255, cv2.THRESH_BINARY)
+    ret2, th2 = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    th3 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
+    th4 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    equalize = cv2.equalizeHist(img)
+    r, t = cv2.threshold(equalize, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    edge = auto_Canny(255-th3)
+    print(ret2)
+    plt.subplot(321),plt.imshow(th1, 'gray')
+    plt.subplot(322),plt.imshow(th2, 'gray')
+    plt.subplot(323),plt.imshow(th3, 'gray')
+    plt.subplot(324),plt.imshow(th4, 'gray')
+    plt.subplot(325),plt.imshow(t, 'gray')
+    plt.subplot(326),plt.imshow(edge, 'gray')
+    return
+
+
 def get_edge(image):
     # edge->blur->dilate->erode->contours
     # img_equalize = cv2.equalizeHist(image)
@@ -53,12 +72,15 @@ def get_edge(image):
     # cv2.imshow('blur1', blur1)
     # img_equalize = cv2.equalizeHist(bl)
     img_equalize = image
+    threshold(image)
     edge = auto_Canny(img_equalize)
     # blur edge, not original image
     blur = cv2.GaussianBlur(edge, (5, 5), 0)
     dilate = cv2.dilate(blur, None)
     erode_edge = cv2.erode(dilate, None)
     cv2.imshow('edge', edge)
+    plt.hist(img_equalize, 256)
+    plt.show()
     # cv2.imshow('dilate', dilate)
     return erode_edge
 
