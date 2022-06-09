@@ -37,26 +37,34 @@ def auto_Canny(image, sigma=0.33):
     # compute the median of the single channel pixel intensities
     v = np.median(image)
     # apply automatic Canny edge detection using the computed median
-    lower = int(max(0, (1.0 - sigma) * v))
+    lower = int(max(0, (1.0 - sigma*3) * v))
     upper = int(min(255, (1.0 + sigma) * v))
     edge = cv2.Canny(image, lower, upper)
     return edge
 
 
 def threshold(img):
+    img = img[:,:500].copy()
+    h, w = img.shape[:2]
+    mask = np.zeros([h+2, w+2], np.uint8)
     # todo: split target and then use different threshold to detect edge
-    ret1, th1 = cv2.threshold(img, 16, 255, cv2.THRESH_BINARY)
+    # ret1, th1 = cv2.threshold(img, 16, 255, cv2.THRESH_BINARY)
     ret2, th2 = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     th3 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
     th4 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
     equalize = cv2.equalizeHist(img)
     r, t = cv2.threshold(equalize, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    edge = auto_Canny(255-th3)
+    edge = auto_Canny(255-th2)
+    cv2.floodFill(th2, mask=mask, seedPoint=(1,1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
+    print(h,w,sep='x')
+    cv2.floodFill(th2, mask=mask, seedPoint=(1,h-1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
     print(ret2)
-    plt.subplot(321),plt.imshow(th1, 'gray')
+    plt.figure(figsize=(10,10))
+
+    plt.subplot(321),plt.imshow(255-th2, 'gray')
     plt.subplot(322),plt.imshow(th2, 'gray')
-    plt.subplot(323),plt.imshow(th3, 'gray')
-    plt.subplot(324),plt.imshow(th4, 'gray')
+    plt.subplot(323),plt.imshow(255-th3, 'gray')
+    plt.subplot(324),plt.imshow(255-th4, 'gray')
     plt.subplot(325),plt.imshow(t, 'gray')
     plt.subplot(326),plt.imshow(edge, 'gray')
     return
@@ -312,7 +320,7 @@ def main():
     # reverse to get better edge
     # use green channel
     # todo: g or b
-    revert_img = revert(g//2+r//2)
+    revert_img = revert(g//2+r//2)[:,:500]
     # revert_img = revert(g)
     edge = get_edge(revert_img)
     # APPROX_NONE to avoid omitting dots
