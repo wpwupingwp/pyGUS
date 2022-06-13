@@ -44,14 +44,14 @@ def auto_Canny(image, sigma=0.33):
 
 
 def threshold(img):
-    img = img[:,:500].copy()
+    # img = img[:,:500].copy()
     h, w = img.shape[:2]
     mask = np.zeros([h+2, w+2], np.uint8)
     # todo: split target and then use different threshold to detect edge
     # ret1, th1 = cv2.threshold(img, 16, 255, cv2.THRESH_BINARY)
     ret2, th2 = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    th3 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
-    th4 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    # th3 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
+    # th4 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
     equalize = cv2.equalizeHist(img)
     r, t = cv2.threshold(equalize, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     edge = auto_Canny(255-th2)
@@ -63,12 +63,10 @@ def threshold(img):
     print(ret2)
     plt.figure(figsize=(10,10))
 
-    plt.subplot(321),plt.imshow(255-th2, 'gray')
-    plt.subplot(322),plt.imshow(th2, 'gray')
-    plt.subplot(323),plt.imshow(255-th3, 'gray')
-    plt.subplot(324),plt.imshow(255-th4, 'gray')
-    plt.subplot(325),plt.imshow(t, 'gray')
-    plt.subplot(326),plt.imshow(edge, 'gray')
+    plt.subplot(221),plt.imshow(255-th2, 'gray')
+    plt.subplot(222),plt.imshow(th2, 'gray')
+    plt.subplot(223),plt.imshow(t, 'gray')
+    plt.subplot(224),plt.imshow(edge, 'gray')
     return
 
 
