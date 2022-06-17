@@ -5,7 +5,7 @@ import logging
 import numpy as np
 from pathlib import Path
 
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 # define logger
 FMT = '%(asctime)s %(levelname)-8s %(message)s'
 DATEFMT = '%Y-%m-%d %H:%M:%S'
@@ -36,37 +36,39 @@ def get_input(input_file='example/ninanjie-ok-75-2.tif'):
 def auto_Canny(image, sigma=0.33):
     # compute the median of the single channel pixel intensities
     v = np.median(image)
-    # apply automatic Canny edge detection using the computed median
+    # use edited lower bound
     lower = int(max(0, (1.0 - sigma*3) * v))
     upper = int(min(255, (1.0 + sigma) * v))
     edge = cv2.Canny(image, lower, upper)
     return edge
 
 
-def threshold(img):
-    # img = img[:,:500].copy()
+def threshold(img, show=False):
+    # todo: find suitable edge to split target and edge
+    r, g, b = cv2.split(img)
+    r_g = r // 2 + g // 2
+    r_g_reverse = 255 - r_g
+    blur = cv2.GaussianBlur(r_g_reverse, (5, 5), 0)
     h, w = img.shape[:2]
     mask = np.zeros([h+2, w+2], np.uint8)
-    # todo: split target and then use different threshold to detect edge
     # ret1, th1 = cv2.threshold(img, 16, 255, cv2.THRESH_BINARY)
-    ret2, th2 = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    # th3 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
-    # th4 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-    equalize = cv2.equalizeHist(img)
+    ret2, th2 = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    equalize = cv2.equalizeHist(blur)
     r, t = cv2.threshold(equalize, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     edge = auto_Canny(255-th2)
-    cv2.floodFill(th2, mask=mask, seedPoint=(1,1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
+    # cv2.floodFill(th2, mask=mask, seedPoint=(1,1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
     print(h,w,sep='x')
-    cv2.floodFill(th2, mask=mask, seedPoint=(1,h-1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
+    # cv2.floodFill(th2, mask=mask, seedPoint=(1,h-1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
     # cv2.floodFill(th2, mask=mask, seedPoint=(w-1,1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
     # cv2.floodFill(th2, mask=mask, seedPoint=(w-1,h-1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
-    print(ret2)
-    plt.figure(figsize=(10,10))
-
-    plt.subplot(221),plt.imshow(255-th2, 'gray')
-    plt.subplot(222),plt.imshow(th2, 'gray')
-    plt.subplot(223),plt.imshow(t, 'gray')
-    plt.subplot(224),plt.imshow(edge, 'gray')
+    # th3 = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 4)
+    # th3 = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    th3 = auto_Canny(th2)
+    if show:
+        cv2.imshow('th2', th2)
+        cv2.imshow('threshold', t)
+        cv2.imshow('t_edge', edge)
+    print('ret2', ret2)
     return
 
 
@@ -80,15 +82,15 @@ def get_edge(image):
     # cv2.imshow('blur1', blur1)
     # img_equalize = cv2.equalizeHist(bl)
     img_equalize = image
-    threshold(image)
+    # threshold(image)
     edge = auto_Canny(img_equalize)
     # blur edge, not original image
     blur = cv2.GaussianBlur(edge, (5, 5), 0)
     dilate = cv2.dilate(blur, None)
     erode_edge = cv2.erode(dilate, None)
     cv2.imshow('edge', edge)
-    plt.hist(img_equalize, 256)
-    plt.show()
+    # plt.hist(img_equalize, 256)
+    # plt.show()
     # cv2.imshow('dilate', dilate)
     return erode_edge
 
@@ -212,11 +214,9 @@ def get_left_right(big_external_contours, level_cnt):
     right = None
     if len(big_external_contours) == 0:
         log.error('Cannot find targets in the image.')
-        return left, right
     elif len(big_external_contours) == 1:
         left = big_external_contours[0]
         log.info('Only detected one target in the image.')
-        return left, right
     else:
         left, right = big_external_contours
         x1, y1, w1, h1 = cv2.boundingRect(level_cnt[left])
@@ -299,8 +299,6 @@ def draw_images(filtered_result, level_cnt, img):
     drawing(real_background, color_red)
     for title, image in img_dict.items():
         cv2.imshow(title, image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
     return img_dict
 
 
@@ -309,6 +307,27 @@ def calculate(inner_contours, fake_inner, inner_background, target, ref,
     # todo
     result = None
     return result
+
+
+def split_image(left_cnt, right_cnt, img):
+    """
+    Target in left, reference in right
+    Args:
+        left_cnt:
+        right_cnt:
+        img: three-channels image
+    Returns:
+        target: left-part image
+        right: right-part image
+    """
+    img_copy = img.copy()
+    x1, y1, w1, h1 = cv2.boundingRect(left_cnt)
+    x2, y2, w2, h2 = cv2.boundingRect(right_cnt)
+    assert x1 < x1+w1 < x2 < x2+w2
+    middle = (x1+w1+x2) // 2
+    target = img_copy[:, :middle]
+    ref = img_copy[:, middle:]
+    return target, ref
 
 
 def main():
@@ -320,7 +339,7 @@ def main():
     # reverse to get better edge
     # use green channel
     # todo: g or b
-    revert_img = revert(g//2+r//2)[:,:500]
+    revert_img = revert(g//2+r//2)
     # revert_img = revert(g)
     edge = get_edge(revert_img)
     # APPROX_NONE to avoid omitting dots
@@ -340,11 +359,18 @@ def main():
      fake_inner, inner_background) = filtered_result
     img_dict = draw_images(filtered_result, level_cnt, img)
     # use mask
-    target, ref = get_left_right(big_external_contours, level_cnt)
+    left, right = get_left_right(big_external_contours, level_cnt)
+    left_cnt = level_cnt[left]
+    right_cnt = level_cnt[right]
+    target, ref = split_image(left_cnt, right_cnt, img)
+    # threshold(target, show=True)
+    # threshold(ref)
     result = calculate(inner_contours, fake_inner, inner_background, target, ref, level_cnt, img)
     # todo: use histogram
     # todo:calculate blue values, then divide by blue region and total region
     # show
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
