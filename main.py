@@ -13,6 +13,50 @@ from pathlib import Path
 # todo: GUI
 # todo: manual
 # todo: manuscript
+# todo: use histogram
+# todo:calculate blue values, then divide by blue region and total region
+
+def mode_1():
+    result = calculate(inner_contours, fake_inner, inner_background, target, ref, level_cnt, img)
+    pass
+
+
+def mode_2(filtered_result, level_cnt, img):
+    # ignore small_external, inner_contours,
+    (big_external_contours, small_external_contours, inner_contours,
+     fake_inner, inner_background) = filtered_result
+    left, right = get_left_right(big_external_contours, level_cnt)
+    assert left is not None and right is not None, 'Object and reference not found.'
+    left_cnt = level_cnt[left]
+    right_cnt = level_cnt[right]
+    left_right_mask = list()
+    for target in left, right:
+        self_index = target[4]
+        cnt = level_cnt[target]
+        print(target)
+        print('self', self_index)
+        mask = np.zeros(img.shape[:2], dtype='uint8')
+        related_fake_inner = [i for i in fake_inner if i[3] == self_index]
+        # related inner background
+        related_inner_bg = [i for i in inner_background if i[3] == target[4]]
+        cv2.fillPoly(mask, [cnt], (255, 255, 255))
+        for i in related_fake_inner:
+            cnt_i = level_cnt[i]
+            cv2.fillPoly(mask, [cnt_i], (255, 255, 255))
+        for j in related_inner_bg:
+            cnt_j = level_cnt[j]
+            cv2.fillPoly(mask, [cnt_j], (0, 0, 0))
+        left_right_mask.append(mask)
+    masked_left = cv2.bitwise_and(img, img, mask=left_right_mask[0])
+    cv2.imshow('mask', masked_left)
+    masked_right = cv2.bitwise_and(img, img, mask=left_right_mask[1])
+    cv2.imshow('mask2', masked_right)
+    pass
+
+
+def mode_3():
+    pass
+
 
 # from matplotlib import pyplot as plt
 # define logger
@@ -46,7 +90,7 @@ def auto_Canny(image, sigma=0.33):
     # compute the median of the single channel pixel intensities
     v = np.median(image)
     # use edited lower bound
-    lower = int(max(0, (1.0 - sigma*3) * v))
+    lower = int(max(0, (1.0 - sigma*2) * v))
     upper = int(min(255, (1.0 + sigma) * v))
     edge = cv2.Canny(image, lower, upper)
     return edge
@@ -239,8 +283,9 @@ def get_left_right(big_external_contours, level_cnt):
             if y1 > y2:
                 y1, h1, y2, h2 = y2, h2, y1, h1
             if y1 + h1 > y2:
+                # todo: show error in window
                 log.error('Target and reference are overlapped!')
-                left = right = None
+                # left = right = None
     return left, right
 
 
@@ -367,16 +412,16 @@ def main():
     (big_external_contours, small_external_contours, inner_contours,
      fake_inner, inner_background) = filtered_result
     img_dict = draw_images(filtered_result, level_cnt, img)
-    # use mask
-    left, right = get_left_right(big_external_contours, level_cnt)
-    left_cnt = level_cnt[left]
-    right_cnt = level_cnt[right]
-    target, ref = split_image(left_cnt, right_cnt, img)
+    mode_2(filtered_result, level_cnt, img)
+    try:
+        pass
+        # use mask
+        # target, ref = split_image(left_cnt, right_cnt, img)
+        # result = calculate(inner_contours, fake_inner, inner_background, target, ref, level_cnt, img)
+    except KeyError:
+        pass
     # threshold(target, show=True)
     # threshold(ref)
-    result = calculate(inner_contours, fake_inner, inner_background, target, ref, level_cnt, img)
-    # todo: use histogram
-    # todo:calculate blue values, then divide by blue region and total region
     # show
     cv2.waitKey(0)
     cv2.destroyAllWindows()
