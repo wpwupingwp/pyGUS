@@ -4,6 +4,15 @@ import cv2
 import logging
 import numpy as np
 from pathlib import Path
+# todo: color correction
+# todo mode 1: single object for each image, select positive, negative, targets
+# todo mode 2: two object for each image, left target, right color card
+# todo mode 3: two object for each image, left target, right positive/negative
+# todo: select area by mouse
+# todo: calculate values, statistic analysis
+# todo: GUI
+# todo: manual
+# todo: manuscript
 
 # from matplotlib import pyplot as plt
 # define logger
