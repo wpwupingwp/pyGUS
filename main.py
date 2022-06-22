@@ -33,6 +33,7 @@ def mode_2(filtered_result, level_cnt, img):
     # ignore small_external, inner_contours,
     (big_external_contours, small_external_contours, inner_contours,
      fake_inner, inner_background) = filtered_result
+    # target, ref
     left, right = get_left_right(big_external_contours, level_cnt)
     assert left is not None and right is not None, 'Object and reference not found.'
     left_cnt = level_cnt[left]
@@ -55,10 +56,17 @@ def mode_2(filtered_result, level_cnt, img):
             cnt_j = level_cnt[j]
             cv2.fillPoly(mask, [cnt_j], (0, 0, 0))
         left_right_mask.append(mask)
-    masked_left = cv2.bitwise_and(img, img, mask=left_right_mask[0])
-    cv2.imshow('mask', masked_left)
-    masked_right = cv2.bitwise_and(img, img, mask=left_right_mask[1])
-    cv2.imshow('mask2', masked_right)
+    left_mask, right_mask = left_right_mask
+    masked_left = cv2.bitwise_and(img, img, mask=left_mask)
+    cv2.imshow('mask', 255-masked_left)
+    masked_right = cv2.bitwise_and(img, img, mask=right_mask)
+    cv2.imshow('mask2', 255-masked_right)
+    b, g, r = cv2.split(img)
+    # todo, 255-b is not real blue part
+    left_value, left_std = cv2.meanStdDev(255-b, mask=left_mask)
+    cv2.imshow('mask3', 255-b)
+    right_value, right_std = cv2.meanStdDev(255-b, mask=right_mask)
+    print(left_value, left_std, right_value, right_std)
     pass
 
 
