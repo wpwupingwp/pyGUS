@@ -5,9 +5,9 @@ import logging
 import numpy as np
 from pathlib import Path
 # todo: color correction
-# todo mode 1: single object for each image, select positive, negative, targets
-# todo mode 2: two object for each image, left target, right color card
-# todo mode 3: two object for each image, left target, right positive/negative
+# todo mode 1: single object for each image, manually select positive, negative, targets
+# todo mode 2: two object for each image, left target, right positive
+# todo mode 3: two object for each image, left target, right color card
 # todo: select area by mouse
 # todo: calculate values, statistic analysis
 # todo: GUI
@@ -17,11 +17,19 @@ from pathlib import Path
 # todo:calculate blue values, then divide by blue region and total region
 
 def mode_1():
+    # ignore light change
+    # first: negative
+    # second: positive
+    # third and after: target
     result = calculate(inner_contours, fake_inner, inner_background, target, ref, level_cnt, img)
     pass
 
 
 def mode_2(filtered_result, level_cnt, img):
+    # use negative to calibrate positive, and then measure each target
+    # assume positive in each image is same, ignore light change
+    # first left: negative, first right: positive
+    # next left: object, next right: positive
     # ignore small_external, inner_contours,
     (big_external_contours, small_external_contours, inner_contours,
      fake_inner, inner_background) = filtered_result
@@ -55,6 +63,10 @@ def mode_2(filtered_result, level_cnt, img):
 
 
 def mode_3():
+    # use color card to calibrate each image
+    # first left: negative, first right: card
+    # second left: positive, second right: card
+    # third and next left: target, right: card
     pass
 
 
