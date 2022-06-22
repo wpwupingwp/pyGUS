@@ -8,7 +8,7 @@ from pathlib import Path
 # todo mode 1: single object for each image, manually select positive, negative, targets
 # todo mode 2: two object for each image, left target, right positive
 # todo mode 3: two object for each image, left target, right color card
-# todo: select area by mouse
+# todo: mode 4: select area by mouse
 # todo: calculate values, statistic analysis
 # todo: GUI
 # todo: manual
