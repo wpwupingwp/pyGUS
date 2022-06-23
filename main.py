@@ -16,6 +16,17 @@ from pathlib import Path
 # todo: use histogram
 # todo:calculate blue values, then divide by blue region and total region
 
+# from matplotlib import pyplot as plt
+# define logger
+FMT = '%(asctime)s %(levelname)-8s %(message)s'
+DATEFMT = '%Y-%m-%d %H:%M:%S'
+formatter = logging.Formatter(fmt=FMT, datefmt=DATEFMT)
+default_level = logging.DEBUG
+
+coloredlogs.install(level=default_level, fmt=FMT, datefmt=DATEFMT)
+log = logging.getLogger('pyGUS')
+
+
 def mode_1():
     # ignore light change
     # first: negative
@@ -78,18 +89,31 @@ def mode_3():
     pass
 
 
-# from matplotlib import pyplot as plt
-# define logger
-FMT = '%(asctime)s %(levelname)-8s %(message)s'
-DATEFMT = '%Y-%m-%d %H:%M:%S'
-formatter = logging.Formatter(fmt=FMT, datefmt=DATEFMT)
-default_level = logging.DEBUG
+def get_input(arg):
+    negative = [arg.ref1, ]
+    positive = [arg.ref2, ]
+    targets = list(arg.targets)
+    if arg.mode == 1:
+        if arg.ref1 is None or arg.ref2 is None or arg.targets is None:
+            log.error('Empty input. Mode 1 requires ref1 (negative) and ref2 (positive')
+    elif arg.mode == 2:
+        if arg.ref1 is None or arg.targets is None:
+            log.error('Empty input. Mode 2 requires ref1 (negative/positive) ')
+    elif arg.mode == 3:
+        if arg.ref1 is None or arg.targets is None:
+            log.error('Empty input. Mode 1 requires ref1 (negative) ')
+    elif arg.mode == 4:
+        pass
+    else:
+        raise ValueError('Invalid mode.')
+    return negative, positive, targets
 
-coloredlogs.install(level=default_level, fmt=FMT, datefmt=DATEFMT)
-log = logging.getLogger('pyGUS')
 
 
-def get_input(input_file='example/ninanjie-ok-75-2.tif'):
+    pass
+
+
+def get_input_demo(input_file='example/ninanjie-ok-75-2.tif'):
     # input_path = 'example/example.png'
     # input_file = 'example/ninanjie-0-1.tif'
     # input_file = 'example/ninanjie-75-2.tif'
@@ -404,10 +428,9 @@ def split_image(left_cnt, right_cnt, img):
     return target, ref
 
 
-def main():
-    input_file = get_input()
+def get_contour(img_file):
     # .png .jpg .tiff
-    img = cv2.imread(input_file)
+    img = cv2.imread(img_file)
     # show_channel(img)
     b, g, r = cv2.split(img)
     # reverse to get better edge
@@ -429,9 +452,12 @@ def main():
     for key, value in zip(hierarchy, contours):
         level_cnt[tuple(key)] = value
     filtered_result = filter_contours(img, level_cnt)
-    (big_external_contours, small_external_contours, inner_contours,
-     fake_inner, inner_background) = filtered_result
-    img_dict = draw_images(filtered_result, level_cnt, img)
+    return filtered_result, level_cnt, img
+
+
+def main():
+    img_file = get_input()
+    filtered_result, level_cnt, img = get_contour(img_file)
     mode_2(filtered_result, level_cnt, img)
     try:
         pass
@@ -443,9 +469,27 @@ def main():
     # threshold(target, show=True)
     # threshold(ref)
     # show
+    img_dict = draw_images(filtered_result, level_cnt, img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    pass
+
+
+def demo():
+    input_file = get_input_demo()
+    # .png .jpg .tiff
+    filtered_result, level_cnt, img = get_contour(input_file)
+    img_dict = draw_images(filtered_result, level_cnt, img)
+    mode_2(filtered_result, level_cnt, img)
+    # use mask
+    # target, ref = split_image(left_cnt, right_cnt, img)
+    # result = calculate(inner_contours, fake_inner, inner_background, target, ref, level_cnt, img)
+    # threshold(target, show=True)
+    # threshold(ref)
+    # show
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
-    main()
+    demo()
