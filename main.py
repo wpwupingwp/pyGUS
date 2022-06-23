@@ -34,9 +34,9 @@ def mode_1(arg):
     # third and after: target
     negative, positive, targets = get_input(arg)
     neg_filtered_result, neg_level_cnt, neg_img = get_contour(negative)
+    pos_filtered_result, pos_level_cnt, pos_img = get_contour(positive)
     neg_value, neg_std = get_single_value(
         neg_filtered_result, neg_level_cnt, neg_img)
-    pos_filtered_result, pos_level_cnt, pos_img = get_contour(positive)
     pos_value, pos_std = get_single_value(
         pos_filtered_result, pos_level_cnt, pos_img)
     for target in targets:
@@ -61,6 +61,20 @@ def mode_2(arg):
         target_value, target_std, pos_value_, pos_std_ = get_left_right_value(
             filtered_result, level_cnt, img)
     pass
+
+
+
+def color_calibrate(img_file):
+    """
+    Use color card to calibrate colors
+    Args:
+        img_file:
+    Returns:
+        calibrated:
+    """
+    # todo: calibrate
+    calibrated = img_file
+    return calibrated
 
 
 def get_single_value(filtered_result, level_cnt, img):
@@ -125,15 +139,30 @@ def get_left_right_value(filtered_result, level_cnt, img):
     left_value, left_std = cv2.meanStdDev(255-b, mask=left_mask)
     cv2.imshow('mask3', 255-b)
     right_value, right_std = cv2.meanStdDev(255-b, mask=right_mask)
-    print(left_value, left_std, right_value, right_std)
-    return left_value, left_std, right_value, right_std
+    return left_value[0], left_std[0], right_value[0], right_std[0]
 
 
-def mode_3():
+def mode_3(arg):
     # use color card to calibrate each image
     # first left: negative, first right: card
     # second left: positive, second right: card
     # third and next left: target, right: card
+    negative, positive, targets = get_input(arg)
+    ok_neg = color_calibrate(negative)
+    ok_pos = color_calibrate(positive)
+    ok_targets = [color_calibrate(i) for i in targets]
+    ###
+    neg_filtered_result, neg_level_cnt, neg_img = get_contour(ok_neg)
+    pos_filtered_result, pos_level_cnt, pos_img = get_contour(ok_pos)
+    neg_value, neg_std, card_value, card_std = get_left_right_value(
+        neg_filtered_result, neg_level_cnt, neg_img)
+    pos_value, pos_std, card_value2, card_std2 = get_left_right_value(
+        pos_filtered_result, pos_level_cnt, pos_img)
+    for target in ok_targets:
+        filtered_result, level_cnt, img = get_contour(target)
+        target_value, target_std, card_value_, card_std_ = get_left_right_value(
+            filtered_result, level_cnt, img)
+    print(neg_value, neg_std, pos_value, pos_std, target_value, target_std)
     pass
 
 
@@ -155,10 +184,6 @@ def get_input(arg):
     else:
         raise ValueError('Invalid mode.')
     return negative, positive, targets
-
-
-
-    pass
 
 
 def get_input_demo(input_file='example/ninanjie-ok-75-2.tif'):
