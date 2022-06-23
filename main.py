@@ -1,9 +1,13 @@
 #!/usr/bin/python3.10
+import argparse
+import logging
+
 import coloredlogs
 import cv2
-import logging
 import numpy as np
+from matplotlib import pyplot as plt
 from pathlib import Path
+
 # todo: color correction
 # todo mode 1: single object for each image, manually select positive, negative, targets
 # todo mode 2: two object for each image, left target, right positive
@@ -16,15 +20,23 @@ from pathlib import Path
 # todo: use histogram
 # todo:calculate blue values, then divide by blue region and total region
 
-# from matplotlib import pyplot as plt
 # define logger
 FMT = '%(asctime)s %(levelname)-8s %(message)s'
 DATEFMT = '%Y-%m-%d %H:%M:%S'
 formatter = logging.Formatter(fmt=FMT, datefmt=DATEFMT)
-default_level = logging.DEBUG
+default_level = logging.INFO
 
 coloredlogs.install(level=default_level, fmt=FMT, datefmt=DATEFMT)
 log = logging.getLogger('pyGUS')
+
+
+def parse_arg():
+    arg = argparse.ArgumentParser()
+    arg.add_argument('-ref1', help='Negative expression reference image')
+    arg.add_argument('-ref2', help='Positive expression reference image')
+    arg.add_argument('-targets', required=True, help='Input images')
+    arg.add_argument('-mode', required=True)
+    return arg.parse_args()
 
 
 def mode_1(arg):
@@ -63,7 +75,6 @@ def mode_2(arg):
     pass
 
 
-
 def color_calibrate(img_file):
     """
     Use color card to calibrate colors
@@ -94,13 +105,13 @@ def get_single_value(filtered_result, level_cnt, img):
         cnt_j = level_cnt[j]
         cv2.fillPoly(mask, [cnt_j], (0, 0, 0))
     masked = cv2.bitwise_and(img, img, mask=mask)
-    cv2.imshow('mask', 255-masked)
+    cv2.imshow('mask', 255 - masked)
     b, g, r = cv2.split(img)
     # todo, 255-b is not real blue part
-    value, std = cv2.meanStdDev(255-b, mask=mask)
-    cv2.imshow('mask3', 255-b)
+    value, std = cv2.meanStdDev(255 - b, mask=mask)
+    cv2.imshow('mask3', 255 - b)
     print(value, std)
-    return value, std
+    return value[0][0], std[0][0]
 
 
 def get_left_right_value(filtered_result, level_cnt, img):
@@ -131,15 +142,15 @@ def get_left_right_value(filtered_result, level_cnt, img):
         left_right_mask.append(mask)
     left_mask, right_mask = left_right_mask
     masked_left = cv2.bitwise_and(img, img, mask=left_mask)
-    cv2.imshow('mask', 255-masked_left)
+    cv2.imshow('mask', 255 - masked_left)
     masked_right = cv2.bitwise_and(img, img, mask=right_mask)
-    cv2.imshow('mask2', 255-masked_right)
+    cv2.imshow('mask2', 255 - masked_right)
     b, g, r = cv2.split(img)
     # todo, 255-b is not real blue part
-    left_value, left_std = cv2.meanStdDev(255-b, mask=left_mask)
-    cv2.imshow('mask3', 255-b)
-    right_value, right_std = cv2.meanStdDev(255-b, mask=right_mask)
-    return left_value[0], left_std[0], right_value[0], right_std[0]
+    left_value, left_std = cv2.meanStdDev(255 - b, mask=left_mask)
+    cv2.imshow('mask3', 255 - b)
+    right_value, right_std = cv2.meanStdDev(255 - b, mask=right_mask)
+    return left_value[0][0], left_std[0][0], right_value[0][0], right_std[0][0]
 
 
 def mode_3(arg):
@@ -189,8 +200,8 @@ def get_input(arg):
 def get_input_demo(input_file='example/ninanjie-ok-75-2.tif'):
     # input_path = 'example/example.png'
     # input_file = 'example/ninanjie-0-1.tif'
-    # input_file = 'example/ninanjie-75-2.tif'
-    input_file = 'example/ninanjie-50-1.tif'
+    input_file = 'example/ninanjie-75-2.tif'
+    # input_file = 'example/ninanjie-50-1.tif'
     # input_file = 'example/ninanjie-ok-75-2.tif'
     # input_file = 'example/ninanjie-100-1.tif'
     # input_file = 'example/ninanjie-2h-3.tif'
@@ -207,7 +218,7 @@ def auto_Canny(image, sigma=0.33):
     # compute the median of the single channel pixel intensities
     v = np.median(image)
     # use edited lower bound
-    lower = int(max(0, (1.0 - sigma*2) * v))
+    lower = int(max(0, (1.0 - sigma * 2) * v))
     upper = int(min(255, (1.0 + sigma) * v))
     edge = cv2.Canny(image, lower, upper)
     return edge
@@ -220,14 +231,14 @@ def threshold(img, show=False):
     r_g_reverse = 255 - r_g
     blur = cv2.GaussianBlur(r_g_reverse, (5, 5), 0)
     h, w = img.shape[:2]
-    mask = np.zeros([h+2, w+2], np.uint8)
+    mask = np.zeros([h + 2, w + 2], np.uint8)
     # ret1, th1 = cv2.threshold(img, 16, 255, cv2.THRESH_BINARY)
-    ret2, th2 = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    ret2, th2 = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     equalize = cv2.equalizeHist(blur)
-    r, t = cv2.threshold(equalize, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    edge = auto_Canny(255-th2)
+    r, t = cv2.threshold(equalize, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    edge = auto_Canny(255 - th2)
     # cv2.floodFill(th2, mask=mask, seedPoint=(1,1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
-    print(h,w,sep='x')
+    print(h, w, sep='x')
     # cv2.floodFill(th2, mask=mask, seedPoint=(1,h-1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
     # cv2.floodFill(th2, mask=mask, seedPoint=(w-1,1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
     # cv2.floodFill(th2, mask=mask, seedPoint=(w-1,h-1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
@@ -324,7 +335,7 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
             inner_blue_mean, _ = get_contour_value(revert_b, inner_cnt)
             # inner_green_mean, _ = get_contour_value(revert_g, inner_cnt)
             # assert big_blue_mean > bg_blue_mean
-            if inner_blue_mean < bg_blue_mean+bg_blue_std:
+            if inner_blue_mean < bg_blue_mean + bg_blue_std:
                 log.debug(f'Real background region: No.{inner[-1]}\t '
                           f'Area: {inner_cnt_area}\t'
                           f'Blue mean: {inner_blue_mean}')
@@ -413,7 +424,7 @@ def show_channel(img):
     # opencv use BGR
     b, g, r = cv2.split(img)
     for title, value in zip(['b', 'g', 'r'], [b, g, r]):
-        cv2.imshow(title+'revert', 255 - value)
+        cv2.imshow(title + 'revert', 255 - value)
         cv2.imshow(title, value)
 
 
@@ -425,9 +436,9 @@ def hex2bgr(hex_str: str):
         255, 255, 255
     """
     hex2 = hex_str.removeprefix('#')
-    r = int('0x'+hex2[0:2].lower(), base=16)
-    g = int('0x'+hex2[2:4].lower(), base=16)
-    b = int('0x'+hex2[4:6].lower(), base=16)
+    r = int('0x' + hex2[0:2].lower(), base=16)
+    g = int('0x' + hex2[2:4].lower(), base=16)
+    b = int('0x' + hex2[4:6].lower(), base=16)
     return b, g, r
 
 
@@ -496,8 +507,8 @@ def split_image(left_cnt, right_cnt, img):
     img_copy = img.copy()
     x1, y1, w1, h1 = cv2.boundingRect(left_cnt)
     x2, y2, w2, h2 = cv2.boundingRect(right_cnt)
-    assert x1 < x1+w1 < x2 < x2+w2
-    middle = (x1+w1+x2) // 2
+    assert x1 < x1 + w1 < x2 < x2 + w2
+    middle = (x1 + w1 + x2) // 2
     target = img_copy[:, :middle]
     ref = img_copy[:, middle:]
     return target, ref
@@ -511,7 +522,7 @@ def get_contour(img_file):
     # reverse to get better edge
     # use green channel
     # todo: g or b
-    revert_img = revert(g//2+r//2)
+    revert_img = revert(g // 2 + r // 2)
     # revert_img = revert(g)
     edge = get_edge(revert_img)
     # APPROX_NONE to avoid omitting dots
@@ -547,7 +558,13 @@ def demo():
     # .png .jpg .tiff
     filtered_result, level_cnt, img = get_contour(input_file)
     img_dict = draw_images(filtered_result, level_cnt, img)
-    get_left_right_value(filtered_result, level_cnt, img)
+    a, b, c, d = get_left_right_value(filtered_result, level_cnt, img)
+    x = ['target', 'reference']
+    print(a,b,c,d)
+    plt.title(f'{input_file}:   {a/c:.2%}')
+    plt.bar(x, [a, c], width=0.5, color='#61a1cd')
+    plt.errorbar(x, [a,c], yerr=[b, d], fmt='+', ecolor='r', capsize=4)
+    plt.show()
     # use mask
     # target, ref = split_image(left_cnt, right_cnt, img)
     # result = calculate(inner_contours, fake_inner, inner_background, target, ref, level_cnt, img)
