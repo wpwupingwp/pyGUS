@@ -27,21 +27,69 @@ coloredlogs.install(level=default_level, fmt=FMT, datefmt=DATEFMT)
 log = logging.getLogger('pyGUS')
 
 
-def mode_1():
+def mode_1(arg):
     # ignore light change
     # first: negative
     # second: positive
     # third and after: target
-    result = calculate(inner_contours, fake_inner, inner_background, target, ref, level_cnt, img)
-    pass
+    negative, positive, targets = get_input(arg)
+    neg_filtered_result, neg_level_cnt, neg_img = get_contour(negative)
+    neg_value, neg_std = get_single_value(
+        neg_filtered_result, neg_level_cnt, neg_img)
+    pos_filtered_result, pos_level_cnt, pos_img = get_contour(positive)
+    pos_value, pos_std = get_single_value(
+        pos_filtered_result, pos_level_cnt, pos_img)
+    for target in targets:
+        filtered_result, level_cnt, img = get_contour(target)
+        target_value, target_std = get_single_value(
+            filtered_result, level_cnt, img)
+    print(neg_value, neg_std, pos_value, pos_std, target_value, target_std)
 
 
-def mode_2(filtered_result, level_cnt, img):
+def mode_2(arg):
     # use negative to calibrate positive, and then measure each target
     # assume positive in each image is same, ignore light change
     # first left: negative, first right: positive
     # next left: object, next right: positive
     # ignore small_external, inner_contours,
+    negative, positive, targets = get_input(arg)
+    neg_filtered_result, neg_level_cnt, neg_img = get_contour(negative)
+    neg_value, neg_std, pos_value, pos_std = get_left_right_value(
+        neg_filtered_result, neg_level_cnt, neg_img)
+    for target in targets:
+        filtered_result, level_cnt, img = get_contour(target)
+        target_value, target_std, pos_value_, pos_std_ = get_left_right_value(
+            filtered_result, level_cnt, img)
+    pass
+
+
+def get_single_value(filtered_result, level_cnt, img):
+    (big_external_contours, small_external_contours, inner_contours,
+     fake_inner, inner_background) = filtered_result
+    target = big_external_contours[0]
+    self_index = target[4]
+    cnt = level_cnt[target]
+    print('self', self_index)
+    mask = np.zeros(img.shape[:2], dtype='uint8')
+    # related inner background
+    cv2.fillPoly(mask, [cnt], (255, 255, 255))
+    for i in fake_inner:
+        cnt_i = level_cnt[i]
+        cv2.fillPoly(mask, [cnt_i], (255, 255, 255))
+    for j in inner_background:
+        cnt_j = level_cnt[j]
+        cv2.fillPoly(mask, [cnt_j], (0, 0, 0))
+    masked = cv2.bitwise_and(img, img, mask=mask)
+    cv2.imshow('mask', 255-masked)
+    b, g, r = cv2.split(img)
+    # todo, 255-b is not real blue part
+    value, std = cv2.meanStdDev(255-b, mask=mask)
+    cv2.imshow('mask3', 255-b)
+    print(value, std)
+    return value, std
+
+
+def get_left_right_value(filtered_result, level_cnt, img):
     (big_external_contours, small_external_contours, inner_contours,
      fake_inner, inner_background) = filtered_result
     # target, ref
@@ -78,7 +126,7 @@ def mode_2(filtered_result, level_cnt, img):
     cv2.imshow('mask3', 255-b)
     right_value, right_std = cv2.meanStdDev(255-b, mask=right_mask)
     print(left_value, left_std, right_value, right_std)
-    pass
+    return left_value, left_std, right_value, right_std
 
 
 def mode_3():
@@ -269,7 +317,9 @@ def filter_contours(img, level_cnt: dict) -> (list, list, list):
     Returns:
         big:
         small:
-        inner
+        inner:
+        fake_inner:
+        inner_background:
     """
     external_contours = list()
     inner_contours = list()
@@ -458,14 +508,6 @@ def get_contour(img_file):
 def main():
     img_file = get_input()
     filtered_result, level_cnt, img = get_contour(img_file)
-    mode_2(filtered_result, level_cnt, img)
-    try:
-        pass
-        # use mask
-        # target, ref = split_image(left_cnt, right_cnt, img)
-        # result = calculate(inner_contours, fake_inner, inner_background, target, ref, level_cnt, img)
-    except KeyError:
-        pass
     # threshold(target, show=True)
     # threshold(ref)
     # show
@@ -480,7 +522,7 @@ def demo():
     # .png .jpg .tiff
     filtered_result, level_cnt, img = get_contour(input_file)
     img_dict = draw_images(filtered_result, level_cnt, img)
-    mode_2(filtered_result, level_cnt, img)
+    get_left_right_value(filtered_result, level_cnt, img)
     # use mask
     # target, ref = split_image(left_cnt, right_cnt, img)
     # result = calculate(inner_contours, fake_inner, inner_background, target, ref, level_cnt, img)
