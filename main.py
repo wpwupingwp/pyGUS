@@ -34,8 +34,8 @@ def parse_arg():
     arg = argparse.ArgumentParser()
     arg.add_argument('-ref1', help='Negative expression reference image')
     arg.add_argument('-ref2', help='Positive expression reference image')
-    arg.add_argument('-targets', required=True, help='Input images')
-    arg.add_argument('-mode', required=True)
+    arg.add_argument('-images', required=True, help='Input images')
+    arg.add_argument('-mode', type=int, choices=(1, 2, 3, 4), required=True)
     return arg.parse_args()
 
 
@@ -75,7 +75,7 @@ def mode_2(arg):
     pass
 
 
-def color_calibrate(img_file):
+def color_correction(img_file):
     """
     Use color card to calibrate colors
     Args:
@@ -159,9 +159,9 @@ def mode_3(arg):
     # second left: positive, second right: card
     # third and next left: target, right: card
     negative, positive, targets = get_input(arg)
-    ok_neg = color_calibrate(negative)
-    ok_pos = color_calibrate(positive)
-    ok_targets = [color_calibrate(i) for i in targets]
+    ok_neg = color_correction(negative)
+    ok_pos = color_correction(positive)
+    ok_targets = [color_correction(i) for i in targets]
     ###
     neg_filtered_result, neg_level_cnt, neg_img = get_contour(ok_neg)
     pos_filtered_result, pos_level_cnt, pos_img = get_contour(ok_pos)
@@ -180,7 +180,7 @@ def mode_3(arg):
 def get_input(arg):
     negative = [arg.ref1, ]
     positive = [arg.ref2, ]
-    targets = list(arg.targets)
+    targets = list(arg.images)
     if arg.mode == 1:
         if arg.ref1 is None or arg.ref2 is None or arg.targets is None:
             log.error('Empty input. Mode 1 requires ref1 (negative) and ref2 (positive')
