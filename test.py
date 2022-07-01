@@ -1,10 +1,12 @@
 import cv2
 import numpy as np
 
-img_file = 'Color_Checker.pdf.jpg'
+# img_file = 'Color_Checker.pdf.jpg'
 # img_file = 'card2.jpeg'
-# img_file = 'card3.jpg'
+# img_file = 'card.jpg'
+img_file = 's2.png'
 img = cv2.imread(img_file)
+print(img.shape)
 # print(img.shape)
 # cv2.imshow('raw', img)
 # detect
@@ -22,7 +24,7 @@ src = charts_rgb[:, 1].copy().reshape(24, 1, 3)
 src /= 255
 # generate model
 model = cv2.ccm_ColorCorrectionModel(src, cv2.ccm.COLORCHECKER_Macbeth)
-# model.setColorSpace(cv2.ccm.COLOR_SPACE_sRGB)
+model.setColorSpace(cv2.ccm.COLOR_SPACE_sRGB)
 model.setCCM_TYPE(cv2.ccm.CCM_3x3)
 model.setDistance(cv2.ccm.DISTANCE_CIE2000)
 model.setLinear(cv2.ccm.LINEARIZATION_GAMMA)
