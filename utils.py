@@ -3,6 +3,15 @@
 import cv2
 import numpy as np
 
+def select_box(img, text='Select the region'):
+    r = cv2.selectROI(text, img)
+    cropped = img[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])]
+    return cropped, r
+
+def mouse_select(img):
+    pass
+
+
 def draw_colorchecker(out='card.jpg'):
     # https://github.com/opencv/opencv_contrib/blob/4.x/modules/mcc/src/dictionary.hpp
     # default size : 2080x1400
@@ -43,6 +52,9 @@ def draw_colorchecker(out='card.jpg'):
     image = image.astype(np.uint8)
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     cv2.imshow('a', image)
+    x,_ = select_box(image)
+    print(x, _)
+    cv2.imshow('selected', x)
     cv2.imwrite(out, image)
     cv2.waitKey(0)
     print(image.shape)
