@@ -8,6 +8,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from pathlib import Path
 
+from utils import select_polygon
+
 # todo: color correction
 # todo mode 1: single object for each image, manually select positive, negative, targets
 # todo mode 2: two object for each image, left target, right positive
@@ -207,6 +209,29 @@ def mode_3(arg):
     pass
 
 
+def mode_4(arg):
+    """
+    Select region manually
+    """
+    negative, positive, targets = get_input(arg)
+    name_dict = {'neg': ('Negative reference', (0, 0, 255)), 'pos': ('Positive reference', (0, 255, 0)),
+                 'target': ('Target region', (255, 0, 0))}
+    for target in targets:
+        img = cv2.imread(target)
+        cropped1, points1 = select_polygon(img, name_dict['neg'][0], name_dict['neg'][1])
+        cropped2, points2 = select_polygon(img, name_dict['pos'][0], name_dict['pos'][1])
+        cropped3, points3 = select_polygon(img, name_dict['target'][0], name_dict['target'][1])
+        cv2.imshow('1', cropped1)
+        cv2.imshow('2', cropped2)
+        cv2.imshow('3', cropped3)
+        for i in (cropped1, cropped2, cropped3):
+            b, g, r = cv2.split(i)
+            # todo, 255-b is not real blue part
+            value, std = cv2.meanStdDev(255-b)
+            # todo, (target-neg)/pos
+    pass
+
+
 def get_input(arg):
     negative = [arg.ref1, ]
     positive = [arg.ref2, ]
@@ -221,9 +246,10 @@ def get_input(arg):
         if arg.ref1 is None or arg.targets is None:
             log.error('Empty input. Mode 1 requires ref1 (negative) ')
     elif arg.mode == 4:
-        pass
+        if arg.targets is None:
+            log.error('Empty input.')
     else:
-        raise ValueError('Invalid mode.')
+        raise ValueError('bad condition')
     return negative, positive, targets
 
 
@@ -590,10 +616,10 @@ def demo():
     img_dict = draw_images(filtered_result, level_cnt, img)
     a, b, c, d = get_left_right_value(filtered_result, level_cnt, img)
     x = ['target', 'reference']
-    print(a,b,c,d)
-    plt.title(f'{input_file}:   {a/c:.2%}')
+    print(a, b, c, d)
+    plt.title(f'{input_file}:   {a / c:.2%}')
     plt.bar(x, [a, c], width=0.5, color='#61a1cd')
-    plt.errorbar(x, [a,c], yerr=[b, d], fmt='+', ecolor='r', capsize=4)
+    plt.errorbar(x, [a, c], yerr=[b, d], fmt='+', ecolor='r', capsize=4)
     plt.show()
     # use mask
     # target, ref = split_image(left_cnt, right_cnt, img)

@@ -16,13 +16,13 @@ def select_box(img, text='Select the region, then press ENTER'):
     return cropped, r
 
 
-def select_polygon(raw_img, color=(255, 255, 255), title=''):
+def select_polygon(raw_img, title='', color=(255, 255, 255)):
     """
     Select polygon region.
     Args:
         raw_img:
-        color:
         title:
+        color:
     Returns:
         cropped:
         points_array:
@@ -115,14 +115,9 @@ def draw_colorchecker(out='card.jpg'):
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     cv2.imshow('a', image)
     # region, r = select_box(image)
+    cropped, _ = select_polygon(image, 'test')
+    cv2.imshow('selected', cropped)
     # cv2.imshow('selected', region)
-    cropped1, points1 = select_polygon(image, (0, 0, 255), 'Negative reference')
-    # cv2.destroyWindow(title)
-    cropped2, points2 = select_polygon(image, (0, 255, 0), 'Positive reference')
-    cropped3, points3 = select_polygon(image, (255, 0, 0), 'Target region')
-    cv2.imshow('1', cropped1)
-    cv2.imshow('2', cropped2)
-    cv2.imshow('3', cropped3)
     cv2.imwrite(out, image)
     cv2.waitKey(0)
     # print(image.shape)
