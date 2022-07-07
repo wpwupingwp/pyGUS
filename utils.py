@@ -3,13 +3,53 @@
 import cv2
 import numpy as np
 
-def select_box(img, text='Select the region'):
+def select_box(img, text='Select the region, then press ENTER'):
     r = cv2.selectROI(text, img)
     cropped = img[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])]
     return cropped, r
 
-def mouse_select(img):
-    pass
+def select_polygon(raw_img, color=(255, 255, 255), title=''):
+    # init
+    name = 'Left click to add points, right click to finish, [Esc] to quit'
+    img = raw_img.copy()
+    done = False
+    current = (0, 0)
+    points = list()
+    mask = np.zeros(img.shape[:2], dtype='uint8')
+
+    def on_mouse(event, x, y, buttons, user_param):
+        # print(event, x, y)
+        nonlocal done, current, points
+        if done:
+            return
+        if event == cv2.EVENT_MOUSEMOVE:
+            current = (x, y)
+        elif event == cv2.EVENT_LBUTTONDOWN:
+            points.append((x, y))
+        elif event == cv2.EVENT_RBUTTONDOWN:
+            done = True
+
+    cv2.imshow(name, img)
+    # cv2.pollKey()
+    cv2.setMouseCallback(name, on_mouse)
+    while not done:
+        if len(points) > 0:
+            cv2.polylines(img, np.array([points]), False, color, 3)
+            cv2.circle(img, points[-1], 2, color, 1)
+            # cv2.line(img, points[-1], current, color, 1)
+        cv2.imshow(name, img)
+            # Esc
+        if cv2.waitKey(50) == 27:
+            done = True
+    if len(points) > 0:
+        cv2.fillPoly(img, np.array([points]), color)
+        cv2.fillPoly(mask, np.array([points]), (255, 255, 255))
+    cv2.imshow(name, img)
+    cv2.waitKey()
+    cv2.destroyWindow(name)
+    return mask
+
+
 
 
 def draw_colorchecker(out='card.jpg'):
@@ -52,9 +92,9 @@ def draw_colorchecker(out='card.jpg'):
     image = image.astype(np.uint8)
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     cv2.imshow('a', image)
-    x,_ = select_box(image)
-    print(x, _)
-    cv2.imshow('selected', x)
+    # region, r = select_box(image)
+    # cv2.imshow('selected', region)
+    mask1 = select_polygon(image, (0, 0, 255))
     cv2.imwrite(out, image)
     cv2.waitKey(0)
     print(image.shape)
