@@ -41,13 +41,18 @@ def select_polygon(raw_img, color=(255, 255, 255), title=''):
             # Esc
         if cv2.waitKey(50) == 27:
             done = True
+    points_array = np.array([points])
     if len(points) > 0:
-        cv2.fillPoly(img, np.array([points]), color)
-        cv2.fillPoly(mask, np.array([points]), (255, 255, 255))
+        cv2.fillPoly(img, points_array, color)
+        cv2.fillPoly(mask, points_array, (255, 255, 255))
+    box = cv2.boundingRect(points_array)
+    cropped = img[int(box[1]):int(box[1]+box[3]), int(box[0]):int(box[0]+box[2])]
     cv2.imshow(name, img)
+    cv2.imshow(title, cropped)
     cv2.waitKey()
     cv2.destroyWindow(name)
-    return mask
+    cv2.destroyWindow(title)
+    return cropped, points_array, mask
 
 
 
@@ -94,10 +99,10 @@ def draw_colorchecker(out='card.jpg'):
     cv2.imshow('a', image)
     # region, r = select_box(image)
     # cv2.imshow('selected', region)
-    mask1 = select_polygon(image, (0, 0, 255))
+    cropped1, points1, mask1 = select_polygon(image, (0, 0, 255))
     cv2.imwrite(out, image)
     cv2.waitKey(0)
-    print(image.shape)
+    # print(image.shape)
     return out
 
 def resize(img, new_height, new_width):
