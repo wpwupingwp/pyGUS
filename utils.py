@@ -3,12 +3,30 @@
 import cv2
 import numpy as np
 
+
+def get_crop(img, r):
+    x, y, w, h = r
+    cropped = img[int(y):(y+h), int(x):int(x+w)]
+    return cropped
+
+
 def select_box(img, text='Select the region, then press ENTER'):
     r = cv2.selectROI(text, img)
-    cropped = img[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])]
+    cropped = get_crop(img, r)
     return cropped, r
 
+
 def select_polygon(raw_img, color=(255, 255, 255), title=''):
+    """
+    Select polygon region.
+    Args:
+        raw_img:
+        color:
+        title:
+    Returns:
+        cropped:
+        points_array:
+    """
     # init
     name = f'{title} (Left click to add points, right click to finish, Esc to quit)'
     img = raw_img.copy()
@@ -47,15 +65,13 @@ def select_polygon(raw_img, color=(255, 255, 255), title=''):
         cv2.fillPoly(img, points_array, color)
         cv2.fillPoly(mask, points_array, (255, 255, 255))
         box = cv2.boundingRect(points_array)
-        cropped = img[int(box[1]):int(box[1] + box[3]), int(box[0]):int(box[0] + box[2])]
-        cv2.imshow(title, cropped)
+        cropped = get_crop(img, box)
     else:
         pass
     cv2.imshow(name, img)
     cv2.pollKey()
     cv2.destroyWindow(name)
-    # cv2.destroyWindow(title)
-    return cropped, points_array, mask
+    return cropped, points_array
 
 
 def draw_colorchecker(out='card.jpg'):
@@ -100,9 +116,13 @@ def draw_colorchecker(out='card.jpg'):
     cv2.imshow('a', image)
     # region, r = select_box(image)
     # cv2.imshow('selected', region)
-    cropped1, points1, mask1 = select_polygon(image, (0, 0, 255), 'Negative reference')
-    cropped2, points2, mask2 = select_polygon(image, (0, 255, 0), 'Positive reference')
-    cropped3, points3, mask3 = select_polygon(image, (255, 0, 0), 'Target region')
+    cropped1, points1 = select_polygon(image, (0, 0, 255), 'Negative reference')
+    # cv2.destroyWindow(title)
+    cropped2, points2 = select_polygon(image, (0, 255, 0), 'Positive reference')
+    cropped3, points3 = select_polygon(image, (255, 0, 0), 'Target region')
+    cv2.imshow('1', cropped1)
+    cv2.imshow('2', cropped2)
+    cv2.imshow('3', cropped3)
     cv2.imwrite(out, image)
     cv2.waitKey(0)
     # print(image.shape)
