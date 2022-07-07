@@ -10,7 +10,7 @@ def select_box(img, text='Select the region, then press ENTER'):
 
 def select_polygon(raw_img, color=(255, 255, 255), title=''):
     # init
-    name = 'Left click to add points, right click to finish, [Esc] to quit'
+    name = title + ' (Left click to add points, right click to finish, Esc to quit)'
     img = raw_img.copy()
     done = False
     current = (0, 0)
@@ -30,15 +30,16 @@ def select_polygon(raw_img, color=(255, 255, 255), title=''):
             done = True
 
     cv2.imshow(name, img)
-    # cv2.pollKey()
+    cv2.pollKey()
+    # todo: extra click needed for drawing polygon
     cv2.setMouseCallback(name, on_mouse)
     while not done:
         if len(points) > 0:
             cv2.polylines(img, np.array([points]), False, color, 3)
-            cv2.circle(img, points[-1], 2, color, 1)
+            cv2.circle(img, points[-1], 2, color, 3)
             # cv2.line(img, points[-1], current, color, 1)
         cv2.imshow(name, img)
-            # Esc
+        # Esc
         if cv2.waitKey(50) == 27:
             done = True
     points_array = np.array([points])
@@ -49,12 +50,10 @@ def select_polygon(raw_img, color=(255, 255, 255), title=''):
     cropped = img[int(box[1]):int(box[1]+box[3]), int(box[0]):int(box[0]+box[2])]
     cv2.imshow(name, img)
     cv2.imshow(title, cropped)
-    cv2.waitKey()
+    cv2.pollKey()
     cv2.destroyWindow(name)
-    cv2.destroyWindow(title)
+    # cv2.destroyWindow(title)
     return cropped, points_array, mask
-
-
 
 
 def draw_colorchecker(out='card.jpg'):
@@ -99,7 +98,9 @@ def draw_colorchecker(out='card.jpg'):
     cv2.imshow('a', image)
     # region, r = select_box(image)
     # cv2.imshow('selected', region)
-    cropped1, points1, mask1 = select_polygon(image, (0, 0, 255))
+    cropped1, points1, mask1 = select_polygon(image, (0, 0, 255), 'Negative reference')
+    cropped2, points2, mask2 = select_polygon(image, (0, 255, 0), 'Positive reference')
+    cropped3, points3, mask3 = select_polygon(image, (255, 0, 0), 'Target region')
     cv2.imwrite(out, image)
     cv2.waitKey(0)
     # print(image.shape)
