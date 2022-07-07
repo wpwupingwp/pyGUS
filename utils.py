@@ -10,12 +10,14 @@ def select_box(img, text='Select the region, then press ENTER'):
 
 def select_polygon(raw_img, color=(255, 255, 255), title=''):
     # init
-    name = title + ' (Left click to add points, right click to finish, Esc to quit)'
+    name = f'{title} (Left click to add points, right click to finish, Esc to quit)'
     img = raw_img.copy()
     done = False
     current = (0, 0)
     points = list()
     mask = np.zeros(img.shape[:2], dtype='uint8')
+    cropped = None
+    box = None
 
     def on_mouse(event, x, y, buttons, user_param):
         # print(event, x, y)
@@ -31,13 +33,11 @@ def select_polygon(raw_img, color=(255, 255, 255), title=''):
 
     cv2.imshow(name, img)
     cv2.pollKey()
-    # todo: extra click needed for drawing polygon
     cv2.setMouseCallback(name, on_mouse)
     while not done:
         if len(points) > 0:
             cv2.polylines(img, np.array([points]), False, color, 3)
             cv2.circle(img, points[-1], 2, color, 3)
-            # cv2.line(img, points[-1], current, color, 1)
         cv2.imshow(name, img)
         # Esc
         if cv2.waitKey(50) == 27:
@@ -46,10 +46,12 @@ def select_polygon(raw_img, color=(255, 255, 255), title=''):
     if len(points) > 0:
         cv2.fillPoly(img, points_array, color)
         cv2.fillPoly(mask, points_array, (255, 255, 255))
-    box = cv2.boundingRect(points_array)
-    cropped = img[int(box[1]):int(box[1]+box[3]), int(box[0]):int(box[0]+box[2])]
+        box = cv2.boundingRect(points_array)
+        cropped = img[int(box[1]):int(box[1] + box[3]), int(box[0]):int(box[0] + box[2])]
+        cv2.imshow(title, cropped)
+    else:
+        pass
     cv2.imshow(name, img)
-    cv2.imshow(title, cropped)
     cv2.pollKey()
     cv2.destroyWindow(name)
     # cv2.destroyWindow(title)
