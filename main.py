@@ -499,9 +499,20 @@ def draw_images(filtered_result, level_cnt, img):
     return img_dict
 
 
-def calculate(inner_contours, fake_inner, inner_background, target, ref,
-              level_cnt, img):
-    # todo
+def calculate(original_img, contour):
+    """
+    Calcuate given region's value.
+    Args:
+        original_img: original BGR image
+        contour: array of points
+    Returns:
+    """
+    b, g, r = cv2.split(original_img)
+    mask = np.zeros(original_img.shape[:2], dtype='uint8')
+    cv2.fillPoly(mask, [contour], (255, 255, 255))
+    masked = cv2.bitwise_and(original_img, original_img, mask=mask)
+    value, std = cv2.meanStdDev(255-b, mask=mask)
+    print(value[0][0], std[0][0])
     result = None
     return result
 
