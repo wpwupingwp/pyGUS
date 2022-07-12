@@ -142,10 +142,9 @@ def get_single_value(filtered_result, level_cnt, img):
         cv2.fillPoly(mask, [cnt_j], (0, 0, 0))
     masked = cv2.bitwise_and(img, img, mask=mask)
     cv2.imshow('mask', revert(mask))
-    b, g, r = cv2.split(img)
-    # todo, 255-b is not real blue part
-    value, std = cv2.meanStdDev(revert(b), mask=mask)
-    cv2.imshow('mask3', revert(b))
+    real_b = get_real_blue(img)
+    value, std = cv2.meanStdDev(real_b, mask=mask)
+    cv2.imshow('mask3', real_b)
     print(value, std)
     return value[0][0], std[0][0]
 
@@ -499,15 +498,19 @@ def draw_images(filtered_result, level_cnt, img):
     return img_dict
 
 
-def get_real_blue(original_blue):
-    return 255 - original_blue
+def get_real_blue(original_image):
+    # todo, 255-b is not real blue part
+    b, g, r = cv2.split(original_image)
+    revert_b = revert(b)
+    return revert_b
 
 
-def calculate(original_img, contour, neg_ref_value=32):
+def calculate(original_img, contour, neg_ref_value=32, pos_ref_value=255):
     """
     Calculate given region's value.
     Args:
-        neg_ref_value: negative reference value for lower threshold
+        neg_ref_value: negative reference value for down threshold
+        pos_ref_value: positive reference value for up threshold
         original_img: original BGR image
         contour: array of points
     Returns:
@@ -608,10 +611,6 @@ def demo():
     plt.show()
     # use mask
     # target, ref = split_image(left_cnt, right_cnt, img)
-    # result = calculate(inner_contours, fake_inner, inner_background, target, ref, level_cnt, img)
-    mask = np.zeros(original_img.shape[:2], dtype='uint8')
-    # threshold(target, show=True)
-    # threshold(ref)
     # show
     cv2.waitKey(0)
     cv2.destroyAllWindows()
