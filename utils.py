@@ -133,3 +133,45 @@ def resize(img, new_height, new_width):
     return img_new
 
 a = draw_colorchecker()
+
+
+def color_calibrate(img):
+    """
+    Use color card to calibrate colors
+    Args:
+        img:
+    Returns:
+        calibrated:
+    """
+    detector = cv2.mcc.CCheckerDetector_create()
+    detector.process(img, cv2.mcc.MCC24)
+    checker = detector.getBestColorChecker()
+    # get ccm
+    charts_rgb = checker.getChartsRGB()
+    src = charts_rgb[:, 1].copy().reshape(24, 1, 3)
+    src /= 255
+    # generate model
+    model = cv2.ccm_ColorCorrectionModel(src, cv2.ccm.COLORCHECKER_Macbeth)
+    # model.setColorSpace(cv2.ccm.COLOR_SPACE_sRGB)
+    model.setCCM_TYPE(cv2.ccm.CCM_3x3)
+    model.setDistance(cv2.ccm.DISTANCE_CIE2000)
+    model.setLinear(cv2.ccm.LINEARIZATION_GAMMA)
+    model.setLinearGamma(2.2)
+    model.setLinearDegree(3)
+    model.setSaturatedThreshold(0, 0.98)
+    model.run()
+    # ccm = model.getCCM()
+    loss = model.getLoss()
+    # print('ccm', ccm)
+    log.debug(f'Color calibration loss {loss}')
+    # calibrate
+    img2 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img2 = img2.astype(np.float64)
+    img2 /= 255.0
+    calibrated = model.infer(img2)
+    out = calibrated * 255
+    out[out < 0] = 0
+    out[out > 255] = 255
+    out = out.astype(np.uint8)
+    out_img = cv2.cvtColor(out, cv2.COLOR_RGB2BGR)
+    return out_img
