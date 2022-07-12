@@ -309,6 +309,7 @@ def get_contour_value(img, cnt):
 
 
 def get_background_value(img, external_contours, level_cnt):
+    # assume bacground value is greater than negative reference value
     mask = np.ones(img.shape[:2], dtype='uint8')
     for external in external_contours:
         cnt = level_cnt[external]
@@ -505,7 +506,7 @@ def get_real_blue(original_image):
     return revert_b
 
 
-def calculate(original_img, contour, neg_ref_value=32, pos_ref_value=255):
+def calculate(original_image, contour, neg_ref_value=32, pos_ref_value=255):
     """
     Calculate given region's value.
     Args:
@@ -516,22 +517,29 @@ def calculate(original_img, contour, neg_ref_value=32, pos_ref_value=255):
     Returns:
     """
     # todo: remove green
-    b, g, r = cv2.split(original_img)
-    zero = np.zeros(original_img.shape[:2], dtype='uint8')
+    # todo: use violinplot to show result, black edge line, white total area,
+    # blue express area
+    b, g, r = cv2.split(original_image)
+    revert_b = get_real_blue(original_image)
+    # make sure express ratio <= 100%
+    revert_b[revert_b>pos_ref_value] = pos_ref_value
+    zero = np.zeros(original_image.shape[:2], dtype='uint8')
     total_mask = cv2.fillPoly(zero.copy(), [contour], (255, 255, 255))
 
     express_mask = total_mask.copy()
-    express_mask[revert(b)<neg_ref_value] = 0
+    express_mask[revert_b < neg_ref_value] = 0
 
     total_area = cv2.contourArea(contour)
     total_area2 = np.count_nonzero(total_mask)
     express_area = np.count_nonzero(express_mask)
+    express_ratio = express_area / total_area
+    # todo: test if same
     print(total_area, total_area2, express_area)
 
-    total = 0
-    total_masked = cv2.bitwise_and(original_img, original_img, mask=total_mask)
-    value, std = cv2.meanStdDev(255-b, mask=total_mask)
-    print(value[0][0], std[0][0])
+    total_masked = cv2.bitwise_and(original_image, original_image, mask=total_mask)
+    total_value, total_std = cv2.meanStdDev(revert_b, mask=total_mask)
+    express_value, express_std = cv2.meanStdDev(revert_b, mask=express_mask)
+    print(total_value[0][0], total_std[0][0])
     result = None
     return result
 
