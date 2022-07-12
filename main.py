@@ -141,11 +141,11 @@ def get_single_value(filtered_result, level_cnt, img):
         cnt_j = level_cnt[j]
         cv2.fillPoly(mask, [cnt_j], (0, 0, 0))
     masked = cv2.bitwise_and(img, img, mask=mask)
-    cv2.imshow('mask', 255 - masked)
+    cv2.imshow('mask', revert(mask))
     b, g, r = cv2.split(img)
     # todo, 255-b is not real blue part
-    value, std = cv2.meanStdDev(255 - b, mask=mask)
-    cv2.imshow('mask3', 255 - b)
+    value, std = cv2.meanStdDev(revert(b), mask=mask)
+    cv2.imshow('mask3', revert(b))
     print(value, std)
     return value[0][0], std[0][0]
 
@@ -499,19 +499,35 @@ def draw_images(filtered_result, level_cnt, img):
     return img_dict
 
 
-def calculate(original_img, contour):
+def get_real_blue(original_blue):
+    return 255 - original_blue
+
+
+def calculate(original_img, contour, neg_ref_value=32):
     """
-    Calcuate given region's value.
+    Calculate given region's value.
     Args:
+        neg_ref_value: negative reference value for lower threshold
         original_img: original BGR image
         contour: array of points
     Returns:
     """
+    # todo: remove green
     b, g, r = cv2.split(original_img)
-    mask = np.zeros(original_img.shape[:2], dtype='uint8')
-    cv2.fillPoly(mask, [contour], (255, 255, 255))
-    masked = cv2.bitwise_and(original_img, original_img, mask=mask)
-    value, std = cv2.meanStdDev(255-b, mask=mask)
+    zero = np.zeros(original_img.shape[:2], dtype='uint8')
+    total_mask = cv2.fillPoly(zero.copy(), [contour], (255, 255, 255))
+
+    express_mask = total_mask.copy()
+    express_mask[revert(b)<neg_ref_value] = 0
+
+    total_area = cv2.contourArea(contour)
+    total_area2 = np.count_nonzero(total_mask)
+    express_area = np.count_nonzero(express_mask)
+    print(total_area, total_area2, express_area)
+
+    total = 0
+    total_masked = cv2.bitwise_and(original_img, original_img, mask=total_mask)
+    value, std = cv2.meanStdDev(255-b, mask=total_mask)
     print(value[0][0], std[0][0])
     result = None
     return result
@@ -593,6 +609,7 @@ def demo():
     # use mask
     # target, ref = split_image(left_cnt, right_cnt, img)
     # result = calculate(inner_contours, fake_inner, inner_background, target, ref, level_cnt, img)
+    mask = np.zeros(original_img.shape[:2], dtype='uint8')
     # threshold(target, show=True)
     # threshold(ref)
     # show
