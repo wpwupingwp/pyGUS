@@ -123,6 +123,7 @@ def draw_colorchecker(out='card.jpg'):
     # print(image.shape)
     return out
 
+
 def resize(img, new_height, new_width):
     # keep original w/h ratio
     height, width = img.shape[:2]
@@ -132,7 +133,6 @@ def resize(img, new_height, new_width):
         img_new = cv2.resize(img, (int(width*new_height/height), new_height))
     return img_new
 
-a = draw_colorchecker()
 
 
 def color_calibrate(img):
@@ -175,3 +175,7 @@ def color_calibrate(img):
     out = out.astype(np.uint8)
     out_img = cv2.cvtColor(out, cv2.COLOR_RGB2BGR)
     return out_img
+
+
+if __name__ == '__main__':
+    draw_colorchecker()

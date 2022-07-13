@@ -147,6 +147,7 @@ def get_single_value(filtered_result, level_cnt, img):
     value, std = cv2.meanStdDev(real_b, mask=mask)
     cv2.imshow('mask3', real_b)
     print(value, std)
+    calculate(img, mask)
     return value[0][0], std[0][0]
 
 
@@ -186,6 +187,8 @@ def get_left_right_value(filtered_result, level_cnt, img):
     left_value, left_std = cv2.meanStdDev(255 - b, mask=left_mask)
     cv2.imshow('mask3', 255 - b)
     right_value, right_std = cv2.meanStdDev(255 - b, mask=right_mask)
+    calculate(img, left_mask)
+    calculate(img, right_mask)
     return left_value[0][0], left_std[0][0], right_value[0][0], right_std[0][0]
 
 
@@ -529,6 +532,8 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     express_mask = target_mask.copy()
     express_mask[revert_b < neg_ref_value] = 0
 
+    cv2.imshow('target mask', target_mask)
+    # cv2.contourArea return different value with np.count_nonzero
     total_area = np.count_nonzero(target_mask)
     express_area = np.count_nonzero(express_mask)
     express_ratio = express_area / total_area
@@ -614,11 +619,11 @@ def demo():
     a, b, c, d = get_left_right_value(filtered_result, level_cnt, img)
     x = ['target', 'reference']
     print(a, b, c, d)
-    from matplotlib import pyplot as plt
-    plt.title(f'{input_file}:   {a / c:.2%}')
-    plt.bar(x, [a, c], width=0.5, color='#61a1cd')
-    plt.errorbar(x, [a, c], yerr=[b, d], fmt='+', ecolor='r', capsize=4)
-    plt.show()
+    # from matplotlib import pyplot as plt
+    # plt.title(f'{input_file}:   {a / c:.2%}')
+    # plt.bar(x, [a, c], width=0.5, color='#61a1cd')
+    # plt.errorbar(x, [a, c], yerr=[b, d], fmt='+', ecolor='r', capsize=4)
+    # plt.show()
     # use mask
     # target, ref = split_image(left_cnt, right_cnt, img)
     # show
