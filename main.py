@@ -131,6 +131,7 @@ def get_single_value(filtered_result, level_cnt, img):
     self_index = target[4]
     cnt = level_cnt[target]
     print('self', self_index)
+    print('contour area', cv2.contourArea(target))
     mask = np.zeros(img.shape[:2], dtype='uint8')
     # related inner background
     cv2.fillPoly(mask, [cnt], (255, 255, 255))
@@ -506,39 +507,40 @@ def get_real_blue(original_image):
     return revert_b
 
 
-def calculate(original_image, contour, neg_ref_value=32, pos_ref_value=255):
+def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     """
     Calculate given region's value.
     Args:
-        neg_ref_value: negative reference value for down threshold
+        original_image: original BGR image
+        target_mask: mask of target region
         pos_ref_value: positive reference value for up threshold
-        original_img: original BGR image
-        contour: array of points
+        neg_ref_value: negative reference value for down threshold
     Returns:
     """
     # todo: remove green
-    # todo: use violinplot to show result, black edge line, white total area,
+    # todo: use violin plot to show result, black edge line, white total area,
     # blue express area
     b, g, r = cv2.split(original_image)
     revert_b = get_real_blue(original_image)
     # make sure express ratio <= 100%
     revert_b[revert_b>pos_ref_value] = pos_ref_value
     zero = np.zeros(original_image.shape[:2], dtype='uint8')
-    total_mask = cv2.fillPoly(zero.copy(), [contour], (255, 255, 255))
 
-    express_mask = total_mask.copy()
+    express_mask = target_mask.copy()
     express_mask[revert_b < neg_ref_value] = 0
 
-    total_area = cv2.contourArea(contour)
-    total_area2 = np.count_nonzero(total_mask)
+    total_area = np.count_nonzero(target_mask)
     express_area = np.count_nonzero(express_mask)
     express_ratio = express_area / total_area
     # todo: test if same
-    print(total_area, total_area2, express_area)
 
-    total_masked = cv2.bitwise_and(original_image, original_image, mask=total_mask)
-    total_value, total_std = cv2.meanStdDev(revert_b, mask=total_mask)
+    total_masked = cv2.bitwise_and(original_image, original_image, mask=target_mask)
+    total_value, total_std = cv2.meanStdDev(revert_b, mask=target_mask)
     express_value, express_std = cv2.meanStdDev(revert_b, mask=express_mask)
+    print('total_area, express_area')
+    print(total_area, express_area)
+    print('total_value, express_value, express_ratio')
+    print(total_value, express_value, express_ratio)
     print(total_value[0][0], total_std[0][0])
     result = None
     return result
