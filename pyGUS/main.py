@@ -526,12 +526,15 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     # cv2.contourArea return different value with np.count_nonzero
     total_area = np.count_nonzero(target_mask)
     express_area = np.count_nonzero(express_mask)
+    # todo: how to get correct ratio
     express_ratio = express_area / total_area
-    # todo: test if same
 
     total_masked = cv2.bitwise_and(original_image, original_image, mask=target_mask)
     total_value, total_std = cv2.meanStdDev(revert_b, mask=target_mask)
     express_value, express_std = cv2.meanStdDev(revert_b, mask=express_mask)
+
+    total_sum = np.sum(revert_b[target_mask>0])
+    print('sum', total_sum)
     print('total_area, express_area')
     print(total_area, express_area)
     print('total_value, express_value, express_ratio')
