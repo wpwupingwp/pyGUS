@@ -5,8 +5,8 @@ import cv2
 import numpy as np
 from pathlib import Path
 
-from global_vars import log
-from utils import select_polygon, color_calibrate
+from pyGUS.global_vars import log
+from pyGUS.utils import select_polygon, color_calibrate
 
 # todo: color correction test
 # todo mode 1 test: single object for each image, manually select positive, negative, targets
