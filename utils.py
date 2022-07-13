@@ -3,6 +3,8 @@
 import cv2
 import numpy as np
 
+from global_vars import log
+
 
 def get_crop(img, r):
     x, y, w, h = r

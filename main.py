@@ -1,12 +1,11 @@
 #!/usr/bin/python3.10
 import argparse
-import logging
 
-import coloredlogs
 import cv2
 import numpy as np
 from pathlib import Path
 
+from global_vars import log
 from utils import select_polygon, color_calibrate
 
 # todo: color correction test
@@ -20,15 +19,6 @@ from utils import select_polygon, color_calibrate
 # todo: manuscript
 # todo: use histogram
 # todo:calculate blue values, then divide by blue region and total region
-
-# define logger
-FMT = '%(asctime)s %(levelname)-8s %(message)s'
-DATEFMT = '%Y-%m-%d %H:%M:%S'
-formatter = logging.Formatter(fmt=FMT, datefmt=DATEFMT)
-default_level = logging.INFO
-
-coloredlogs.install(level=default_level, fmt=FMT, datefmt=DATEFMT)
-log = logging.getLogger('pyGUS')
 
 
 def parse_arg():
