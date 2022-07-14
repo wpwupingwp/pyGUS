@@ -34,12 +34,11 @@ def parse_arg():
     return arg.parse_args()
 
 
-def mode_1(arg):
+def mode_1(negative, positive, targets):
     # ignore light change
     # first: negative
     # second: positive
     # third and after: target
-    negative, positive, targets = get_input(arg)
     neg_filtered_result, neg_level_cnt, neg_img = get_contour(negative)
     pos_filtered_result, pos_level_cnt, pos_img = get_contour(positive)
     neg_value, neg_std = get_single_value(
@@ -53,13 +52,12 @@ def mode_1(arg):
     print(neg_value, neg_std, pos_value, pos_std, target_value, target_std)
 
 
-def mode_2(arg):
+def mode_2(negative, positive, targets):
     # use negative to calibrate positive, and then measure each target
     # assume positive in each image is same, ignore light change
     # first left: negative, first right: positive
     # next left: object, next right: positive
     # ignore small_external, inner_contours,
-    negative, positive, targets = get_input(arg)
     neg_filtered_result, neg_level_cnt, neg_img = get_contour(negative)
     neg_value, neg_std, pos_value, pos_std = get_left_right_value(
         neg_filtered_result, neg_level_cnt, neg_img)
@@ -70,12 +68,11 @@ def mode_2(arg):
     pass
 
 
-def mode_3(arg):
+def mode_3(negative, positive, targets):
     # use color card to calibrate each image
     # first left: negative, first right: card
     # second left: positive, second right: card
     # third and next left: target, right: card
-    negative, positive, targets = get_input(arg)
     ok_neg = color_calibrate(negative)
     ok_pos = color_calibrate(positive)
     ok_targets = [color_calibrate(i) for i in targets]
@@ -94,11 +91,10 @@ def mode_3(arg):
     pass
 
 
-def mode_4(arg):
+def mode_4(negative, positive, targets):
     """
     Select region manually
     """
-    negative, positive, targets = get_input(arg)
     name_dict = {'neg': ('Negative reference', (0, 0, 255)), 'pos': ('Positive reference', (0, 255, 0)),
                  'target': ('Target region', (255, 0, 0))}
     for target in targets:
@@ -109,10 +105,13 @@ def mode_4(arg):
         cv2.imshow('1', cropped1)
         cv2.imshow('2', cropped2)
         cv2.imshow('3', cropped3)
+        cv2.waitKey()
+        cv2.destroyAllWindows()
         for i in (cropped1, cropped2, cropped3):
             b, g, r = cv2.split(i)
             # todo, 255-b is not real blue part
             value, std = cv2.meanStdDev(255-b)
+            print(value, std)
             # todo, (target-neg)/pos
     pass
 
@@ -613,15 +612,12 @@ def get_contour(img_file):
 def main():
     arg = parse_arg()
     negative, positive, images = get_input(arg)
+    run_dict = {1: mode_1, 2: mode_2, 3: mode_3, 4: mode_4}
+    run = run_dict[arg.mode]
+    run(negative, positive, images)
     # todo: need rewrite
-    filtered_result, level_cnt, img = get_contour(images[0])
-    # threshold(target, show=True)
-    # threshold(ref)
-    # show
-    img_dict = draw_images(filtered_result, level_cnt, img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
     pass
+    return
 
 
 def demo():
