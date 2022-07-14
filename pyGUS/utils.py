@@ -6,6 +6,18 @@ import numpy as np
 from pyGUS.global_vars import log
 
 
+def if_exist(filename):
+    """
+    Args:
+        filename: Path
+    """
+    if not filename.exists():
+        log.error(f'{filename} does not exist. Please check the input.')
+        raise SystemExit(-1)
+    else:
+        return str(filename)
+
+
 def get_crop(img, r):
     x, y, w, h = r
     cropped = img[int(y):(y+h), int(x):int(x+w)]

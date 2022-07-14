@@ -6,7 +6,7 @@ import numpy as np
 from pathlib import Path
 
 from pyGUS.global_vars import log
-from pyGUS.utils import select_polygon, color_calibrate
+from pyGUS.utils import select_polygon, color_calibrate, if_exist
 
 # todo: color correction test
 # todo mode 1 test: single object for each image, manually select positive, negative, targets
@@ -187,23 +187,37 @@ def get_left_right_value(filtered_result, level_cnt, img):
 
 
 def get_input(arg):
-    negative = [arg.ref1, ]
-    positive = [arg.ref2, ]
-    targets = list(arg.images)
+    message = None
+    negative = None
+    positive = None
+    targets = None
     if arg.mode == 1:
-        if arg.ref1 is None or arg.ref2 is None or arg.targets is None:
-            log.error('Empty input. Mode 1 requires ref1 (negative) and ref2 (positive')
+        if arg.ref1 is None or arg.ref2 is None or arg.images is None:
+            message = ('Bad input. Mode 1 requires ref1 (negative) and ref2 '
+                       '(positive)')
     elif arg.mode == 2:
-        if arg.ref1 is None or arg.targets is None:
-            log.error('Empty input. Mode 2 requires ref1 (negative/positive) ')
+        if arg.ref1 is None or arg.images is None:
+            message = 'Bad input. Mode 2 requires ref1 (negative vs positive)'
     elif arg.mode == 3:
-        if arg.ref1 is None or arg.targets is None:
-            log.error('Empty input. Mode 1 requires ref1 (negative) ')
+        if arg.ref1 is None or arg.images is None:
+            message = 'Bad input. Mode 1 requires ref1 (negative)'
     elif arg.mode == 4:
-        if arg.targets is None:
-            log.error('Empty input.')
+        if arg.images is None:
+            message = 'Bad input. Mode 4 requires images'
     else:
-        raise ValueError('bad condition')
+        message = 'bad condition'
+    if message is not None:
+        log.error(message)
+        raise SystemExit(-1)
+    else:
+        targets = [Path(i).absolute() for i in arg.images]
+        targets = [if_exist(i) for i in targets]
+        if arg.mode != 4:
+            negative = Path(arg.ref1).absolute()
+            negative = if_exist(negative)
+        if arg.mode == 1:
+            positive = Path(arg.ref2).absolute()
+            positive = if_exist(positive)
     return negative, positive, targets
 
 
@@ -598,8 +612,9 @@ def get_contour(img_file):
 
 def main():
     arg = parse_arg()
-    img_file = get_input(arg)
-    filtered_result, level_cnt, img = get_contour(img_file)
+    negative, positive, images = get_input(arg)
+    # todo: need rewrite
+    filtered_result, level_cnt, img = get_contour(images[0])
     # threshold(target, show=True)
     # threshold(ref)
     # show
