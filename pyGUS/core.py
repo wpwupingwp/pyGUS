@@ -22,11 +22,15 @@ from pyGUS.utils import select_polygon, color_calibrate
 
 
 def parse_arg():
-    arg = argparse.ArgumentParser()
+    arg = argparse.ArgumentParser(prog='pyGUS')
     arg.add_argument('-ref1', help='Negative expression reference image')
     arg.add_argument('-ref2', help='Positive expression reference image')
-    arg.add_argument('-images', required=True, help='Input images')
-    arg.add_argument('-mode', type=int, choices=(1, 2, 3, 4), required=True)
+    arg.add_argument('-images', nargs='*', help='Input images')
+    arg.add_argument('-mode', type=int, choices=(1, 2, 3, 4), required=True,
+                     help=('1. single target in each image; '
+                           '2. target and positive reference in each image; '
+                           '3. target and colorchecker in each image; '
+                           '4. manually select target region with mouse'))
     return arg.parse_args()
 
 
@@ -593,7 +597,8 @@ def get_contour(img_file):
 
 
 def main():
-    img_file = get_input()
+    arg = parse_arg()
+    img_file = get_input(arg)
     filtered_result, level_cnt, img = get_contour(img_file)
     # threshold(target, show=True)
     # threshold(ref)
