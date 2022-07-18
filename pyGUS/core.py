@@ -1,10 +1,10 @@
 #!/usr/bin/python3.10
 import argparse
+from pathlib import Path
 
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from pathlib import Path
 
 from pyGUS.global_vars import log
 from pyGUS.utils import select_polygon, color_calibrate, if_exist
@@ -96,20 +96,25 @@ def mode_4(negative, positive, targets):
     """
     name_dict = {'neg': ('Negative reference', (0, 0, 255)), 'pos': ('Positive reference', (0, 255, 0)),
                  'target': ('Target region', (255, 0, 0))}
+    all_express = []
     for target in targets:
         img = cv2.imread(target)
         cropped1, mask1 = select_polygon(img, name_dict['neg'][0], name_dict['neg'][1])
         cropped2, mask2 = select_polygon(img, name_dict['pos'][0], name_dict['pos'][1])
         cropped3, mask3 = select_polygon(img, name_dict['target'][0], name_dict['target'][1])
-        cv2.imshow('1', cropped1)
-        cv2.imshow('2', cropped2)
-        cv2.imshow('3', cropped3)
+        cv2.imshow('neg', cropped1)
+        cv2.imshow('pos', cropped2)
+        cv2.imshow('target', cropped3)
         cv2.waitKey()
         cv2.destroyAllWindows()
         # todo: is it ok to directly use calculate to get ref value?
-        _, neg_ref_value = calculate(img, mask1, neg_ref_value=0)
-        _, pos_ref_value = calculate(img, mask2, pos_ref_value=0)
+        neg_ref_value, *_ = calculate(img, mask1, neg_ref_value=0)
+        pos_ref_value, *_ = calculate(img, mask2, pos_ref_value=255)
+        print('neg', 'pos', neg_ref_value, pos_ref_value)
         result = calculate(img, mask3, neg_ref_value, pos_ref_value)
+        *_, express_flatten = result
+        all_express.append(express_flatten)
+    draw(all_express, targets)
     pass
 
 
@@ -543,9 +548,12 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     # todo: how to get correct ratio
     express_ratio = express_area / total_area
 
-    total_masked = cv2.bitwise_and(original_image, original_image, mask=target_mask)
+    total_masked = cv2.bitwise_and(original_image, original_image,
+                                   mask=target_mask)
     total_value, total_std = cv2.meanStdDev(revert_b, mask=target_mask)
+    total_value, total_std = total_value[0][0], total_std[0][0]
     express_value, express_std = cv2.meanStdDev(revert_b, mask=express_mask)
+    express_value, express_std = express_value[0][0], express_std[0][0]
 
     total_sum = np.sum(revert_b[target_mask>0])
     print('sum', total_sum)
@@ -553,12 +561,15 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     print(total_area, express_area)
     print('total_value, express_value, express_ratio')
     print(total_value, express_value, express_ratio)
-    print(total_value[0][0], total_std[0][0])
-    result = None
-    # todo: return what?
-    return result, express_value
 
-def draw():
+    express_flatten = revert_b[express_mask].flatten()
+    express_flatten = express_flatten[express_flatten>0]
+    result = (express_value, express_std, express_area, total_value, total_std, total_area, express_ratio, express_flatten)
+
+    # todo: return what?
+    return result
+
+def draw(data, labels):
     """
     violin outer and inner
     or violin outer and bar inner
@@ -566,10 +577,16 @@ def draw():
 
     """
     # todo
-    https://www.matplotlib.org.cn/gallery/images_contours_and_fields/layer_images.html
-    if
-    extent = [0, 100, 0, 100]
-    plt.violinplot(dataset=None, extent=extent)
+    # https://www.matplotlib.org.cn/gallery/images_contours_and_fields/layer_images.html
+    # extent = [0, 100, 0, 100]
+    # plt.violinplot(dataset=None, extent=extent)
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    plt.violinplot(data, showmeans=False, showmedians=False, showextrema=False)
+    plt.xlabel('Sample')
+    plt.ylabel('Expression')
+    plt.xticks(np.arange(1, len(labels) + 1), labels=labels)
+    plt.show()
+    return
 
 def split_image(left_cnt, right_cnt, img):
     """
