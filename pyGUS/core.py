@@ -99,20 +99,18 @@ def mode_4(negative, positive, targets):
                  'target': ('Target region', (255, 0, 0))}
     for target in targets:
         img = cv2.imread(target)
-        cropped1, points1 = select_polygon(img, name_dict['neg'][0], name_dict['neg'][1])
-        cropped2, points2 = select_polygon(img, name_dict['pos'][0], name_dict['pos'][1])
-        cropped3, points3 = select_polygon(img, name_dict['target'][0], name_dict['target'][1])
+        cropped1, mask1 = select_polygon(img, name_dict['neg'][0], name_dict['neg'][1])
+        cropped2, mask2 = select_polygon(img, name_dict['pos'][0], name_dict['pos'][1])
+        cropped3, mask3 = select_polygon(img, name_dict['target'][0], name_dict['target'][1])
         cv2.imshow('1', cropped1)
         cv2.imshow('2', cropped2)
         cv2.imshow('3', cropped3)
         cv2.waitKey()
         cv2.destroyAllWindows()
-        for i in (cropped1, cropped2, cropped3):
-            b, g, r = cv2.split(i)
-            # todo, 255-b is not real blue part
-            value, std = cv2.meanStdDev(255-b)
-            print(value, std)
-            # todo, (target-neg)/pos
+        # todo: is it ok to directly use calculate to get ref value?
+        _, neg_ref_value = calculate(img, mask1, neg_ref_value=0)
+        _, pos_ref_value = calculate(img, mask2, pos_ref_value=0)
+        result = calculate(img, mask3, neg_ref_value, pos_ref_value)
     pass
 
 
@@ -558,7 +556,8 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     print(total_value, express_value, express_ratio)
     print(total_value[0][0], total_std[0][0])
     result = None
-    return result
+    # todo: return what?
+    return result, express_value
 
 
 def split_image(left_cnt, right_cnt, img):

@@ -39,10 +39,11 @@ def select_polygon(raw_img, title='', color=(255, 255, 255)):
         color:
     Returns:
         cropped:
-        points_array:
+        mask:
     """
     # init
-    name = f'{title} (Left click to add points, right click to finish, Esc to quit)'
+    name = (f'{title} (Left click to add points, right click to finish, '
+            f'Esc to quit)')
     img = raw_img.copy()
     done = False
     current = (0, 0)
@@ -85,7 +86,7 @@ def select_polygon(raw_img, title='', color=(255, 255, 255)):
     cv2.imshow(name, img)
     cv2.pollKey()
     cv2.destroyWindow(name)
-    return cropped, points_array
+    return cropped, mask
 
 
 def draw_colorchecker(out='card.jpg'):
