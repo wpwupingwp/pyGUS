@@ -97,6 +97,7 @@ def mode_4(negative, positive, targets):
     name_dict = {'neg': ('Negative reference', (0, 0, 255)), 'pos': ('Positive reference', (0, 255, 0)),
                  'target': ('Target region', (255, 0, 0))}
     all_express = []
+    all_ratio = []
     for target in targets:
         img = cv2.imread(target)
         cropped1, mask1 = select_polygon(img, name_dict['neg'][0], name_dict['neg'][1])
@@ -112,9 +113,10 @@ def mode_4(negative, positive, targets):
         pos_ref_value, *_ = calculate(img, mask2, pos_ref_value=255)
         print('neg', 'pos', neg_ref_value, pos_ref_value)
         result = calculate(img, mask3, neg_ref_value, pos_ref_value)
-        *_, express_flatten = result
+        *_, express_ratio, express_flatten = result
         all_express.append(express_flatten)
-    draw(all_express, targets)
+        all_ratio.append(express_ratio)
+    draw(all_express, all_ratio, targets)
     pass
 
 
@@ -541,7 +543,7 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     express_mask = target_mask.copy()
     express_mask[revert_b < neg_ref_value] = 0
 
-    cv2.imshow('target mask', target_mask)
+    # cv2.imshow('target mask', target_mask)
     # cv2.contourArea return different value with np.count_nonzero
     total_area = np.count_nonzero(target_mask)
     express_area = np.count_nonzero(express_mask)
@@ -569,22 +571,39 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     # todo: return what?
     return result
 
-def draw(data, labels):
+def draw(value, ratio, labels):
     """
     violin outer and inner
     or violin outer and bar inner
+    Args:
+        value: express value list
+        ratio: express ratio list
+        labels: x axis ticks
     Returns:
 
     """
     # todo
-    # https://www.matplotlib.org.cn/gallery/images_contours_and_fields/layer_images.html
-    # extent = [0, 100, 0, 100]
-    # plt.violinplot(dataset=None, extent=extent)
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    plt.violinplot(data, showmeans=False, showmedians=False, showextrema=False)
-    plt.xlabel('Sample')
-    plt.ylabel('Expression')
-    plt.xticks(np.arange(1, len(labels) + 1), labels=labels)
+    fig, ax1 = plt.subplots()
+    try:
+        violin_parts = ax1.violinplot(value, showmeans=False, showmedians=False,
+                                      showextrema=False)
+    except ValueError:
+        log.error('Failed to plot results due to bad values.')
+        raise SystemExit(-2)
+    for pc in violin_parts['bodies']:
+        pc.set_facecolor('#0d96ff')
+        pc.set_edgecolor('black')
+    ax1.set_xlabel('Sample')
+    ax1.set_ylabel('Expression value', color='b')
+    ax1.set_yticks(np.linspace(0, 256, 9))
+    short_labels = [Path(i).name for i in labels]
+    ax1.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
+    ax2 = ax1.twinx()
+    ax2.bar(range(1, len(labels)+1), ratio, width=0.5, alpha=0.6,
+            color='g', edgecolor='black')
+    ax2.set_ylabel('Express area ratio', color='g')
+    ax2.set_yticks(np.linspace(0, 1, 11))
     plt.show()
     return
 
