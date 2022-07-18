@@ -2,6 +2,7 @@
 import argparse
 
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
 
@@ -17,8 +18,6 @@ from pyGUS.utils import select_polygon, color_calibrate, if_exist
 # todo: GUI
 # todo: manual
 # todo: manuscript
-# todo: use histogram
-# todo:calculate blue values, then divide by blue region and total region
 
 
 def parse_arg():
@@ -559,6 +558,18 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     # todo: return what?
     return result, express_value
 
+def draw():
+    """
+    violin outer and inner
+    or violin outer and bar inner
+    Returns:
+
+    """
+    # todo
+    https://www.matplotlib.org.cn/gallery/images_contours_and_fields/layer_images.html
+    if
+    extent = [0, 100, 0, 100]
+    plt.violinplot(dataset=None, extent=extent)
 
 def split_image(left_cnt, right_cnt, img):
     """
