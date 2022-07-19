@@ -515,6 +515,8 @@ def get_real_blue(original_image):
     # todo, 255-b is not real blue part
     b, g, r = cv2.split(original_image)
     revert_b = revert(b)
+    # revert_b * 255 / pos_ref_value
+    # 0 * pos_ref_value = 0
     return revert_b
 
 
@@ -530,10 +532,11 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     """
     # todo: remove green
     # blue express area
-    b, g, r = cv2.split(original_image)
     revert_b = get_real_blue(original_image)
     # make sure express ratio <= 100%
     revert_b[revert_b>pos_ref_value] = pos_ref_value
+    cv2.imshow('x',revert_b)
+    cv2.waitKey()
     zero = np.zeros(original_image.shape[:2], dtype='uint8')
 
     express_mask = target_mask.copy()
@@ -574,7 +577,7 @@ def draw(results, labels, out='out.svg'):
     # result = (express_value, express_std, express_area, total_value,
     # total_std, total_area, express_ratio, express_flatten)
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    fig, ax1 = plt.subplots()
+    fig, ax1 = plt.subplots(figsize=(10, 6))
     _ = results[0][-1]
     x = np.arange(1, len(labels)+1)
     width = 0.2
@@ -594,10 +597,12 @@ def draw(results, labels, out='out.svg'):
     short_labels = [Path(i).name for i in labels]
     ax1.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
     ax2 = ax1.twinx()
-    ax2.bar(x-width/2, [i[2] for i in results], width=width,
-            alpha=0.4, color='green', label='Express area')
-    ax2.bar(x+width/2, [i[5] for i in results], width=width,
-            alpha=0.4, color='orange', label='Total area')
+    rects1 = ax2.bar(x-width/2, [i[2] for i in results], width=width, alpha=0.4,
+                     color='green', label='Express area')
+    rects2 = ax2.bar(x+width/2, [i[5] for i in results], width=width, alpha=0.4,
+                     color='orange', label='Total area')
+    ax2.bar_label(rects1, padding=3)
+    ax2.bar_label(rects2, padding=3)
     ax2.legend()
     ax2.set_ylabel('Area')
     # ax2.set_yticks(np.linspace(0, 1, 11))
