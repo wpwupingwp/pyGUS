@@ -9,6 +9,7 @@ import numpy as np
 from pyGUS.global_vars import log
 from pyGUS.utils import select_polygon, color_calibrate, if_exist
 
+
 # todo: color correction test
 # todo mode 1 test: single object for each image, manually select positive, negative, targets
 # todo mode 2 test: two object for each image, left target, right positive
@@ -94,14 +95,18 @@ def mode_4(negative, positive, targets):
     """
     Select region manually
     """
-    name_dict = {'neg': ('Negative reference', (0, 0, 255)), 'pos': ('Positive reference', (0, 255, 0)),
+    name_dict = {'neg': ('Negative reference', (0, 0, 255)),
+                 'pos': ('Positive reference', (0, 255, 0)),
                  'target': ('Target region', (255, 0, 0))}
     all_result = []
     for target in targets:
         img = cv2.imread(target)
-        cropped1, mask1 = select_polygon(img, name_dict['neg'][0], name_dict['neg'][1])
-        cropped2, mask2 = select_polygon(img, name_dict['pos'][0], name_dict['pos'][1])
-        cropped3, mask3 = select_polygon(img, name_dict['target'][0], name_dict['target'][1])
+        cropped1, mask1 = select_polygon(img, name_dict['neg'][0],
+                                         name_dict['neg'][1])
+        cropped2, mask2 = select_polygon(img, name_dict['pos'][0],
+                                         name_dict['pos'][1])
+        cropped3, mask3 = select_polygon(img, name_dict['target'][0],
+                                         name_dict['target'][1])
         cv2.imshow('neg', cropped1)
         cv2.imshow('pos', cropped2)
         cv2.imshow('target', cropped3)
@@ -339,11 +344,14 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
     b, g, r = cv2.split(img)
     revert_b = revert(b)
     # background blue mean
-    bg_blue_mean, bg_blue_std = get_background_value(revert_b, external_contours, level_cnt)
+    bg_blue_mean, bg_blue_std = get_background_value(revert_b,
+                                                     external_contours,
+                                                     level_cnt)
     bg_size = img.size
     log.info(f'Whole image: Area {img.size}\t '
              f'Whole blue mean {cv2.meanStdDev(revert_b)}')
-    log.info(f'Background masked: Area {bg_size}\t Blue mean {bg_blue_mean}+-std{bg_blue_std}')
+    log.info(
+        f'Background masked: Area {bg_size}\t Blue mean {bg_blue_mean}+-std{bg_blue_std}')
     for big in big_external_contours:
         # [next, previous, child, parent, self]
         big_cnt = level_cnt[big]
@@ -400,7 +408,8 @@ def filter_contours(img, level_cnt: dict) -> (list, list, list):
     except IndexError:
         small_external_contours = list()
     fake_inner, inner_background = remove_fake_inner_cnt(
-        img, level_cnt, big_external_contours, external_contours, inner_contours)
+        img, level_cnt, big_external_contours, external_contours,
+        inner_contours)
     return (big_external_contours, small_external_contours, inner_contours,
             fake_inner, inner_background)
 
@@ -532,15 +541,26 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     """
     # todo: remove green
     # blue express area
+    assert neg_ref_value <= pos_ref_value
+    assert pos_ref_value > 0
     revert_b = get_real_blue(original_image)
+    revert_b[revert_b > pos_ref_value] = pos_ref_value
+    # amplify
+    # revert_b = revert_b.astype('float')
+    # factor = 256 // pos_ref_value
+    # log.info(f'Factor {factor}')
+    # neg_ref_value = int(neg_ref_value * factor)
+    # revert_b *= factor
+    # revert_b = revert_b.astype('uint8')
+    # amplify end
     # make sure express ratio <= 100%
-    revert_b[revert_b>pos_ref_value] = pos_ref_value
-    cv2.imshow('x',revert_b)
+    revert_b[revert_b > 255] = 255
+    cv2.imshow('x', revert_b)
     cv2.waitKey()
     zero = np.zeros(original_image.shape[:2], dtype='uint8')
 
     express_mask = target_mask.copy()
-    express_mask[revert_b < neg_ref_value] = 0
+    express_mask[revert_b <= neg_ref_value] = 0
 
     # cv2.contourArea return different value with np.count_nonzero
     total_area = np.count_nonzero(target_mask)
@@ -553,8 +573,8 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     total_value, total_std = total_value[0][0], total_std[0][0]
     express_value, express_std = cv2.meanStdDev(revert_b, mask=express_mask)
     express_value, express_std = express_value[0][0], express_std[0][0]
-    express_flatten_ = revert_b[express_mask>0]
-    express_flatten = express_flatten_[express_flatten_>0]
+    express_flatten_ = revert_b[express_mask > 0]
+    express_flatten = express_flatten_[express_flatten_ > 0]
     result = (express_value, express_std, express_area, total_value, total_std,
               total_area, express_ratio, express_flatten)
     print('express_value, express_std, express_area, total_value, total_std, '
@@ -579,7 +599,7 @@ def draw(results, labels, out='out.svg'):
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     fig, ax1 = plt.subplots(figsize=(10, 6))
     _ = results[0][-1]
-    x = np.arange(1, len(labels)+1)
+    x = np.arange(1, len(labels) + 1)
     width = 0.2
     try:
         violin_parts = ax1.violinplot([i[-1] for i in results], showmeans=False,
@@ -597,9 +617,11 @@ def draw(results, labels, out='out.svg'):
     short_labels = [Path(i).name for i in labels]
     ax1.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
     ax2 = ax1.twinx()
-    rects1 = ax2.bar(x-width/2, [i[2] for i in results], width=width, alpha=0.4,
+    rects1 = ax2.bar(x - width / 2, [i[2] for i in results], width=width,
+                     alpha=0.4,
                      color='green', label='Express area')
-    rects2 = ax2.bar(x+width/2, [i[5] for i in results], width=width, alpha=0.4,
+    rects2 = ax2.bar(x + width / 2, [i[5] for i in results], width=width,
+                     alpha=0.4,
                      color='orange', label='Total area')
     ax2.bar_label(rects1, padding=3)
     ax2.bar_label(rects2, padding=3)
