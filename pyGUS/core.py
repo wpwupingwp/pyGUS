@@ -96,8 +96,7 @@ def mode_4(negative, positive, targets):
     """
     name_dict = {'neg': ('Negative reference', (0, 0, 255)), 'pos': ('Positive reference', (0, 255, 0)),
                  'target': ('Target region', (255, 0, 0))}
-    all_express = []
-    all_ratio = []
+    all_result = []
     for target in targets:
         img = cv2.imread(target)
         cropped1, mask1 = select_polygon(img, name_dict['neg'][0], name_dict['neg'][1])
@@ -113,10 +112,8 @@ def mode_4(negative, positive, targets):
         pos_ref_value, *_ = calculate(img, mask2, pos_ref_value=255)
         print('neg', 'pos', neg_ref_value, pos_ref_value)
         result = calculate(img, mask3, neg_ref_value, pos_ref_value)
-        *_, express_ratio, express_flatten = result
-        all_express.append(express_flatten)
-        all_ratio.append(express_ratio)
-    draw(all_express, all_ratio, targets)
+        all_result.append(result)
+    draw(all_result, targets)
     pass
 
 
@@ -563,31 +560,37 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     print(total_area, express_area)
     print('total_value, express_value, express_ratio')
     print(total_value, express_value, express_ratio)
-
-    express_flatten = revert_b[express_mask].flatten()
-    express_flatten = express_flatten[express_flatten>0]
-    result = (express_value, express_std, express_area, total_value, total_std, total_area, express_ratio, express_flatten)
+    express_flatten_ = revert_b[express_mask>0]
+    express_flatten = express_flatten_[express_flatten_>0]
+    result = (express_value, express_std, express_area, total_value, total_std,
+              total_area, express_ratio, express_flatten)
 
     # todo: return what?
     return result
 
-def draw(value, ratio, labels):
+
+def draw(results, labels, out='out.svg'):
     """
     violin outer and inner
     or violin outer and bar inner
     Args:
-        value: express value list
-        ratio: express ratio list
-        labels: x axis ticks
+        results: calculate results
+        labels: x-axis ticks
     Returns:
+        out: figure file
 
     """
-    # todo
+    # todo: grouped bar to show more values
+    # result = (express_value, express_std, express_area, total_value,
+    # total_std, total_area, express_ratio, express_flatten)
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     fig, ax1 = plt.subplots()
+    _ = results[0][-1]
+    violin_data = [i[-1] for i in results]
+    pass
     try:
-        violin_parts = ax1.violinplot(value, showmeans=False, showmedians=False,
-                                      showextrema=False)
+        violin_parts = ax1.violinplot([i[-1] for i in results], showmeans=False,
+                                      showmedians=False, showextrema=False)
     except ValueError:
         log.error('Failed to plot results due to bad values.')
         raise SystemExit(-2)
@@ -600,12 +603,20 @@ def draw(value, ratio, labels):
     short_labels = [Path(i).name for i in labels]
     ax1.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
     ax2 = ax1.twinx()
-    ax2.bar(range(1, len(labels)+1), ratio, width=0.5, alpha=0.6,
-            color='g', edgecolor='black')
-    ax2.set_ylabel('Express area ratio', color='g')
+    x = np.arange(len(labels))
+    width = 0.35
+    # todo: express area ratio?
+    ax2.bar(x-width/2, [i[2] for i in results], width=width,
+            alpha=0.6, color='green', label='Express area')
+    ax2.bar(x+width/2, [i[5] for i in results], width=width,
+            alpha=0.6, color='orange', label='Total area')
+    ax2.legend()
+    ax2.set_ylabel('Area')
     ax2.set_yticks(np.linspace(0, 1, 11))
     plt.show()
-    return
+    # plt.savefig(out)
+    return out
+
 
 def split_image(left_cnt, right_cnt, img):
     """
