@@ -1,5 +1,6 @@
 #!/usr/bin/python3.10
 import argparse
+import csv
 from pathlib import Path
 
 import cv2
@@ -130,8 +131,11 @@ def mode_4(negative, positive, targets):
     all_result.append(pos_result)
     all_result.append(neg_result)
     targets.extend(('Positive reference', 'Negative reference'))
-    draw(all_result, targets)
-    pass
+    svg_file = Path(targets[0]).with_suffix('.svg')
+    csv_file = svg_file.with_suffix('.csv')
+    draw(all_result, targets, svg_file)
+    write_csv(all_result, targets, csv_file)
+    return svg_file, csv_file
 
 
 def get_single_value(filtered_result, level_cnt, img):
@@ -606,55 +610,6 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     return result
 
 
-def draw(results, labels, out='out.svg'):
-    """
-    violin outer and inner
-    or violin outer and bar inner
-    Args:
-        results: calculate results
-        labels: x-axis ticks
-    Returns:
-        out: figure file
-
-    """
-    # result = (express_value, express_std, express_area, total_value,
-    # total_std, total_area, express_ratio, express_flatten)
-    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    fig, ax1 = plt.subplots(figsize=(10, 6))
-    _ = results[0][-1]
-    x = np.arange(1, len(labels) + 1)
-    width = 0.2
-    try:
-        violin_parts = ax1.violinplot([i[-1] for i in results], showmeans=False,
-                                      showmedians=False, showextrema=False,
-                                      widths=0.4)
-    except ValueError:
-        log.error('Failed to plot results due to bad values.')
-        raise SystemExit(-2)
-    for pc in violin_parts['bodies']:
-        pc.set_facecolor('#0d56ff')
-        pc.set_edgecolor('black')
-    ax1.set_xlabel('Sample')
-    ax1.set_ylabel('Expression value', color='b')
-    ax1.set_yticks(np.linspace(0, 256, 9))
-    short_labels = [Path(i).name for i in labels]
-    ax1.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
-    ax2 = ax1.twinx()
-    rects1 = ax2.bar(x - width / 2, [i[2] for i in results], width=width,
-                     alpha=0.4,
-                     color='green', label='Express area')
-    rects2 = ax2.bar(x + width / 2, [i[5] for i in results], width=width,
-                     alpha=0.4,
-                     color='orange', label='Total area')
-    ax2.bar_label(rects1, padding=3)
-    ax2.bar_label(rects2, padding=3)
-    ax2.legend()
-    ax2.set_ylabel('Area')
-    # ax2.set_yticks(np.linspace(0, 1, 11))
-    plt.tight_layout()
-    plt.show()
-    # plt.savefig(out)
-    return out
 
 
 def split_image(left_cnt, right_cnt, img):
@@ -705,6 +660,81 @@ def get_contour(img_file):
     return filtered_result, level_cnt, img
 
 
+def draw(results, labels, out):
+    """
+    violin outer and inner
+    or violin outer and bar inner
+    Args:
+        results: calculate results
+        labels: x-axis ticks
+        out: output filename
+    Returns:
+        out: figure file
+
+    """
+    # result = (express_value, express_std, express_area, total_value,
+    # total_std, total_area, express_ratio, express_flatten)
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+    _ = results[0][-1]
+    x = np.arange(1, len(labels) + 1)
+    width = 0.2
+    try:
+        violin_parts = ax1.violinplot([i[-1] for i in results], showmeans=False,
+                                      showmedians=False, showextrema=False,
+                                      widths=0.4)
+    except ValueError:
+        log.error('Failed to plot results due to bad values.')
+        raise SystemExit(-2)
+    for pc in violin_parts['bodies']:
+        pc.set_facecolor('#0d56ff')
+        pc.set_edgecolor('black')
+    ax1.set_xlabel('Sample')
+    ax1.set_ylabel('Expression value', color='b')
+    ax1.set_yticks(np.linspace(0, 256, 9))
+    short_labels = [Path(i).name for i in labels]
+    ax1.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
+    ax2 = ax1.twinx()
+    rects1 = ax2.bar(x - width / 2, [i[2] for i in results], width=width,
+                     alpha=0.4,
+                     color='green', label='Express area')
+    rects2 = ax2.bar(x + width / 2, [i[5] for i in results], width=width,
+                     alpha=0.4,
+                     color='orange', label='Total area')
+    ax2.bar_label(rects1, padding=3)
+    ax2.bar_label(rects2, padding=3)
+    ax2.legend()
+    ax2.set_ylabel('Area')
+    plt.tight_layout()
+    # todo: not show in formal version
+    plt.savefig(out)
+    plt.show()
+    log.info(f'Output figure file {out}')
+    return out
+
+
+def write_csv(all_result, targets, out):
+    """
+    Output csv
+    Args:
+        all_result:
+        targets:
+        out:
+    Returns:
+        out:
+    """
+    header = ('Name,Express value, Express std,Express area, Total value,'
+              'Total std,Total Area,Express ratio')
+    with open(out, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f, delimiter=',', quotechar='"',
+                            quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(header.split(','))
+        for name, result in zip(targets, all_result):
+            writer.writerow([name, *result[:-1]])
+    log.info(f'Output table file {out}')
+    return out
+
+
 def main():
     arg = parse_arg()
     negative, positive, images = get_input(arg)
@@ -712,7 +742,6 @@ def main():
     run = run_dict[arg.mode]
     run(negative, positive, images)
     # todo: need rewrite
-    pass
     return
 
 
