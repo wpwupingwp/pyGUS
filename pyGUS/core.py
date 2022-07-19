@@ -107,17 +107,29 @@ def mode_4(negative, positive, targets):
                                          name_dict['pos'][1])
         cropped3, mask3 = select_polygon(img, name_dict['target'][0],
                                          name_dict['target'][1])
-        cv2.imshow('neg', cropped1)
-        cv2.imshow('pos', cropped2)
-        cv2.imshow('target', cropped3)
-        cv2.waitKey()
-        cv2.destroyAllWindows()
+        try:
+            cv2.imshow('neg', cropped1)
+            cv2.imshow('pos', cropped2)
+            cv2.imshow('target', cropped3)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+        except cv2.error:
+            log.error('Bad selection.')
+            raise SystemExit(-3)
         # todo: is it ok to directly use calculate to get ref value?
-        neg_ref_value, *_ = calculate(img, mask1, neg_ref_value=0)
-        pos_ref_value, *_ = calculate(img, mask2, pos_ref_value=255)
+        neg_result = calculate(img, mask1, neg_ref_value=0)
+        neg_ref_value, neg_std, *_ = neg_result
+        pos_result = calculate(img, mask2, pos_ref_value=255)
+        pos_ref_value, pos_std, *_ = pos_result
+        # neg_ref_value += neg_std * 3
+        neg_ref_value += neg_std
+        pos_ref_value += pos_std
         print('neg', 'pos', neg_ref_value, pos_ref_value)
         result = calculate(img, mask3, neg_ref_value, pos_ref_value)
         all_result.append(result)
+    all_result.append(pos_result)
+    all_result.append(neg_result)
+    targets.extend(('Positive reference', 'Negative reference'))
     draw(all_result, targets)
     pass
 
@@ -520,13 +532,37 @@ def draw_images(filtered_result, level_cnt, img):
     return img_dict
 
 
-def get_real_blue(original_image):
-    # todo, 255-b is not real blue part
+def get_real_blue(original_image, neg_ref_value, pos_ref_value):
+    assert neg_ref_value <= pos_ref_value
+    assert pos_ref_value > 0
     b, g, r = cv2.split(original_image)
+    factor = 1
     revert_b = revert(b)
-    # revert_b * 255 / pos_ref_value
-    # 0 * pos_ref_value = 0
-    return revert_b
+    amplified_neg_ref = int(factor * neg_ref_value)
+    return revert_b, amplified_neg_ref
+
+
+def get_real_blue_2(original_image, neg_ref_value, pos_ref_value):
+    # todo, 255-b is not real blue part
+    assert neg_ref_value <= pos_ref_value
+    assert pos_ref_value > 0
+    factor = 1
+    b, g, r = cv2.split(original_image)
+    pos_ref_value = round(pos_ref_value)
+    neg_ref_value = max(255, round(neg_ref_value))
+    revert_b = revert(b)
+    # amplify
+    # revert_b = revert_b.astype('float')
+    # log.info(f'Factor {factor}')
+    # make sure express ratio <= 100%
+    # todo: is it ok?
+    revert_b = revert_b.astype('float')
+    factor = 255 // pos_ref_value
+    revert_b = (revert_b - neg_ref_value) * factor
+    revert_b[revert_b > 255] = 255
+    revert_b = revert_b.astype('uint8')
+    amplified_neg_ref = int(factor * neg_ref_value)
+    return revert_b, amplified_neg_ref
 
 
 def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
@@ -541,26 +577,13 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     """
     # todo: remove green
     # blue express area
-    assert neg_ref_value <= pos_ref_value
-    assert pos_ref_value > 0
-    revert_b = get_real_blue(original_image)
-    revert_b[revert_b > pos_ref_value] = pos_ref_value
-    # amplify
-    # revert_b = revert_b.astype('float')
-    # factor = 256 // pos_ref_value
-    # log.info(f'Factor {factor}')
-    # neg_ref_value = int(neg_ref_value * factor)
-    # revert_b *= factor
-    # revert_b = revert_b.astype('uint8')
-    # amplify end
-    # make sure express ratio <= 100%
-    revert_b[revert_b > 255] = 255
+    revert_b, amplified_neg_ref = get_real_blue(original_image, neg_ref_value, pos_ref_value)
     cv2.imshow('x', revert_b)
     cv2.waitKey()
     zero = np.zeros(original_image.shape[:2], dtype='uint8')
 
     express_mask = target_mask.copy()
-    express_mask[revert_b <= neg_ref_value] = 0
+    express_mask[revert_b <= amplified_neg_ref] = 0
 
     # cv2.contourArea return different value with np.count_nonzero
     total_area = np.count_nonzero(target_mask)
