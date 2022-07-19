@@ -529,7 +529,6 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     Returns:
     """
     # todo: remove green
-    # todo: use violin plot to show result, black edge line, white total area,
     # blue express area
     b, g, r = cv2.split(original_image)
     revert_b = get_real_blue(original_image)
@@ -540,32 +539,24 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     express_mask = target_mask.copy()
     express_mask[revert_b < neg_ref_value] = 0
 
-    # cv2.imshow('target mask', target_mask)
     # cv2.contourArea return different value with np.count_nonzero
     total_area = np.count_nonzero(target_mask)
     express_area = np.count_nonzero(express_mask)
     # todo: how to get correct ratio
     express_ratio = express_area / total_area
 
-    total_masked = cv2.bitwise_and(original_image, original_image,
-                                   mask=target_mask)
+    # total_sum = np.sum(revert_b[target_mask>0])
     total_value, total_std = cv2.meanStdDev(revert_b, mask=target_mask)
     total_value, total_std = total_value[0][0], total_std[0][0]
     express_value, express_std = cv2.meanStdDev(revert_b, mask=express_mask)
     express_value, express_std = express_value[0][0], express_std[0][0]
-
-    total_sum = np.sum(revert_b[target_mask>0])
-    print('sum', total_sum)
-    print('total_area, express_area')
-    print(total_area, express_area)
-    print('total_value, express_value, express_ratio')
-    print(total_value, express_value, express_ratio)
     express_flatten_ = revert_b[express_mask>0]
     express_flatten = express_flatten_[express_flatten_>0]
     result = (express_value, express_std, express_area, total_value, total_std,
               total_area, express_ratio, express_flatten)
-
-    # todo: return what?
+    print('express_value, express_std, express_area, total_value, total_std, '
+          'total_area, express_ratio, express_flatten')
+    print(result)
     return result
 
 
@@ -580,22 +571,22 @@ def draw(results, labels, out='out.svg'):
         out: figure file
 
     """
-    # todo: grouped bar to show more values
     # result = (express_value, express_std, express_area, total_value,
     # total_std, total_area, express_ratio, express_flatten)
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     fig, ax1 = plt.subplots()
     _ = results[0][-1]
-    violin_data = [i[-1] for i in results]
-    pass
+    x = np.arange(1, len(labels)+1)
+    width = 0.2
     try:
         violin_parts = ax1.violinplot([i[-1] for i in results], showmeans=False,
-                                      showmedians=False, showextrema=False)
+                                      showmedians=False, showextrema=False,
+                                      widths=0.4)
     except ValueError:
         log.error('Failed to plot results due to bad values.')
         raise SystemExit(-2)
     for pc in violin_parts['bodies']:
-        pc.set_facecolor('#0d96ff')
+        pc.set_facecolor('#0d56ff')
         pc.set_edgecolor('black')
     ax1.set_xlabel('Sample')
     ax1.set_ylabel('Expression value', color='b')
@@ -603,16 +594,14 @@ def draw(results, labels, out='out.svg'):
     short_labels = [Path(i).name for i in labels]
     ax1.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
     ax2 = ax1.twinx()
-    x = np.arange(len(labels))
-    width = 0.35
-    # todo: express area ratio?
     ax2.bar(x-width/2, [i[2] for i in results], width=width,
-            alpha=0.6, color='green', label='Express area')
+            alpha=0.4, color='green', label='Express area')
     ax2.bar(x+width/2, [i[5] for i in results], width=width,
-            alpha=0.6, color='orange', label='Total area')
+            alpha=0.4, color='orange', label='Total area')
     ax2.legend()
     ax2.set_ylabel('Area')
-    ax2.set_yticks(np.linspace(0, 1, 11))
+    # ax2.set_yticks(np.linspace(0, 1, 11))
+    plt.tight_layout()
     plt.show()
     # plt.savefig(out)
     return out
