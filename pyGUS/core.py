@@ -83,11 +83,11 @@ def mode_1(negative, positive, targets):
                                   pos_ref_value=pos_ref_value)
         target_results.append(target_result)
         img_dict = draw_images(filtered_result, level_cnt, img, simple=True,
-                               filename=target)
+                               show=False, filename=target)
     neg_img_dict = draw_images(neg_filtered_result, neg_level_cnt, neg_img,
-                               simple=True, filename=negative)
+                               show=False, simple=True, filename=negative)
     pos_img_dict = draw_images(pos_filtered_result, pos_level_cnt, pos_img,
-                               simple=True, filename=positive)
+                               show=False, simple=True, filename=positive)
     return neg_result, pos_result, target_results
 
 
@@ -115,10 +115,10 @@ def mode_2(ref1, ref2, targets):
         target_result = calculate(img, target_mask, neg_ref_value=neg_ref_value,
                                   pos_ref_value=pos_ref_value)
         target_results.append(target_result)
-        img_dict = draw_images(filtered_result, level_cnt, img, simple=True,
-                               filename=target)
+        img_dict = draw_images(filtered_result, level_cnt, img, show=False,
+                               simple=True, filename=target)
     ref_img_dict = draw_images(ref_filtered_result, ref_level_cnt, ref_img,
-                               simple=True, filename=negative_positive_ref)
+                               show=False, simple=True, filename=negative_positive_ref)
     masked_neg = cv2.bitwise_and(ref_img, ref_img, mask=neg_mask)
     cv2.imshow('masked negative reference', 255 - masked_neg)
     masked_pos = cv2.bitwise_and(ref_img, ref_img, mask=pos_mask)
@@ -152,16 +152,17 @@ def mode_3(ref1, ref2, targets):
     target_results = []
     for target in ok_targets:
         filtered_result, level_cnt, img = get_contour(target)
-        left_mask, right_mask = get_left_right_mask(
-            filtered_result, level_cnt, img, neg_ref_value, pos_ref_value)
+        left_mask, right_mask = get_left_right_mask(filtered_result, level_cnt,
+                                                    img)
         target_result = calculate(img, left_mask, neg_ref_value, pos_ref_value)
         target_results.append(target_result)
-        img_dict = draw_images(filtered_result, level_cnt, img, simple=True,
-                               filename=target)
+        img_dict = draw_images(filtered_result, level_cnt, img, show=True,
+                               # todo: show for demo only
+                               simple=True, filename=target)
     neg_img_dict = draw_images(neg_filtered_result, neg_level_cnt, neg_img,
-                               simple=True, filename=negative)
+                               show=True, simple=True, filename=negative)
     pos_img_dict = draw_images(pos_filtered_result, pos_level_cnt, pos_img,
-                               simple=True, filename=positive)
+                               show=True, simple=True, filename=positive)
     return neg_result, pos_result, target_results
 
 
@@ -184,9 +185,9 @@ def mode_4(ref1, ref2, targets):
         cropped3, mask3 = select_polygon(img, name_dict['target'][0],
                                          name_dict['target'][1])
         try:
-            cv2.imshow('neg', cropped1)
-            cv2.imshow('pos', cropped2)
-            cv2.imshow('target', cropped3)
+            cv2.imshow('Selected negative reference region', cropped1)
+            cv2.imshow('Selected positive reference region', cropped2)
+            cv2.imshow('Selected target region', cropped3)
             cv2.waitKey()
             cv2.destroyAllWindows()
         except cv2.error:
@@ -290,7 +291,7 @@ def threshold(img, show=False):
     r_g_reverse = 255 - r_g
     blur = cv2.GaussianBlur(r_g_reverse, (5, 5), 0)
     h, w = img.shape[:2]
-    mask = np.zeros([h + 2, w + 2], np.uint8)
+    # mask = np.zeros([h + 2, w + 2], np.uint8)
     # ret1, th1 = cv2.threshold(img, 16, 255, cv2.THRESH_BINARY)
     ret2, th2 = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     equalize = cv2.equalizeHist(blur)
@@ -309,7 +310,7 @@ def threshold(img, show=False):
         cv2.imshow('threshold', t)
         cv2.imshow('t_edge', edge)
     log.debug(f'ret2 {ret2}')
-    return
+    return th3
 
 
 def get_edge(image):
@@ -318,9 +319,6 @@ def get_edge(image):
     # clahe = cv2.createCLAHE()
     # sharped = clahe.apply(image)
     # blur1 = cv2.GaussianBlur(img_equalize, (3, 3), 0)
-    # cv2.imshow('equalize', img_equalize)
-    # cv2.imshow('blur1', blur1)
-    # img_equalize = cv2.equalizeHist(bl)
     img_equalize = image
     # threshold(image)
     edge = auto_Canny(img_equalize)
@@ -328,10 +326,7 @@ def get_edge(image):
     blur = cv2.GaussianBlur(edge, (5, 5), 0)
     dilate = cv2.dilate(blur, None)
     erode_edge = cv2.erode(dilate, None)
-    cv2.imshow('edge', edge)
-    # plt.hist(img_equalize, 256)
-    # plt.show()
-    # cv2.imshow('dilate', dilate)
+    # cv2.imshow('edge', edge)
     return erode_edge
 
 
@@ -350,7 +345,6 @@ def get_contour_value(img, cnt):
     # fill contour with (255,255,255)
     mask = np.zeros(img.shape[:2], dtype='uint8')
     cv2.fillPoly(mask, [cnt], (255, 255, 255))
-    masked = cv2.bitwise_and(img, img, mask=mask)
     mean, std = cv2.meanStdDev(img, mask=mask)
     return mean[0][0], std[0][0]
 
@@ -361,7 +355,6 @@ def get_background_value(img, external_contours, level_cnt):
     for external in external_contours:
         cnt = level_cnt[external]
         cv2.fillPoly(mask, [cnt], (0, 0, 0))
-    masked = cv2.bitwise_and(img, img, mask=mask)
     mean, std = cv2.meanStdDev(img, mask=mask)
     # cv2.imshow('Background masked', masked)
     return mean[0][0], std[0][0]
@@ -388,7 +381,6 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
         big_area = cv2.contourArea(big_cnt)
         self_index = big[4]
         related_inner = [i for i in inner_contours if i[3] == self_index]
-        # cv2.imshow('Masked big', masked)
         big_blue_mean, big_blue_std = get_contour_value(revert_b, big_cnt)
         log.info(f'Big region: No.{big[-1]}\t '
                  f'Area: {big_area}\t Blue mean: {big_blue_mean}')
@@ -506,7 +498,8 @@ def hex2bgr(hex_str: str):
     return b, g, r
 
 
-def draw_images(filtered_result, level_cnt, img, simple=False, filename=None):
+def draw_images(filtered_result, level_cnt, img, simple=False, show=False,
+                filename=None):
     def drawing(levels, color):
         line_width = 2
         for level in levels:
@@ -544,7 +537,8 @@ def draw_images(filtered_result, level_cnt, img, simple=False, filename=None):
     drawing(fake_inner, color_green)
     drawing(real_background, color_red)
     for title, image in img_dict.items():
-        cv2.imshow(title, image)
+        if show:
+            cv2.imshow(title, image)
         if filename is not None:
             out_p = Path(filename)
             out_filename = str(out_p.parent / out_p.with_name(
@@ -603,19 +597,15 @@ def calculate(original_image, target_mask, neg_ref_value=0, pos_ref_value=255):
     # blue express area
     revert_b, amplified_neg_ref = get_real_blue(original_image, neg_ref_value,
                                                 pos_ref_value)
-    cv2.imshow('x', revert_b)
+    cv2.imshow('revert blue', revert_b)
     cv2.waitKey()
-    zero = np.zeros(original_image.shape[:2], dtype='uint8')
-
     express_mask = target_mask.copy()
     express_mask[revert_b <= amplified_neg_ref] = 0
-
     # cv2.contourArea return different value with np.count_nonzero
     total_area = np.count_nonzero(target_mask)
     express_area = np.count_nonzero(express_mask)
     # todo: how to get correct ratio
     express_ratio = express_area / total_area
-
     # total_sum = np.sum(revert_b[target_mask>0])
     total_value, total_std = cv2.meanStdDev(revert_b, mask=target_mask)
     total_value, total_std = total_value[0][0], total_std[0][0]
@@ -776,6 +766,8 @@ def main():
     draw(target_results, targets, svg_file)
     write_csv(target_results, targets, csv_file)
     # todo: need rewrite
+    cv2.waitKey()
+    cv2.destroyAllWindows()
     return
 
 

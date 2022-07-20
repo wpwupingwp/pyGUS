@@ -202,8 +202,6 @@ def color_calibrate(img_file: Path):
     log.debug(f'Calibrated image {out_img_file}')
     cv2.imshow('original', img)
     cv2.imshow('calibrated', out_img)
-    cv2.waitKey()
-    cv2.destroyAllWindows()
     return str(out_img_file)
 
 
