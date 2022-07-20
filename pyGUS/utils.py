@@ -1,5 +1,6 @@
 #!/usr/bin/python3)
 
+from pathlib import Path
 import cv2
 import numpy as np
 
@@ -20,7 +21,7 @@ def if_exist(filename):
 
 def get_crop(img, r):
     x, y, w, h = r
-    cropped = img[int(y):(y+h), int(x):int(x+w)]
+    cropped = img[int(y):(y + h), int(x):int(x + w)]
     return cropped
 
 
@@ -122,10 +123,13 @@ def draw_colorchecker(out='card.jpg'):
     w = 150 * factor
     gap = 20 * factor
     w_and_gap = w + gap
-    image = np.zeros((4*w+5*gap, 6*w+7*gap, 3))
+    image = np.zeros((4 * w + 5 * gap, 6 * w + 7 * gap, 3))
     for i in range(4):
         for j in range(6):
-            image[(gap+i*w_and_gap):(gap+i*w_and_gap+w), (gap+j*w_and_gap):(gap+j*w_and_gap+w), :] = rgb[(i*6+j), :]
+            image[(gap + i * w_and_gap):(gap + i * w_and_gap + w),
+            (gap + j * w_and_gap):(gap + j * w_and_gap + w), :] = rgb[
+                                                                  (i * 6 + j),
+                                                                  :]
     image = image.astype(np.uint8)
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     cv2.imshow('a', image)
@@ -143,21 +147,22 @@ def resize(img, new_height, new_width):
     # keep original w/h ratio
     height, width = img.shape[:2]
     if width / height >= new_width / new_height:
-        img_new = cv2.resize(img, (new_width, int(height*new_width/width)))
+        img_new = cv2.resize(img, (new_width, int(height * new_width / width)))
     else:
-        img_new = cv2.resize(img, (int(width*new_height/height), new_height))
+        img_new = cv2.resize(img,
+                             (int(width * new_height / height), new_height))
     return img_new
 
 
-
-def color_calibrate(img):
+def color_calibrate(img_file: Path):
     """
     Use color card to calibrate colors
     Args:
-        img:
+        img_file: raw image filename
     Returns:
         calibrated:
     """
+    img = cv2.imread(img_file)
     detector = cv2.mcc.CCheckerDetector_create()
     detector.process(img, cv2.mcc.MCC24)
     checker = detector.getBestColorChecker()
@@ -178,7 +183,7 @@ def color_calibrate(img):
     # ccm = model.getCCM()
     loss = model.getLoss()
     # print('ccm', ccm)
-    log.debug(f'Color calibration loss {loss}')
+    log.info(f'Color calibration loss {loss}')
     # calibrate
     img2 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img2 = img2.astype(np.float64)
@@ -189,7 +194,9 @@ def color_calibrate(img):
     out[out > 255] = 255
     out = out.astype(np.uint8)
     out_img = cv2.cvtColor(out, cv2.COLOR_RGB2BGR)
-    return out_img
+    img_file_p = Path(img_file)
+    out_img_file = img_file_p.with_stem(img_file_p.stem+'_calibrated')
+    return out_img_file
 
 
 if __name__ == '__main__':

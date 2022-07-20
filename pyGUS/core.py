@@ -31,8 +31,34 @@ def parse_arg():
                      help=('1. single target in each image; '
                            '2. target and positive reference in each image; '
                            '3. target and colorchecker in each image; '
-                           '4. manually select target region with mouse'))
+                           '4. manually select target regions with mouse'))
     return arg.parse_args()
+
+
+def get_input(arg):
+    message = None
+    negative = None
+    positive = None
+    targets = None
+    if arg.mode in (1, 3):
+        if arg.ref1 is None or arg.ref2 is None:
+            message = (f'Bad input. Mode {arg.mode} requires ref1 (negative) '
+                       f'and ref2 (positive)')
+    elif arg.mode == 2:
+        if arg.ref1 is None:
+            message = 'Bad input. Mode 2 requires ref1 (negative vs positive)'
+    if message is not None:
+        log.error(message)
+        raise SystemExit(-1)
+    targets = [Path(i).absolute() for i in arg.images]
+    targets = [if_exist(i) for i in targets]
+    if arg.mode != 4:
+        negative = Path(arg.ref1).absolute()
+        negative = if_exist(negative)
+    if arg.mode == 1:
+        positive = Path(arg.ref2).absolute()
+        positive = if_exist(positive)
+    return negative, positive, targets
 
 
 def mode_1(negative, positive, targets):
@@ -125,7 +151,7 @@ def mode_4(negative, positive, targets):
         # neg_ref_value += neg_std * 3
         neg_ref_value += neg_std
         pos_ref_value += pos_std
-        print('neg', 'pos', neg_ref_value, pos_ref_value)
+        log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
         result = calculate(img, mask3, neg_ref_value, pos_ref_value)
         all_result.append(result)
     all_result.append(pos_result)
@@ -145,8 +171,8 @@ def get_single_value(filtered_result, level_cnt, img):
     target = big_external_contours[0]
     self_index = target[4]
     cnt = level_cnt[target]
-    print('self', self_index)
-    print('contour area', cv2.contourArea(target))
+    log.debug(f'self {self_index}')
+    log.debug(f'contour area {cv2.contourArea(target)}')
     mask = np.zeros(img.shape[:2], dtype='uint8')
     # related inner background
     cv2.fillPoly(mask, [cnt], (255, 255, 255))
@@ -161,7 +187,7 @@ def get_single_value(filtered_result, level_cnt, img):
     real_b = get_real_blue(img)
     value, std = cv2.meanStdDev(real_b, mask=mask)
     cv2.imshow('mask3', real_b)
-    print(value, std)
+    log.debug(f'{value} {std}')
     calculate(img, mask)
     return value[0][0], std[0][0]
 
@@ -178,8 +204,8 @@ def get_left_right_value(filtered_result, level_cnt, img):
     for target in left, right:
         self_index = target[4]
         cnt = level_cnt[target]
-        print(target)
-        print('self', self_index)
+        log.debug(f'target {target}')
+        log.debug(f'self {self_index}')
         mask = np.zeros(img.shape[:2], dtype='uint8')
         related_fake_inner = [i for i in fake_inner if i[3] == self_index]
         # related inner background
@@ -207,30 +233,6 @@ def get_left_right_value(filtered_result, level_cnt, img):
     return left_value[0][0], left_std[0][0], right_value[0][0], right_std[0][0]
 
 
-def get_input(arg):
-    message = None
-    negative = None
-    positive = None
-    targets = None
-    if arg.mode in (1, 3):
-        if arg.ref1 is None or arg.ref2 is None:
-            message = (f'Bad input. Mode {arg.mode} requires ref1 (negative) '
-                       f'and ref2 (positive)')
-    elif arg.mode == 2:
-        if arg.ref1 is None:
-            message = 'Bad input. Mode 2 requires ref1 (negative vs positive)'
-    if message is not None:
-        log.error(message)
-        raise SystemExit(-1)
-    targets = [Path(i).absolute() for i in arg.images]
-    targets = [if_exist(i) for i in targets]
-    if arg.mode != 4:
-        negative = Path(arg.ref1).absolute()
-        negative = if_exist(negative)
-    if arg.mode == 1:
-        positive = Path(arg.ref2).absolute()
-        positive = if_exist(positive)
-    return negative, positive, targets
 
 
 def get_input_demo(input_file='example/ninanjie-ok-75-2.tif'):
@@ -246,7 +248,6 @@ def get_input_demo(input_file='example/ninanjie-ok-75-2.tif'):
     # input_file = 'example/ersuiduanbingcao-ok-BD7-4.png'
     img = cv2.imread(input_file)
     log.info(f'Image size: {img.shape}')
-    print(img.shape)
     return input_file
 
 
@@ -274,7 +275,7 @@ def threshold(img, show=False):
     r, t = cv2.threshold(equalize, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     edge = auto_Canny(255 - th2)
     # cv2.floodFill(th2, mask=mask, seedPoint=(1,1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
-    print(h, w, sep='x')
+    log.debug(f'h * w: {h} {w}')
     # cv2.floodFill(th2, mask=mask, seedPoint=(1,h-1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
     # cv2.floodFill(th2, mask=mask, seedPoint=(w-1,1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
     # cv2.floodFill(th2, mask=mask, seedPoint=(w-1,h-1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
@@ -285,7 +286,7 @@ def threshold(img, show=False):
         cv2.imshow('th2', th2)
         cv2.imshow('threshold', t)
         cv2.imshow('t_edge', edge)
-    print('ret2', ret2)
+    log.debug(f'ret2 {ret2}')
     return
 
 
@@ -595,9 +596,9 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
     express_flatten = express_flatten_[express_flatten_ > 0]
     result = (express_value, express_std, express_area, total_value, total_std,
               total_area, express_ratio, express_flatten)
-    print('express_value, express_std, express_area, total_value, total_std, '
-          'total_area, express_ratio, express_flatten')
-    print(result)
+    log.debug('express_value, express_std, express_area, total_value, '
+              'total_std, total_area, express_ratio, express_flatten')
+    log.debug(result)
     return result
 
 
@@ -729,6 +730,13 @@ def write_csv(all_result, targets, out):
 def main():
     arg = parse_arg()
     negative, positive, images = get_input(arg)
+    log.info('Welcome to pyGUS.')
+    log.info(f'Running mode {arg.mode}...')
+    log.info(f'Negative reference image: {negative}')
+    log.info(f'Positive reference image: {positive}')
+    log.info('Target images:')
+    for i in images:
+        log.info(f'\t{i}')
     run_dict = {1: mode_1, 2: mode_2, 3: mode_3, 4: mode_4}
     run = run_dict[arg.mode]
     run(negative, positive, images)
