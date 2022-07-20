@@ -771,25 +771,5 @@ def main():
     return
 
 
-def demo():
-    input_file = get_input_demo()
-    # .png .jpg .tiff
-    filtered_result, level_cnt, img = get_contour(input_file)
-    img_dict = draw_images(filtered_result, level_cnt, img)
-    a, b, c, d = get_left_right_mask(filtered_result, level_cnt, img)
-    x = ['target', 'reference']
-    print(a, b, c, d)
-    # from matplotlib import pyplot as plt
-    # plt.title(f'{input_file}:   {a / c:.2%}')
-    # plt.bar(x, [a, c], width=0.5, color='#61a1cd')
-    # plt.errorbar(x, [a, c], yerr=[b, d], fmt='+', ecolor='r', capsize=4)
-    # plt.show()
-    # use mask
-    # target, ref = split_image(left_cnt, right_cnt, img)
-    # show
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-
 if __name__ == '__main__':
-    demo()
+    main()

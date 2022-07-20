@@ -127,19 +127,12 @@ def draw_colorchecker(out='card.jpg'):
     for i in range(4):
         for j in range(6):
             image[(gap + i * w_and_gap):(gap + i * w_and_gap + w),
-            (gap + j * w_and_gap):(gap + j * w_and_gap + w), :] = rgb[
-                                                                  (i * 6 + j),
-                                                                  :]
+                  (gap + j * w_and_gap):(gap + j * w_and_gap + w), :] = rgb[
+                                                                       (i * 6
+                                                                        + j), :]
     image = image.astype(np.uint8)
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    cv2.imshow('a', image)
-    # region, r = select_box(image)
-    cropped, _ = select_polygon(image, 'test')
-    cv2.imshow('selected', cropped)
-    # cv2.imshow('selected', region)
     cv2.imwrite(out, image)
-    cv2.waitKey(0)
-    # print(image.shape)
     return out
 
 
@@ -154,11 +147,12 @@ def resize(img, new_height, new_width):
     return img_new
 
 
-def color_calibrate(img_file: Path):
+def color_calibrate(img_file: Path, draw_detected=False):
     """
     Use color card to calibrate colors
     Args:
         img_file: raw image filename
+        draw_detected: draw detected colorchecker or not
     Returns:
         calibrated:
     """
@@ -166,6 +160,11 @@ def color_calibrate(img_file: Path):
     detector = cv2.mcc.CCheckerDetector_create()
     detector.process(img, cv2.mcc.MCC24)
     checker = detector.getBestColorChecker()
+    if draw_detected:
+        cdraw = cv2.mcc.CCheckerDraw_create(checker)
+        img_draw = img.copy()
+        cdraw.draw(img_draw)
+        cv2.imshow('Detected colorchecker', img_draw)
     # get ccm
     charts_rgb = checker.getChartsRGB()
     src = charts_rgb[:, 1].copy().reshape(24, 1, 3)
@@ -197,7 +196,7 @@ def color_calibrate(img_file: Path):
     img_file_p = Path(img_file)
     # png is lossless compress
     out_img_file = img_file_p.parent / img_file_p.with_name(
-        img_file_p.stem+'_calibrated.png')
+        img_file_p.stem + '_calibrated.png')
     cv2.imwrite(str(out_img_file), out_img)
     log.debug(f'Calibrated image {out_img_file}')
     cv2.imshow('original', img)
