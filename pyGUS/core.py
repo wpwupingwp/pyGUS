@@ -68,15 +68,21 @@ def mode_1(negative, positive, targets):
     # third and after: target
     neg_filtered_result, neg_level_cnt, neg_img = get_contour(negative)
     pos_filtered_result, pos_level_cnt, pos_img = get_contour(positive)
-    neg_value, neg_std = get_single_value(
-        neg_filtered_result, neg_level_cnt, neg_img)
-    pos_value, pos_std = get_single_value(
-        pos_filtered_result, pos_level_cnt, pos_img)
+    neg_mask = get_single_mask(neg_filtered_result, neg_level_cnt, neg_img)
+    pos_mask = get_single_mask(pos_filtered_result, pos_level_cnt, pos_img)
+    neg_result = calculate(neg_img, neg_mask)
+    neg_ref_value = neg_result[0]
+    pos_result = calculate(pos_img, pos_mask, neg_ref_value=neg_ref_value)
+    pos_ref_value = pos_result[0]
+    log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
+    target_results = []
     for target in targets:
         filtered_result, level_cnt, img = get_contour(target)
-        target_value, target_std = get_single_value(
-            filtered_result, level_cnt, img)
-    print(neg_value, neg_std, pos_value, pos_std, target_value, target_std)
+        target_mask = get_single_mask(filtered_result, level_cnt, img)
+        target_result = calculate(img, target_mask, neg_ref_value=neg_ref_value,
+                                  pos_ref_value=pos_ref_value)
+        target_results.append(target_result)
+    return neg_result, pos_result, target_results
 
 
 def mode_2(ref1, ref2, targets):
@@ -98,15 +104,15 @@ def mode_2(ref1, ref2, targets):
     target_results = []
     for target in targets:
         filtered_result, level_cnt, img = get_contour(target)
-        target_mask, pos_mask_ = get_left_right_mask(
-            filtered_result, level_cnt, img, neg_ref_value, pos_ref_value)
+        target_mask, pos_mask_ = get_left_right_mask(filtered_result, level_cnt,
+                                                     img)
         target_result = calculate(img, target_mask, neg_ref_value=neg_ref_value,
                                   pos_ref_value=pos_ref_value)
         target_results.append(target_result)
     masked_neg = cv2.bitwise_and(ref_img, ref_img, mask=neg_mask)
     cv2.imshow('masked negative reference', 255 - masked_neg)
     masked_pos = cv2.bitwise_and(ref_img, ref_img, mask=pos_mask)
-    cv2.imshow('masked positive referfence', 255 - masked_pos)
+    cv2.imshow('masked positive reference', 255 - masked_pos)
     return neg_result, pos_result, target_results
 
 
@@ -201,7 +207,7 @@ def fill_mask(shape, target, fake_inner, inner_background, level_cnt):
     return mask
 
 
-def get_single_value(filtered_result, level_cnt, img):
+def get_single_mask(filtered_result, level_cnt, img):
     # big_external + fake_inner - inner_background
     (big_external_contours, small_external_contours, inner_contours,
      fake_inner, inner_background) = filtered_result
@@ -211,17 +217,10 @@ def get_single_value(filtered_result, level_cnt, img):
     log.debug(f'contour area {cv2.contourArea(target)}')
     mask = fill_mask(img.shape[:2], target, fake_inner, inner_background,
                      level_cnt)
-    cv2.imshow('mask', revert(mask))
-    real_b = get_real_blue(img)
-    value, std = cv2.meanStdDev(real_b, mask=mask)
-    cv2.imshow('mask3', real_b)
-    log.debug(f'{value} {std}')
-    calculate(img, mask)
-    return value[0][0], std[0][0]
+    return mask
 
 
-def get_left_right_mask(filtered_result, level_cnt, img, neg_ref_value=32,
-                        pos_ref_value=255):
+def get_left_right_mask(filtered_result, level_cnt, img):
     (big_external_contours, small_external_contours, inner_contours,
      fake_inner, inner_background) = filtered_result
     # target, ref
