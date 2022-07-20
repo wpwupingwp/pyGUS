@@ -106,16 +106,20 @@ def mode_3(negative, positive, targets):
     ###
     neg_filtered_result, neg_level_cnt, neg_img = get_contour(ok_neg)
     pos_filtered_result, pos_level_cnt, pos_img = get_contour(ok_pos)
-    neg_value, neg_std, card_value, card_std = get_left_right_value(
-        neg_filtered_result, neg_level_cnt, neg_img)
-    pos_value, pos_std, card_value2, card_std2 = get_left_right_value(
-        pos_filtered_result, pos_level_cnt, pos_img)
+    neg_result, card_result = get_left_right_value(neg_filtered_result,
+                                                   neg_level_cnt, neg_img)
+    neg_ref_value = neg_result[0]
+    pos_result, card_result_ = get_left_right_value(pos_filtered_result,
+                                                    pos_level_cnt, pos_img)
+    pos_ref_value = pos_result[0]
+    log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
+    target_results = []
     for target in ok_targets:
         filtered_result, level_cnt, img = get_contour(target)
-        target_value, target_std, card_value_, card_std_ = get_left_right_value(
-            filtered_result, level_cnt, img)
-    print(neg_value, neg_std, pos_value, pos_std, target_value, target_std)
-    pass
+        target_result, card_result__ = get_left_right_value(
+            filtered_result, level_cnt, img, neg_ref_value, pos_ref_value)
+        target_results.append(target_result)
+    return neg_result, pos_result, target_results
 
 
 def mode_4(negative, positive, targets):
@@ -154,6 +158,7 @@ def mode_4(negative, positive, targets):
         log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
         result = calculate(img, mask3, neg_ref_value, pos_ref_value)
         all_result.append(result)
+    # todo: move to main()
     all_result.append(pos_result)
     all_result.append(neg_result)
     targets.extend(('Positive reference', 'Negative reference'))
@@ -200,14 +205,13 @@ def get_single_value(filtered_result, level_cnt, img):
     return value[0][0], std[0][0]
 
 
-def get_left_right_value(filtered_result, level_cnt, img):
+def get_left_right_value(filtered_result, level_cnt, img, neg_ref_value=32,
+                         pos_ref_value=255):
     (big_external_contours, small_external_contours, inner_contours,
      fake_inner, inner_background) = filtered_result
     # target, ref
     left, right = get_left_right(big_external_contours, level_cnt)
-    assert left is not None and right is not None, 'Object and reference not found.'
-    left_cnt = level_cnt[left]
-    right_cnt = level_cnt[right]
+    assert left is not None and right is not None, 'Object not found.'
     left_right_mask = list()
     for target in left, right:
         self_index = target[4]
@@ -224,16 +228,9 @@ def get_left_right_value(filtered_result, level_cnt, img):
     cv2.imshow('mask', 255 - masked_left)
     masked_right = cv2.bitwise_and(img, img, mask=right_mask)
     cv2.imshow('mask2', 255 - masked_right)
-    b, g, r = cv2.split(img)
-    # todo, 255-b is not real blue part
-    left_value, left_std = cv2.meanStdDev(255 - b, mask=left_mask)
-    cv2.imshow('mask3', 255 - b)
-    right_value, right_std = cv2.meanStdDev(255 - b, mask=right_mask)
-    calculate(img, left_mask)
-    calculate(img, right_mask)
-    return left_value[0][0], left_std[0][0], right_value[0][0], right_std[0][0]
-
-
+    left_result = calculate(img, left_mask, neg_ref_value, pos_ref_value)
+    right_result = calculate(img, right_mask, neg_ref_value, pos_ref_value)
+    return left_result, right_result
 
 
 def get_input_demo(input_file='example/ninanjie-ok-75-2.tif'):
@@ -335,7 +332,7 @@ def get_contour_value(img, cnt):
 
 
 def get_background_value(img, external_contours, level_cnt):
-    # assume bacground value is greater than negative reference value
+    # assume background value is greater than negative reference value
     mask = np.ones(img.shape[:2], dtype='uint8')
     for external in external_contours:
         cnt = level_cnt[external]
@@ -562,7 +559,7 @@ def get_real_blue_2(original_image, neg_ref_value, pos_ref_value):
     return revert_b, amplified_neg_ref
 
 
-def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
+def calculate(original_image, target_mask, neg_ref_value=0, pos_ref_value=255):
     """
     Calculate given region's value.
     Args:
@@ -571,6 +568,8 @@ def calculate(original_image, target_mask, neg_ref_value=32, pos_ref_value=255):
         pos_ref_value: positive reference value for up threshold
         neg_ref_value: negative reference value for down threshold
     Returns:
+        result = (express_value, express_std, express_area, total_value,
+            total_std, total_area, express_ratio, express_flatten)
     """
     # todo: remove green
     # blue express area
