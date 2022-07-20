@@ -79,45 +79,66 @@ def mode_1(negative, positive, targets):
     print(neg_value, neg_std, pos_value, pos_std, target_value, target_std)
 
 
-def mode_2(negative, positive, targets):
+def mode_2(ref1, ref2, targets):
     # use negative to calibrate positive, and then measure each target
     # assume positive in each image is same, ignore light change
     # first left: negative, first right: positive
     # next left: object, next right: positive
     # ignore small_external, inner_contours,
-    neg_filtered_result, neg_level_cnt, neg_img = get_contour(negative)
-    neg_value, neg_std, pos_value, pos_std = get_left_right_value(
-        neg_filtered_result, neg_level_cnt, neg_img)
+    negative_positive_ref = ref1
+    ref_filtered_result, ref_level_cnt, ref_img = get_contour(
+        negative_positive_ref)
+    neg_mask, pos_mask = get_left_right_mask(ref_filtered_result,
+                                             ref_level_cnt, ref_img)
+    neg_result = calculate(ref_img, neg_mask)
+    neg_ref_value = neg_result[0]
+    pos_result = calculate(ref_img, pos_mask, neg_ref_value=neg_ref_value)
+    pos_ref_value = pos_result[0]
+    log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
+    target_results = []
     for target in targets:
         filtered_result, level_cnt, img = get_contour(target)
-        target_value, target_std, pos_value_, pos_std_ = get_left_right_value(
-            filtered_result, level_cnt, img)
-    pass
+        target_mask, pos_mask_ = get_left_right_mask(
+            filtered_result, level_cnt, img, neg_ref_value, pos_ref_value)
+        target_result = calculate(img, target_mask, neg_ref_value=neg_ref_value,
+                                  pos_ref_value=pos_ref_value)
+        target_results.append(target_result)
+    masked_neg = cv2.bitwise_and(ref_img, ref_img, mask=neg_mask)
+    cv2.imshow('masked negative reference', 255 - masked_neg)
+    masked_pos = cv2.bitwise_and(ref_img, ref_img, mask=pos_mask)
+    cv2.imshow('masked positive referfence', 255 - masked_pos)
+    return neg_result, pos_result, target_results
 
 
-def mode_3(negative, positive, targets):
+def mode_3(ref1, ref2, targets):
     # use color card to calibrate each image
     # first left: negative, first right: card
     # second left: positive, second right: card
     # third and next left: target, right: card
+    negative = ref1
+    positive = ref2
     ok_neg = color_calibrate(negative)
     ok_pos = color_calibrate(positive)
     ok_targets = [color_calibrate(i) for i in targets]
     ###
     neg_filtered_result, neg_level_cnt, neg_img = get_contour(ok_neg)
-    pos_filtered_result, pos_level_cnt, pos_img = get_contour(ok_pos)
-    neg_result, card_result = get_left_right_value(neg_filtered_result,
-                                                   neg_level_cnt, neg_img)
+    neg_left_mask, neg_right_mask = get_left_right_mask(neg_filtered_result,
+                                                        neg_level_cnt, neg_img)
+    neg_result = calculate(neg_img, neg_left_mask)
     neg_ref_value = neg_result[0]
-    pos_result, card_result_ = get_left_right_value(pos_filtered_result,
-                                                    pos_level_cnt, pos_img)
+    # right_result = calculate(img, right_mask, neg_ref_value, pos_ref_value)
+    pos_filtered_result, pos_level_cnt, pos_img = get_contour(ok_pos)
+    pos_left_mask, pos_right_mask = get_left_right_mask(pos_filtered_result,
+                                                        pos_level_cnt, pos_img)
+    pos_result = calculate(pos_img, pos_left_mask)
     pos_ref_value = pos_result[0]
     log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
     target_results = []
     for target in ok_targets:
         filtered_result, level_cnt, img = get_contour(target)
-        target_result, card_result__ = get_left_right_value(
+        left_mask, right_mask = get_left_right_mask(
             filtered_result, level_cnt, img, neg_ref_value, pos_ref_value)
+        target_result = calculate(img, left_mask, neg_ref_value, pos_ref_value)
         target_results.append(target_result)
     return neg_result, pos_result, target_results
 
@@ -190,7 +211,6 @@ def get_single_value(filtered_result, level_cnt, img):
     log.debug(f'contour area {cv2.contourArea(target)}')
     mask = fill_mask(img.shape[:2], target, fake_inner, inner_background,
                      level_cnt)
-    # masked = cv2.bitwise_and(img, img, mask=mask)
     cv2.imshow('mask', revert(mask))
     real_b = get_real_blue(img)
     value, std = cv2.meanStdDev(real_b, mask=mask)
@@ -200,8 +220,8 @@ def get_single_value(filtered_result, level_cnt, img):
     return value[0][0], std[0][0]
 
 
-def get_left_right_value(filtered_result, level_cnt, img, neg_ref_value=32,
-                         pos_ref_value=255):
+def get_left_right_mask(filtered_result, level_cnt, img, neg_ref_value=32,
+                        pos_ref_value=255):
     (big_external_contours, small_external_contours, inner_contours,
      fake_inner, inner_background) = filtered_result
     # target, ref
@@ -219,13 +239,7 @@ def get_left_right_value(filtered_result, level_cnt, img, neg_ref_value=32,
                          related_inner_bg, level_cnt)
         left_right_mask.append(mask)
     left_mask, right_mask = left_right_mask
-    masked_left = cv2.bitwise_and(img, img, mask=left_mask)
-    cv2.imshow('mask', 255 - masked_left)
-    masked_right = cv2.bitwise_and(img, img, mask=right_mask)
-    cv2.imshow('mask2', 255 - masked_right)
-    left_result = calculate(img, left_mask, neg_ref_value, pos_ref_value)
-    right_result = calculate(img, right_mask, neg_ref_value, pos_ref_value)
-    return left_result, right_result
+    return left_mask, right_mask
 
 
 def get_input_demo(input_file='example/ninanjie-ok-75-2.tif'):
@@ -568,7 +582,8 @@ def calculate(original_image, target_mask, neg_ref_value=0, pos_ref_value=255):
     """
     # todo: remove green
     # blue express area
-    revert_b, amplified_neg_ref = get_real_blue(original_image, neg_ref_value, pos_ref_value)
+    revert_b, amplified_neg_ref = get_real_blue(original_image, neg_ref_value,
+                                                pos_ref_value)
     cv2.imshow('x', revert_b)
     cv2.waitKey()
     zero = np.zeros(original_image.shape[:2], dtype='uint8')
@@ -595,8 +610,6 @@ def calculate(original_image, target_mask, neg_ref_value=0, pos_ref_value=255):
               'total_std, total_area, express_ratio, express_flatten')
     log.debug(result)
     return result
-
-
 
 
 def split_image(left_cnt, right_cnt, img):
