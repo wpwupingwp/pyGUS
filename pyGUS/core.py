@@ -129,7 +129,9 @@ def mode_4(negative, positive, targets):
     name_dict = {'neg': ('Negative reference', (0, 0, 255)),
                  'pos': ('Positive reference', (0, 255, 0)),
                  'target': ('Target region', (255, 0, 0))}
-    all_result = []
+    neg_result = []
+    pos_result = []
+    target_results = []
     for target in targets:
         img = cv2.imread(target)
         cropped1, mask1 = select_polygon(img, name_dict['neg'][0],
@@ -157,16 +159,9 @@ def mode_4(negative, positive, targets):
         pos_ref_value += pos_std
         log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
         result = calculate(img, mask3, neg_ref_value, pos_ref_value)
-        all_result.append(result)
+        target_results.append(result)
     # todo: move to main()
-    all_result.append(pos_result)
-    all_result.append(neg_result)
-    targets.extend(('Positive reference', 'Negative reference'))
-    svg_file = Path(targets[0]).with_suffix('.svg')
-    csv_file = svg_file.with_suffix('.csv')
-    draw(all_result, targets, svg_file)
-    write_csv(all_result, targets, csv_file)
-    return svg_file, csv_file
+    return neg_result, pos_result, target_results
 
 
 def fill_mask(shape, target, fake_inner, inner_background, level_cnt):
@@ -729,17 +724,25 @@ def write_csv(all_result, targets, out):
 
 def main():
     arg = parse_arg()
-    negative, positive, images = get_input(arg)
+    negative, positive, targets = get_input(arg)
     log.info('Welcome to pyGUS.')
     log.info(f'Running mode {arg.mode}...')
     log.info(f'Negative reference image: {negative}')
     log.info(f'Positive reference image: {positive}')
     log.info('Target images:')
-    for i in images:
+    for i in targets:
         log.info(f'\t{i}')
     run_dict = {1: mode_1, 2: mode_2, 3: mode_3, 4: mode_4}
     run = run_dict[arg.mode]
-    run(negative, positive, images)
+    neg_result, pos_result, target_results = run(negative, positive, targets)
+    # add ref results
+    target_results.append(pos_result)
+    target_results.append(neg_result)
+    targets.extend(('Positive reference', 'Negative reference'))
+    svg_file = Path(targets[0]).with_suffix('.svg')
+    csv_file = svg_file.with_suffix('.csv')
+    draw(target_results, targets, svg_file)
+    write_csv(target_results, targets, csv_file)
     # todo: need rewrite
     return
 
