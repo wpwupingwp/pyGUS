@@ -196,7 +196,8 @@ def color_calibrate(img_file: Path):
     out_img = cv2.cvtColor(out, cv2.COLOR_RGB2BGR)
     img_file_p = Path(img_file)
     # png is lossless compress
-    out_img_file = img_file_p.with_name(img_file_p.stem+'_calibrated.png')
+    out_img_file = img_file_p.parent / img_file_p.with_name(
+        img_file_p.stem+'_calibrated.png')
     cv2.imwrite(str(out_img_file), out_img)
     log.debug(f'Calibrated image {out_img_file}')
     cv2.imshow('original', img)

@@ -82,9 +82,12 @@ def mode_1(negative, positive, targets):
         target_result = calculate(img, target_mask, neg_ref_value=neg_ref_value,
                                   pos_ref_value=pos_ref_value)
         target_results.append(target_result)
-    neg_img_dict = draw_images(neg_filtered_result, neg_level_cnt, neg_img)
-    pos_img_dict = draw_images(pos_filtered_result, pos_level_cnt, pos_img)
-    neg_img_dict = draw_images(neg_filtered_result, neg_level_cnt, neg_img)
+        img_dict = draw_images(filtered_result, level_cnt, img, simple=True,
+                               filename=target)
+    neg_img_dict = draw_images(neg_filtered_result, neg_level_cnt, neg_img,
+                               simple=True, filename=negative)
+    pos_img_dict = draw_images(pos_filtered_result, pos_level_cnt, pos_img,
+                               simple=True, filename=positive)
     return neg_result, pos_result, target_results
 
 
@@ -112,6 +115,10 @@ def mode_2(ref1, ref2, targets):
         target_result = calculate(img, target_mask, neg_ref_value=neg_ref_value,
                                   pos_ref_value=pos_ref_value)
         target_results.append(target_result)
+        img_dict = draw_images(filtered_result, level_cnt, img, simple=True,
+                               filename=target)
+    ref_img_dict = draw_images(ref_filtered_result, ref_level_cnt, ref_img,
+                               simple=True, filename=negative_positive_ref)
     masked_neg = cv2.bitwise_and(ref_img, ref_img, mask=neg_mask)
     cv2.imshow('masked negative reference', 255 - masked_neg)
     masked_pos = cv2.bitwise_and(ref_img, ref_img, mask=pos_mask)
@@ -149,6 +156,12 @@ def mode_3(ref1, ref2, targets):
             filtered_result, level_cnt, img, neg_ref_value, pos_ref_value)
         target_result = calculate(img, left_mask, neg_ref_value, pos_ref_value)
         target_results.append(target_result)
+        img_dict = draw_images(filtered_result, level_cnt, img, simple=True,
+                               filename=target)
+    neg_img_dict = draw_images(neg_filtered_result, neg_level_cnt, neg_img,
+                               simple=True, filename=negative)
+    pos_img_dict = draw_images(pos_filtered_result, pos_level_cnt, pos_img,
+                               simple=True, filename=positive)
     return neg_result, pos_result, target_results
 
 
@@ -493,7 +506,7 @@ def hex2bgr(hex_str: str):
     return b, g, r
 
 
-def draw_images(filtered_result, level_cnt, img):
+def draw_images(filtered_result, level_cnt, img, simple=False, filename=None):
     def drawing(levels, color):
         line_width = 2
         for level in levels:
@@ -503,26 +516,24 @@ def draw_images(filtered_result, level_cnt, img):
             x, y, w, h = cv2.boundingRect(cnt)
             approx = cv2.approxPolyDP(cnt, arc_epsilon, True)
             # b,g,r
-            cv2.rectangle(img_dict['rectangle'], (x, y), (x + w, y + h),
-                          color, line_width)
-            cv2.drawContours(img_dict['min_area_rectangle'],
-                             [min_rect_points], 0, color, line_width)
-            cv2.polylines(img_dict['polyline'], [approx], True, color,
-                          line_width)
             cv2.fillPoly(img_dict['fill'], [approx], color)
-
+            if not simple:
+                cv2.rectangle(img_dict['rectangle'], (x, y), (x + w, y + h),
+                              color, line_width)
+                cv2.drawContours(img_dict['min_area_rectangle'],
+                                 [min_rect_points], 0, color, line_width)
+                cv2.polylines(img_dict['polyline'], [approx], True, color,
+                              line_width)
     (big_external_contours, small_external_contours, inner_contours,
      fake_inner, real_background) = filtered_result
     arc_epsilon = get_arc_epsilon(level_cnt[big_external_contours[0]])
-    b, g, r = cv2.split(img)
     img_dict = dict()
-    img_dict['raw'] = img
-    img_dict['rectangle'] = img.copy()
-    img_dict['min_area_rectangle'] = img.copy()
-    img_dict['polyline'] = img.copy()
     img_dict['fill'] = img.copy()
-    # img_dict['edge'] = edge
-    # img_dict['revert_blue'] = 255 - b
+    if not simple:
+        img_dict['raw'] = img
+        img_dict['rectangle'] = img.copy()
+        img_dict['min_area_rectangle'] = img.copy()
+        img_dict['polyline'] = img.copy()
     color_blue = hex2bgr('#4d96ff')
     color_green = hex2bgr('#6bcb77')
     color_red = hex2bgr('#ff6b6b')
@@ -534,6 +545,12 @@ def draw_images(filtered_result, level_cnt, img):
     drawing(real_background, color_red)
     for title, image in img_dict.items():
         cv2.imshow(title, image)
+        if filename is not None:
+            out_p = Path(filename)
+            out_filename = str(out_p.parent / out_p.with_name(
+                f'{out_p.stem}_{title}.png'))
+            cv2.imwrite(out_filename, image)
+            log.debug(f'Write image {out_filename}')
     return img_dict
 
 
