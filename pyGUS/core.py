@@ -26,7 +26,7 @@ def parse_arg():
     arg = argparse.ArgumentParser(prog='pyGUS')
     arg.add_argument('-ref1', help='Negative expression reference image')
     arg.add_argument('-ref2', help='Positive expression reference image')
-    arg.add_argument('-images', nargs='*', help='Input images')
+    arg.add_argument('-images', nargs='*', help='Input images', required=True)
     arg.add_argument('-mode', type=int, choices=(1, 2, 3, 4), required=True,
                      help=('1. single target in each image; '
                            '2. target and positive reference in each image; '
@@ -212,33 +212,24 @@ def get_input(arg):
     negative = None
     positive = None
     targets = None
-    if arg.mode == 1:
-        if arg.ref1 is None or arg.ref2 is None or arg.images is None:
-            message = ('Bad input. Mode 1 requires ref1 (negative) and ref2 '
-                       '(positive)')
+    if arg.mode in (1, 3):
+        if arg.ref1 is None or arg.ref2 is None:
+            message = (f'Bad input. Mode {arg.mode} requires ref1 (negative) '
+                       f'and ref2 (positive)')
     elif arg.mode == 2:
-        if arg.ref1 is None or arg.images is None:
+        if arg.ref1 is None:
             message = 'Bad input. Mode 2 requires ref1 (negative vs positive)'
-    elif arg.mode == 3:
-        if arg.ref1 is None or arg.images is None:
-            message = 'Bad input. Mode 1 requires ref1 (negative)'
-    elif arg.mode == 4:
-        if arg.images is None:
-            message = 'Bad input. Mode 4 requires images'
-    else:
-        message = 'bad condition'
     if message is not None:
         log.error(message)
         raise SystemExit(-1)
-    else:
-        targets = [Path(i).absolute() for i in arg.images]
-        targets = [if_exist(i) for i in targets]
-        if arg.mode != 4:
-            negative = Path(arg.ref1).absolute()
-            negative = if_exist(negative)
-        if arg.mode == 1:
-            positive = Path(arg.ref2).absolute()
-            positive = if_exist(positive)
+    targets = [Path(i).absolute() for i in arg.images]
+    targets = [if_exist(i) for i in targets]
+    if arg.mode != 4:
+        negative = Path(arg.ref1).absolute()
+        negative = if_exist(negative)
+    if arg.mode == 1:
+        positive = Path(arg.ref2).absolute()
+        positive = if_exist(positive)
     return negative, positive, targets
 
 
