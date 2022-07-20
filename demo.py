@@ -1,10 +1,13 @@
 #!/usr/bin/python3
 
+import tkinter as tk
+import tkinter.font as font
+from tkinter import ttk
+
 from subprocess import run
 from platform import system
 from pyGUS import core, utils
 import cv2
-from pyGUS import core
 
 if system() == 'Windows':
     python = 'python'
@@ -45,16 +48,35 @@ def demo_show_colorchecker():
 
 
 def demo_show_detected_checker():
-    utils.color_calibrate('s2.png', draw_detected=True)
-    cv2.waitKey()
-    cv2.destroyAllWindows()
     utils.color_calibrate('card2.jpeg', draw_detected=True)
     cv2.waitKey()
     cv2.destroyAllWindows()
+    utils.color_calibrate('s2.png', draw_detected=True)
+    cv2.waitKey()
+    cv2.destroyAllWindows()
+    utils.color_calibrate('example/color/DSC_8081.JPG', draw_detected=True)
+    cv2.waitKey()
+    cv2.destroyAllWindows()
 
 
-demo_show_detected_checker()
-demo_mode_3()
-demo_mode_4()
-demo_old()
-demo_show_colorchecker()
+def main():
+    root = tk.Tk()
+    default_font = font.nametofont('TkDefaultFont')
+    default_font.config(size=24)
+    b1 = ttk.Button(root, text='Old', command=demo_old)
+    b1.pack()
+    b2 = ttk.Button(root, text='Mode 3', command=demo_mode_3)
+    b2.pack()
+    b3 = ttk.Button(root, text='Mode 4', command=demo_mode_4)
+    b3.pack()
+    b4 = ttk.Button(root, text='Show colorchecker',
+                    command=demo_show_colorchecker)
+    b4.pack()
+    b5 = ttk.Button(root, text='Show deteced colorchecker',
+                    command=demo_show_detected_checker)
+    b5.pack()
+    root.mainloop()
+
+
+if __name__ == '__main__':
+    main()
