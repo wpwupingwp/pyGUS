@@ -7,7 +7,7 @@ import numpy as np
 from pyGUS.global_vars import log
 
 
-def if_exist(filename):
+def if_exist(filename) -> str:
     """
     Args:
         filename: Path
@@ -195,8 +195,15 @@ def color_calibrate(img_file: Path):
     out = out.astype(np.uint8)
     out_img = cv2.cvtColor(out, cv2.COLOR_RGB2BGR)
     img_file_p = Path(img_file)
-    out_img_file = img_file_p.with_stem(img_file_p.stem+'_calibrated')
-    return out_img_file
+    # png is lossless compress
+    out_img_file = img_file_p.with_name(img_file_p.stem+'_calibrated.png')
+    cv2.imwrite(str(out_img_file), out_img)
+    log.debug(f'Calibrated image {out_img_file}')
+    cv2.imshow('original', img)
+    cv2.imshow('calibrated', out_img)
+    cv2.waitKey()
+    cv2.destroyAllWindows()
+    return str(out_img_file)
 
 
 if __name__ == '__main__':

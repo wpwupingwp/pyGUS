@@ -50,12 +50,12 @@ def get_input(arg):
     if message is not None:
         log.error(message)
         raise SystemExit(-1)
-    targets = [Path(i).absolute() for i in arg.images]
-    targets = [if_exist(i) for i in targets]
+    targets_ = [Path(i).absolute() for i in arg.images]
+    targets = [if_exist(i) for i in targets_]
     if arg.mode != 4:
         negative = Path(arg.ref1).absolute()
         negative = if_exist(negative)
-    if arg.mode == 1:
+    if arg.mode not in (2, 4):
         positive = Path(arg.ref2).absolute()
         positive = if_exist(positive)
     return negative, positive, targets
@@ -164,25 +164,33 @@ def mode_4(negative, positive, targets):
     return svg_file, csv_file
 
 
+def fill_mask(shape, target, fake_inner, inner_background, level_cnt):
+    cnt = level_cnt[target]
+    white = (255, 255, 255)
+    black = (0, 0, 0)
+    mask = np.zeros(shape, dtype='uint8')
+    # related inner background
+    cv2.fillPoly(mask, [cnt], white)
+    for i in fake_inner:
+        cnt_i = level_cnt[i]
+        cv2.fillPoly(mask, [cnt_i], white)
+    for j in inner_background:
+        cnt_j = level_cnt[j]
+        cv2.fillPoly(mask, [cnt_j], black)
+    return mask
+
+
 def get_single_value(filtered_result, level_cnt, img):
     # big_external + fake_inner - inner_background
     (big_external_contours, small_external_contours, inner_contours,
      fake_inner, inner_background) = filtered_result
     target = big_external_contours[0]
     self_index = target[4]
-    cnt = level_cnt[target]
     log.debug(f'self {self_index}')
     log.debug(f'contour area {cv2.contourArea(target)}')
-    mask = np.zeros(img.shape[:2], dtype='uint8')
-    # related inner background
-    cv2.fillPoly(mask, [cnt], (255, 255, 255))
-    for i in fake_inner:
-        cnt_i = level_cnt[i]
-        cv2.fillPoly(mask, [cnt_i], (255, 255, 255))
-    for j in inner_background:
-        cnt_j = level_cnt[j]
-        cv2.fillPoly(mask, [cnt_j], (0, 0, 0))
-    masked = cv2.bitwise_and(img, img, mask=mask)
+    mask = fill_mask(img.shape[:2], target, fake_inner, inner_background,
+                     level_cnt)
+    # masked = cv2.bitwise_and(img, img, mask=mask)
     cv2.imshow('mask', revert(mask))
     real_b = get_real_blue(img)
     value, std = cv2.meanStdDev(real_b, mask=mask)
@@ -203,20 +211,13 @@ def get_left_right_value(filtered_result, level_cnt, img):
     left_right_mask = list()
     for target in left, right:
         self_index = target[4]
-        cnt = level_cnt[target]
         log.debug(f'target {target}')
         log.debug(f'self {self_index}')
-        mask = np.zeros(img.shape[:2], dtype='uint8')
         related_fake_inner = [i for i in fake_inner if i[3] == self_index]
         # related inner background
         related_inner_bg = [i for i in inner_background if i[3] == target[4]]
-        cv2.fillPoly(mask, [cnt], (255, 255, 255))
-        for i in related_fake_inner:
-            cnt_i = level_cnt[i]
-            cv2.fillPoly(mask, [cnt_i], (255, 255, 255))
-        for j in related_inner_bg:
-            cnt_j = level_cnt[j]
-            cv2.fillPoly(mask, [cnt_j], (0, 0, 0))
+        mask = fill_mask(img.shape[:2], target, related_fake_inner,
+                         related_inner_bg, level_cnt)
         left_right_mask.append(mask)
     left_mask, right_mask = left_right_mask
     masked_left = cv2.bitwise_and(img, img, mask=left_mask)
