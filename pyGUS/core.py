@@ -82,6 +82,9 @@ def mode_1(negative, positive, targets):
         target_result = calculate(img, target_mask, neg_ref_value=neg_ref_value,
                                   pos_ref_value=pos_ref_value)
         target_results.append(target_result)
+    neg_img_dict = draw_images(neg_filtered_result, neg_level_cnt, neg_img)
+    pos_img_dict = draw_images(pos_filtered_result, pos_level_cnt, pos_img)
+    neg_img_dict = draw_images(neg_filtered_result, neg_level_cnt, neg_img)
     return neg_result, pos_result, target_results
 
 
@@ -149,7 +152,7 @@ def mode_3(ref1, ref2, targets):
     return neg_result, pos_result, target_results
 
 
-def mode_4(negative, positive, targets):
+def mode_4(ref1, ref2, targets):
     """
     Select region manually
     """
@@ -764,7 +767,7 @@ def demo():
     # .png .jpg .tiff
     filtered_result, level_cnt, img = get_contour(input_file)
     img_dict = draw_images(filtered_result, level_cnt, img)
-    a, b, c, d = get_left_right_value(filtered_result, level_cnt, img)
+    a, b, c, d = get_left_right_mask(filtered_result, level_cnt, img)
     x = ['target', 'reference']
     print(a, b, c, d)
     # from matplotlib import pyplot as plt
