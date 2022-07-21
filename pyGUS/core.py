@@ -22,7 +22,13 @@ from pyGUS.utils import select_polygon, color_calibrate, if_exist
 # todo: manuscript
 
 
-def parse_arg():
+def parse_arg(arg_str):
+    """
+    Args:
+        arg_str: None or str
+    Returns:
+        arg.parse_args()
+    """
     arg = argparse.ArgumentParser(prog='pyGUS')
     arg.add_argument('-ref1', help='Negative expression reference image')
     arg.add_argument('-ref2', help='Positive expression reference image')
@@ -32,7 +38,10 @@ def parse_arg():
                            '2. target and positive reference in each image; '
                            '3. target and colorchecker in each image; '
                            '4. manually select target regions with mouse'))
-    return arg.parse_args()
+    if arg_str is None:
+        return arg.parse_args()
+    else:
+        return arg.parse_args(arg_str.split(' '))
 
 
 def get_input(arg):
@@ -48,8 +57,7 @@ def get_input(arg):
         if arg.ref1 is None:
             message = 'Bad input. Mode 2 requires ref1 (negative vs positive)'
     if message is not None:
-        log.error(message)
-        raise SystemExit(-1)
+        return negative, positive, targets, message
     targets_ = [Path(i).absolute() for i in arg.images]
     targets = [if_exist(i) for i in targets_]
     if arg.mode != 4:
@@ -58,7 +66,7 @@ def get_input(arg):
     if arg.mode not in (2, 4):
         positive = Path(arg.ref2).absolute()
         positive = if_exist(positive)
-    return negative, positive, targets
+    return negative, positive, targets, message
 
 
 def mode_1(negative, positive, targets):
@@ -256,22 +264,6 @@ def get_left_right_mask(filtered_result, level_cnt, img):
         left_right_mask.append(mask)
     left_mask, right_mask = left_right_mask
     return left_mask, right_mask
-
-
-def get_input_demo(input_file='example/ninanjie-ok-75-2.tif'):
-    # input_path = 'example/example.png'
-    # input_file = 'example/ninanjie-0-1.tif'
-    input_file = 'example/ninanjie-75-2.tif'
-    # input_file = 'example/ninanjie-50-1.tif'
-    # input_file = 'example/ninanjie-ok-75-2.tif'
-    # input_file = 'example/ninanjie-100-1.tif'
-    # input_file = 'example/ninanjie-2h-3.tif'
-    # input_file = 'example/ersuiduanbingcao-BD15-27.png'
-    # input_file = 'example/ersuiduanbingcao-DH39-5.png'
-    # input_file = 'example/ersuiduanbingcao-ok-BD7-4.png'
-    img = cv2.imread(input_file)
-    log.info(f'Image size: {img.shape}')
-    return input_file
 
 
 def auto_Canny(image, sigma=0.33):
@@ -744,10 +736,15 @@ def write_csv(all_result, targets, out):
     return out
 
 
-def main():
-    arg = parse_arg()
-    negative, positive, targets = get_input(arg)
+def main(arg_str=None):
     log.info('Welcome to pyGUS.')
+    arg = parse_arg(arg_str)
+    negative, positive, targets, message = get_input(arg)
+    svg_file = None
+    csv_file = None
+    if message is not None:
+        log.error(message)
+        return svg_file, csv_file, message
     log.info(f'Running mode {arg.mode}...')
     log.info(f'Negative reference image: {negative}')
     log.info(f'Positive reference image: {positive}')
@@ -768,7 +765,7 @@ def main():
     # todo: need rewrite
     cv2.waitKey()
     cv2.destroyAllWindows()
-    return
+    return svg_file, csv_file, None
 
 
 if __name__ == '__main__':
