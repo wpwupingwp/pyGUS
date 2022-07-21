@@ -12,7 +12,8 @@ from pyGUS.utils import select_polygon, color_calibrate, if_exist
 
 
 # todo: color correction test
-# todo mode 1 test: single object for each image, manually select positive, negative, targets
+# todo mode 1 test: single object for each image, manually select positive,
+#  negative, targets
 # todo mode 2 test: two object for each image, left target, right positive
 # todo mode 3 test: two object for each image, left target, right color card
 # todo: mode 4 test: select area by mouse
@@ -126,7 +127,8 @@ def mode_2(ref1, ref2, targets):
         img_dict = draw_images(filtered_result, level_cnt, img, show=False,
                                simple=True, filename=target)
     ref_img_dict = draw_images(ref_filtered_result, ref_level_cnt, ref_img,
-                               show=False, simple=True, filename=negative_positive_ref)
+                               show=False, simple=True,
+                               filename=negative_positive_ref)
     masked_neg = cv2.bitwise_and(ref_img, ref_img, mask=neg_mask)
     cv2.imshow('masked negative reference', 255 - masked_neg)
     masked_pos = cv2.bitwise_and(ref_img, ref_img, mask=pos_mask)
@@ -212,7 +214,6 @@ def mode_4(ref1, ref2, targets):
         log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
         result = calculate(img, mask3, neg_ref_value, pos_ref_value)
         target_results.append(result)
-    # todo: move to main()
     return neg_result, pos_result, target_results
 
 
@@ -289,13 +290,19 @@ def threshold(img, show=False):
     equalize = cv2.equalizeHist(blur)
     r, t = cv2.threshold(equalize, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     edge = auto_Canny(255 - th2)
-    # cv2.floodFill(th2, mask=mask, seedPoint=(1,1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
+    # cv2.floodFill(th2, mask=mask, seedPoint=(1,1), newVal=0, loDiff=3,
+    # upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
     log.debug(f'h * w: {h} {w}')
-    # cv2.floodFill(th2, mask=mask, seedPoint=(1,h-1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
-    # cv2.floodFill(th2, mask=mask, seedPoint=(w-1,1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
-    # cv2.floodFill(th2, mask=mask, seedPoint=(w-1,h-1), newVal=0, loDiff=3, upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
-    # th3 = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 4)
-    # th3 = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    # cv2.floodFill(th2, mask=mask, seedPoint=(1,h-1), newVal=0, loDiff=3,
+    # upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
+    # cv2.floodFill(th2, mask=mask, seedPoint=(w-1,1), newVal=0, loDiff=3,
+    # upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
+    # cv2.floodFill(th2, mask=mask, seedPoint=(w-1,h-1), newVal=0, loDiff=3,
+    # upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
+    # th3 = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
+    # cv2.THRESH_BINARY, 11, 4)
+    # th3 = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+    # cv2.THRESH_BINARY, 11, 2)
     th3 = auto_Canny(th2)
     if show:
         cv2.imshow('th2', th2)
@@ -366,7 +373,8 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
     log.info(f'Whole image: Area {img.size}\t '
              f'Whole blue mean {cv2.meanStdDev(revert_b)}')
     log.info(
-        f'Background masked: Area {bg_size}\t Blue mean {bg_blue_mean}+-std{bg_blue_std}')
+        f'Background masked: Area {bg_size}\t Blue mean {bg_blue_mean}'
+        f'+-std{bg_blue_std}')
     for big in big_external_contours:
         # [next, previous, child, parent, self]
         big_cnt = level_cnt[big]
@@ -509,6 +517,7 @@ def draw_images(filtered_result, level_cnt, img, simple=False, show=False,
                                  [min_rect_points], 0, color, line_width)
                 cv2.polylines(img_dict['polyline'], [approx], True, color,
                               line_width)
+
     (big_external_contours, small_external_contours, inner_contours,
      fake_inner, real_background) = filtered_result
     arc_epsilon = get_arc_epsilon(level_cnt[big_external_contours[0]])
@@ -762,7 +771,6 @@ def main(arg_str=None):
     csv_file = svg_file.with_suffix('.csv')
     draw(target_results, targets, svg_file)
     write_csv(target_results, targets, csv_file)
-    # todo: need rewrite
     cv2.waitKey()
     cv2.destroyAllWindows()
     return svg_file, csv_file, None
