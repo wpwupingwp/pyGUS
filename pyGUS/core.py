@@ -677,7 +677,7 @@ def get_contour(img_file):
     return filtered_result, level_cnt, img
 
 
-def draw(results, labels, out):
+def write_image(results, labels, out):
     """
     violin outer and inner
     or violin outer and bar inner
@@ -779,9 +779,12 @@ def main(arg_str=None):
     target_results.append(pos_result)
     target_results.append(neg_result)
     targets.extend(('Positive reference', 'Negative reference'))
-    svg_file = Path(targets[0]).with_suffix('.svg')
+    svg_file = Path(targets[0]).parent / 'Result.svg'
     csv_file = svg_file.with_suffix('.csv')
-    draw(target_results, targets, svg_file)
+    for f in svg_file, csv_file:
+        if f.exists():
+            log.warning(f'{f} exists, overwrite.')
+    write_image(target_results, targets, svg_file)
     write_csv(target_results, targets, csv_file)
     # wait or poll
     cv2.pollKey()
