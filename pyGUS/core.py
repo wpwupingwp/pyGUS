@@ -695,7 +695,8 @@ def draw(results, labels, out):
         figsize = (10, 6)
     else:
         figsize = (10*len(labels)/5, 6)
-    fig, ax1 = plt.subplots(figsize=figsize)
+    fig = plt.figure(figsize=figsize)
+    ax1 = plt.subplot(211)
     _ = results[0][-1]
     x = np.arange(1, len(labels) + 1)
     width = 0.2
@@ -714,7 +715,8 @@ def draw(results, labels, out):
     ax1.set_yticks(np.linspace(0, 256, 9))
     short_labels = [Path(i).name for i in labels]
     ax1.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
-    ax2 = ax1.twinx()
+    # ax2 = ax1.twinx()
+    ax2 = plt.subplot(212)
     rects1 = ax2.bar(x - width / 2, [i[2] for i in results], width=width,
                      alpha=0.4,
                      color='green', label='Express area')
@@ -724,11 +726,9 @@ def draw(results, labels, out):
     ax2.bar_label(rects1, padding=3)
     ax2.bar_label(rects2, padding=3)
     ax2.legend()
-    ax2.set_ylabel('Area')
+    ax2.set_ylabel('Area (pixels)')
     plt.tight_layout()
-    # todo: not show in formal version
     plt.savefig(out)
-    plt.show()
     log.info(f'Output figure file {out}')
     return out
 
