@@ -239,8 +239,8 @@ def get_single_mask(filtered_result, level_cnt, img):
      fake_inner, inner_background) = filtered_result
     target = big_external_contours[0]
     self_index = target[4]
-    log.debug(f'self {self_index}')
-    log.debug(f'contour area {cv2.contourArea(target)}')
+    # log.debug(f'self {self_index}')
+    # log.debug(f'contour area {cv2.contourArea(target)}')
     mask = fill_mask(img.shape[:2], target, fake_inner, inner_background,
                      level_cnt)
     return mask
@@ -334,9 +334,9 @@ def revert(img):
 
 
 def get_arc_epsilon(max_contour, ratio=0.0001):
-    log.info(f'Max contour area: {cv2.contourArea(max_contour)}')
+    log.debug(f'Max contour area: {cv2.contourArea(max_contour)}')
     arc_epsilon = cv2.arcLength(max_contour, True) * ratio
-    log.info(f'Set arc epsilon: {arc_epsilon}')
+    log.debug(f'Set arc epsilon: {arc_epsilon}')
     return arc_epsilon
 
 
@@ -370,9 +370,9 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
                                                      external_contours,
                                                      level_cnt)
     bg_size = img.size
-    log.info(f'Whole image: Area {img.size}\t '
-             f'Whole blue mean {cv2.meanStdDev(revert_b)}')
-    log.info(
+    log.debug(f'Whole image: Area {img.size}\t '
+              f'Whole blue mean {cv2.meanStdDev(revert_b)}')
+    log.debug(
         f'Background masked: Area {bg_size}\t Blue mean {bg_blue_mean}'
         f'+-std{bg_blue_std}')
     for big in big_external_contours:
@@ -382,8 +382,8 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
         self_index = big[4]
         related_inner = [i for i in inner_contours if i[3] == self_index]
         big_blue_mean, big_blue_std = get_contour_value(revert_b, big_cnt)
-        log.info(f'Big region: No.{big[-1]}\t '
-                 f'Area: {big_area}\t Blue mean: {big_blue_mean}')
+        # log.debug(f'Big region: No.{big[-1]}\t '
+        # f'Area: {big_area}\t Blue mean: {big_blue_mean}')
         for inner in related_inner:
             inner_cnt = level_cnt[inner]
             inner_cnt_area = cv2.contourArea(inner_cnt)
@@ -391,9 +391,10 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
             # inner_green_mean, _ = get_contour_value(revert_g, inner_cnt)
             # assert big_blue_mean > bg_blue_mean
             if inner_blue_mean < bg_blue_mean + bg_blue_std:
-                log.debug(f'Real background region: No.{inner[-1]}\t '
-                          f'Area: {inner_cnt_area}\t'
-                          f'Blue mean: {inner_blue_mean}')
+                pass
+                # log.debug(f'Real background region: No.{inner[-1]}\t '
+                #           f'Area: {inner_cnt_area}\t'
+                #           f'Blue mean: {inner_blue_mean}')
                 inner_background.append(inner)
             elif inner_blue_mean >= big_blue_mean:
                 fake_inner.append(inner)
@@ -598,8 +599,8 @@ def calculate(original_image, target_mask, neg_ref_value=0, pos_ref_value=255):
     # blue express area
     revert_b, amplified_neg_ref = get_real_blue(original_image, neg_ref_value,
                                                 pos_ref_value)
-    cv2.imshow('revert blue', revert_b)
-    cv2.waitKey()
+    # cv2.imshow('revert blue', revert_b)
+    # cv2.waitKey()
     express_mask = target_mask.copy()
     express_mask[revert_b <= amplified_neg_ref] = 0
     # cv2.contourArea return different value with np.count_nonzero
@@ -762,6 +763,7 @@ def main(arg_str=None):
         log.info(f'\t{i}')
     run_dict = {1: mode_1, 2: mode_2, 3: mode_3, 4: mode_4}
     run = run_dict[arg.mode]
+    log.info('Analyzing...')
     neg_result, pos_result, target_results = run(negative, positive, targets)
     # add ref results
     target_results.append(pos_result)
@@ -771,8 +773,11 @@ def main(arg_str=None):
     csv_file = svg_file.with_suffix('.csv')
     draw(target_results, targets, svg_file)
     write_csv(target_results, targets, csv_file)
-    cv2.waitKey()
+    # wait or poll
+    cv2.pollKey()
     cv2.destroyAllWindows()
+    log.info('Done.')
+    # todo: 30s per image, too slow
     return svg_file, csv_file, None
 
 

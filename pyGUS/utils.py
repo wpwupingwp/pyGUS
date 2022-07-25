@@ -182,7 +182,7 @@ def color_calibrate(img_file: Path, draw_detected=False):
     # ccm = model.getCCM()
     loss = model.getLoss()
     # print('ccm', ccm)
-    log.info(f'Color calibration loss {loss}')
+    log.debug(f'Color calibration loss {loss}')
     # calibrate
     img2 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img2 = img2.astype(np.float64)
