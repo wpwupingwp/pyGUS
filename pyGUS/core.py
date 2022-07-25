@@ -340,12 +340,16 @@ def get_arc_epsilon(max_contour, ratio=0.0001):
     return arc_epsilon
 
 
-def get_contour_value(img, cnt):
+def get_contour_value(img, cnt, with_std=True):
     # fill contour with (255,255,255)
     mask = np.zeros(img.shape[:2], dtype='uint8')
     cv2.fillPoly(mask, [cnt], (255, 255, 255))
-    mean, std = cv2.meanStdDev(img, mask=mask)
-    return mean[0][0], std[0][0]
+    if with_std:
+        mean, std = cv2.meanStdDev(img, mask=mask)
+        return mean[0][0], std[0][0]
+    else:
+        mean = cv2.mean(img, mask=mask)
+        return mean[0], 0
 
 
 def get_background_value(img, external_contours, level_cnt):
@@ -386,8 +390,9 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
         # f'Area: {big_area}\t Blue mean: {big_blue_mean}')
         for inner in related_inner:
             inner_cnt = level_cnt[inner]
-            inner_cnt_area = cv2.contourArea(inner_cnt)
-            inner_blue_mean, _ = get_contour_value(revert_b, inner_cnt)
+            # inner_cnt_area = cv2.contourArea(inner_cnt)
+            inner_blue_mean, _ = get_contour_value(revert_b, inner_cnt,
+                                                   with_std=False)
             # inner_green_mean, _ = get_contour_value(revert_g, inner_cnt)
             # assert big_blue_mean > bg_blue_mean
             if inner_blue_mean < bg_blue_mean + bg_blue_std:

@@ -156,6 +156,7 @@ def color_calibrate(img_file: Path, draw_detected=False):
     Returns:
         calibrated:
     """
+    log.info(f'Calibrate {img_file}')
     img = cv2.imread(img_file)
     detector = cv2.mcc.CCheckerDetector_create()
     detector.process(img, cv2.mcc.MCC24)
