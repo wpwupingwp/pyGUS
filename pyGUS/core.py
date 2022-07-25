@@ -691,7 +691,11 @@ def draw(results, labels, out):
     # result = (express_value, express_std, express_area, total_value,
     # total_std, total_area, express_ratio, express_flatten)
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    fig, ax1 = plt.subplots(figsize=(10, 6))
+    if len(labels) <= 5:
+        figsize = (10, 6)
+    else:
+        figsize = (10*len(labels)/5, 6)
+    fig, ax1 = plt.subplots(figsize=figsize)
     _ = results[0][-1]
     x = np.arange(1, len(labels) + 1)
     width = 0.2
