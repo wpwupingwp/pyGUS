@@ -187,6 +187,7 @@ def mode_4(ref1, ref2, targets):
     pos_result = []
     target_results = []
     for target in targets:
+        log.info(f'Analyzing {target}')
         img = cv2.imread(target)
         cropped1, mask1 = select_polygon(img, name_dict['neg'][0],
                                          name_dict['neg'][1])
@@ -651,6 +652,7 @@ def split_image(left_cnt, right_cnt, img):
 
 def get_contour(img_file):
     # .png .jpg .tiff
+    log.info(f'Analyzing {img_file}')
     img = cv2.imread(img_file)
     # show_channel(img)
     b, g, r = cv2.split(img)
@@ -725,6 +727,7 @@ def draw(results, labels, out):
                      color='orange', label='Total area')
     ax2.bar_label(rects1, padding=3)
     ax2.bar_label(rects2, padding=3)
+    ax2.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
     ax2.legend()
     ax2.set_ylabel('Area (pixels)')
     plt.tight_layout()
@@ -772,7 +775,6 @@ def main(arg_str=None):
         log.info(f'\t{i}')
     run_dict = {1: mode_1, 2: mode_2, 3: mode_3, 4: mode_4}
     run = run_dict[arg.mode]
-    log.info('Analyzing...')
     neg_result, pos_result, target_results = run(negative, positive, targets)
     # add ref results
     target_results.append(pos_result)
