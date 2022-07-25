@@ -130,9 +130,9 @@ def mode_2(ref1, ref2, targets):
                                show=False, simple=True,
                                filename=negative_positive_ref)
     masked_neg = cv2.bitwise_and(ref_img, ref_img, mask=neg_mask)
-    cv2.imshow('masked negative reference', 255 - masked_neg)
+    # cv2.imshow('masked negative reference', 255 - masked_neg)
     masked_pos = cv2.bitwise_and(ref_img, ref_img, mask=pos_mask)
-    cv2.imshow('masked positive reference', 255 - masked_pos)
+    # cv2.imshow('masked positive reference', 255 - masked_pos)
     return neg_result, pos_result, target_results
 
 
@@ -166,13 +166,12 @@ def mode_3(ref1, ref2, targets):
                                                     img)
         target_result = calculate(img, left_mask, neg_ref_value, pos_ref_value)
         target_results.append(target_result)
-        img_dict = draw_images(filtered_result, level_cnt, img, show=True,
-                               # todo: show for demo only
+        img_dict = draw_images(filtered_result, level_cnt, img, show=False,
                                simple=True, filename=target)
     neg_img_dict = draw_images(neg_filtered_result, neg_level_cnt, neg_img,
-                               show=True, simple=True, filename=negative)
+                               show=False, simple=True, filename=negative)
     pos_img_dict = draw_images(pos_filtered_result, pos_level_cnt, pos_img,
-                               show=True, simple=True, filename=positive)
+                               show=False, simple=True, filename=positive)
     return neg_result, pos_result, target_results
 
 

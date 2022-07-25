@@ -200,8 +200,8 @@ def color_calibrate(img_file: Path, draw_detected=False):
         img_file_p.stem + '_calibrated.png')
     cv2.imwrite(str(out_img_file), out_img)
     log.debug(f'Calibrated image {out_img_file}')
-    cv2.imshow('original', img)
-    cv2.imshow('calibrated', out_img)
+    # cv2.imshow('original', img)
+    # cv2.imshow('calibrated', out_img)
     return str(out_img_file)
 
 
