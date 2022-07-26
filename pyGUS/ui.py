@@ -325,7 +325,6 @@ class RootMode1:
         self.Button2.configure(command=run(
             mode=1, ref1=self.ref1, ref2=self.ref2,
             images=self.images))
-        # mode=1, ref1=self.Entry1, ref2=self.Entry1_1, images=self.Entry1_1_1))
         self.Button2.configure(compound='left')
         self.Button2.configure(foreground="#000000")
         self.Button2.configure(highlightbackground="#edf0f3")
@@ -359,7 +358,7 @@ class RootMode2:
 
         self.top = top
         self.ref1 = tk.StringVar()
-        self.targets = tk.StringVar()
+        self.images = tk.StringVar()
 
         self.Frame1_2 = tk.Frame(self.top)
         self.Frame1_2.place(relx=0.04, rely=0.1, relheight=0.2, relwidth=0.92)
@@ -401,7 +400,8 @@ class RootMode2:
         self.Button1.configure(activebackground="beige")
         self.Button1.configure(activeforeground="#000000")
         self.Button1.configure(background="#edf0f3")
-        self.Button1.configure(command=open_file)
+        self.Button1.configure(command=open_file(
+            'Left negative reference, right positive reference', self.Entry1))
         self.Button1.configure(compound='left')
         self.Button1.configure(foreground="#000000")
         self.Button1.configure(highlightbackground="#edf0f3")
@@ -429,40 +429,42 @@ class RootMode2:
         self.Label1_1_1.configure(highlightcolor="black")
         self.Label1_1_1.configure(text='''Target images''')
         self.tooltip_font = "TkDefaultFont"
-        self.Label1_1_1_tooltip = \
-            ToolTip(self.Label1_1_1, self.tooltip_font,
-                    '''Left target, right positive reference''')
+        self.Label1_1_1_tooltip = ToolTip(
+            self.Label1_1_1, self.tooltip_font,
+            'Left target, right positive reference')
+
+        self.Entry2 = tk.Entry(self.Frame1_1_1_1)
+        self.Entry2.place(relx=0.396, rely=0.125, height=30, relwidth=0.435)
+        self.Entry2.configure(background="white")
+        self.Entry2.configure(font="TkFixedFont")
+        self.Entry2.configure(foreground="#000000")
+        self.Entry2.configure(highlightbackground="#d9d9d9")
+        self.Entry2.configure(highlightcolor="black")
+        self.Entry2.configure(insertbackground="black")
+        self.Entry2.configure(selectbackground="#c4c4c4")
+        self.Entry2.configure(selectforeground="black")
+        self.Entry2.configure(textvariable=self.images)
 
         self.Button1_2_1 = tk.Button(self.Frame1_1_1_1)
         self.Button1_2_1.place(relx=0.833, rely=0.125, height=30, width=70)
         self.Button1_2_1.configure(activebackground="beige")
         self.Button1_2_1.configure(activeforeground="#000000")
         self.Button1_2_1.configure(background="#edf0f3")
-        self.Button1_2_1.configure(command=open_file)
+        self.Button1_2_1.configure(command=open_file(
+            'Target images', self.Entry2, single=False))
         self.Button1_2_1.configure(compound='left')
         self.Button1_2_1.configure(foreground="#000000")
         self.Button1_2_1.configure(highlightbackground="#edf0f3")
         self.Button1_2_1.configure(highlightcolor="black")
         self.Button1_2_1.configure(text='''Open''')
 
-        self.Entry1_1_1 = tk.Entry(self.Frame1_1_1_1)
-        self.Entry1_1_1.place(relx=0.396, rely=0.125, height=30, relwidth=0.435)
-        self.Entry1_1_1.configure(background="white")
-        self.Entry1_1_1.configure(font="TkFixedFont")
-        self.Entry1_1_1.configure(foreground="#000000")
-        self.Entry1_1_1.configure(highlightbackground="#d9d9d9")
-        self.Entry1_1_1.configure(highlightcolor="black")
-        self.Entry1_1_1.configure(insertbackground="black")
-        self.Entry1_1_1.configure(selectbackground="#c4c4c4")
-        self.Entry1_1_1.configure(selectforeground="black")
-        self.Entry1_1_1.configure(textvariable=self.targets)
-
         self.Button2 = tk.Button(self.top)
         self.Button2.place(relx=0.38, rely=0.7, height=40, width=100)
         self.Button2.configure(activebackground="beige")
         self.Button2.configure(activeforeground="#000000")
         self.Button2.configure(background="#edf0f3")
-        self.Button2.configure(command=run_mode2)
+        self.Button2.configure(command=run(mode=2, ref1=self.ref1,
+                                           images=self.images))
         self.Button2.configure(compound='left')
         self.Button2.configure(foreground="#000000")
         self.Button2.configure(highlightbackground="#edf0f3")
@@ -1076,17 +1078,17 @@ def run_mode4():
 def run(mode, ref1=None, ref2=None, images=None):
     # call core
     def call():
-        if (ref1 is not None and ref1.get() == '' or
-                ref2 is not None and ref2.get() == '' or
-                images is not None and images.get() == ''):
-            messagebox.showerror(message='Empty input!')
-            return
+        s_list = ['', '', '']
+        for index, entry in enumerate([ref1, ref2, images]):
+            if entry is not None:
+                if entry.get() == '':
+                    messagebox.showerror(message='Empty input!')
+                    return
+                else:
+                    s_list[index] = entry.get()
 
-        ref1_s = ref1.get() if ref1 is not None else ''
-        ref2_s = ref2.get() if ref1 is not None else ''
-        images_s = images.get() if ref1 is not None else ''
-        cmd = (f'-mode {mode} -ref1 {ref1_s} -ref2 {ref2_s} '
-               f'-targets {images_s}')
+        cmd = (f'-mode {mode} -ref1 {s_list[0]} -ref2 {s_list[1]} '
+               f'-targets {s_list[2]}')
         messagebox.showinfo(message=cmd)
     return call
 
