@@ -952,12 +952,12 @@ def run(mode, ref1=None, ref2=None, images=None):
         cmd = (f'-mode {mode} -ref1 {s_list[0]} -ref2 {s_list[1]} '
                f'-images {s_list[2]}')
         messagebox.showinfo(message=cmd)
-        core.main(cmd)
-
+        # todo: scroll text
+        core.cli_main(cmd)
     return call
 
 
-def main():
+def ui_main():
     global root
     root = tk.Tk()
     root.protocol('WM_DELETE_WINDOW', root.destroy)
@@ -969,4 +969,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    ui_main()

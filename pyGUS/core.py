@@ -757,7 +757,7 @@ def write_csv(all_result, targets, out):
     return out
 
 
-def main(arg_str=None):
+def cli_main(arg_str=None):
     log.info('Welcome to pyGUS.')
     arg = parse_arg(arg_str)
     negative, positive, targets, message = get_input(arg)
@@ -795,4 +795,4 @@ def main(arg_str=None):
 
 
 if __name__ == '__main__':
-    main()
+    cli_main()
