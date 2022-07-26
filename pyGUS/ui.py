@@ -11,6 +11,8 @@ import logging
 import queue
 import tkinter as tk
 import tkinter.ttk as ttk
+from pkg_resources import resource_filename
+import webbrowser
 
 from global_vars import log, FMT, DATEFMT
 
@@ -904,11 +906,16 @@ def open_file(title, entry, single=True):
 
 
 def checker():
-    pass
+    file = resource_filename('pyGUS', '1200dpi.png')
+    messagebox.showinfo(message=file)
+    webbrowser.open('file:///'+file, new=2)
+    return
 
 
 def help():
-    pass
+    url = 'https://github.com/wpwupingwp/pyGUS'
+    webbrowser.open(url, new=2)
+    return
 
 
 def run_mode1():
