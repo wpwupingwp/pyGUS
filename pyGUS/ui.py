@@ -15,7 +15,8 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import webbrowser
 
-from global_vars import log, FMT, DATEFMT
+from pyGUS.global_vars import log, FMT, DATEFMT
+from pyGUS import core
 
 
 class Root:
@@ -949,9 +950,9 @@ def run(mode, ref1=None, ref2=None, images=None):
                     s_list[index] = entry.get()
 
         cmd = (f'-mode {mode} -ref1 {s_list[0]} -ref2 {s_list[1]} '
-               f'-targets {s_list[2]}')
+               f'-images {s_list[2]}')
         messagebox.showinfo(message=cmd)
-        # todo: call
+        core.main(cmd)
 
     return call
 
