@@ -131,7 +131,7 @@ class Root:
         self.b_help.configure(text='''Help''')
 
 
-class root_mode1:
+class RootMode1:
     def __init__(self, top=None):
         '''This class configures and populates the toplevel window.
            top is the toplevel containing window.'''
@@ -158,9 +158,7 @@ class root_mode1:
         self.top = top
         self.ref1 = tk.StringVar()
         self.ref2 = tk.StringVar()
-        self.targets = tk.StringVar()
-        self.che48 = tk.IntVar()
-
+        self.images = tk.StringVar()
         self.Frame1 = tk.Frame(self.top)
         self.Frame1.place(relx=0.04, rely=0.071, relheight=0.143,
                           relwidth=0.912)
@@ -200,7 +198,8 @@ class root_mode1:
         self.Button1.configure(activebackground="beige")
         self.Button1.configure(activeforeground="#000000")
         self.Button1.configure(background="#edf0f3")
-        self.Button1.configure(command=open_file)
+        self.Button1.configure(command=open_file('Negative reference image',
+                                                 self.Entry1))
         self.Button1.configure(compound='left')
         self.Button1.configure(foreground="#000000")
         self.Button1.configure(highlightbackground="#edf0f3")
@@ -228,18 +227,6 @@ class root_mode1:
         self.Label1_1.configure(highlightcolor="black")
         self.Label1_1.configure(text='''Positive reference image''')
 
-        self.Button1_2 = tk.Button(self.Frame1_1)
-        self.Button1_2.place(relx=0.833, rely=0.125, height=30, width=70)
-        self.Button1_2.configure(activebackground="beige")
-        self.Button1_2.configure(activeforeground="#000000")
-        self.Button1_2.configure(background="#edf0f3")
-        self.Button1_2.configure(command=open_file)
-        self.Button1_2.configure(compound='left')
-        self.Button1_2.configure(foreground="#000000")
-        self.Button1_2.configure(highlightbackground="#edf0f3")
-        self.Button1_2.configure(highlightcolor="black")
-        self.Button1_2.configure(text='''Open''')
-
         self.Entry1_1 = tk.Entry(self.Frame1_1)
         self.Entry1_1.place(relx=0.395, rely=0.125, height=30, relwidth=0.439)
         self.Entry1_1.configure(background="white")
@@ -251,6 +238,19 @@ class root_mode1:
         self.Entry1_1.configure(selectbackground="#c4c4c4")
         self.Entry1_1.configure(selectforeground="black")
         self.Entry1_1.configure(textvariable=self.ref2)
+
+        self.Button1_2 = tk.Button(self.Frame1_1)
+        self.Button1_2.place(relx=0.833, rely=0.125, height=30, width=70)
+        self.Button1_2.configure(activebackground="beige")
+        self.Button1_2.configure(activeforeground="#000000")
+        self.Button1_2.configure(background="#edf0f3")
+        self.Button1_2.configure(command=open_file('Positive reference image',
+                                                   self.Entry1_1))
+        self.Button1_2.configure(compound='left')
+        self.Button1_2.configure(foreground="#000000")
+        self.Button1_2.configure(highlightbackground="#edf0f3")
+        self.Button1_2.configure(highlightcolor="black")
+        self.Button1_2.configure(text='''Open''')
 
         self.Frame1_1_1 = tk.Frame(self.top)
         self.Frame1_1_1.place(relx=0.04, rely=0.5, relheight=0.143
@@ -273,18 +273,6 @@ class root_mode1:
         self.Label1_1_1.configure(highlightcolor="black")
         self.Label1_1_1.configure(text='''Target images''')
 
-        self.Button1_2_1 = tk.Button(self.Frame1_1_1)
-        self.Button1_2_1.place(relx=0.833, rely=0.125, height=30, width=70)
-        self.Button1_2_1.configure(activebackground="beige")
-        self.Button1_2_1.configure(activeforeground="#000000")
-        self.Button1_2_1.configure(background="#edf0f3")
-        self.Button1_2_1.configure(command=open_file)
-        self.Button1_2_1.configure(compound='left')
-        self.Button1_2_1.configure(foreground="#000000")
-        self.Button1_2_1.configure(highlightbackground="#edf0f3")
-        self.Button1_2_1.configure(highlightcolor="black")
-        self.Button1_2_1.configure(text='''Open''')
-
         self.Entry1_1_1 = tk.Entry(self.Frame1_1_1)
         self.Entry1_1_1.place(relx=0.395, rely=0.125, height=30, relwidth=0.439)
         self.Entry1_1_1.configure(background="white")
@@ -295,11 +283,26 @@ class root_mode1:
         self.Entry1_1_1.configure(insertbackground="black")
         self.Entry1_1_1.configure(selectbackground="#c4c4c4")
         self.Entry1_1_1.configure(selectforeground="black")
-        self.Entry1_1_1.configure(textvariable=self.targets)
+        self.Entry1_1_1.configure(textvariable=self.images)
 
+        self.Button1_2_1 = tk.Button(self.Frame1_1_1)
+        self.Button1_2_1.place(relx=0.833, rely=0.125, height=30, width=70)
+        self.Button1_2_1.configure(activebackground="beige")
+        self.Button1_2_1.configure(activeforeground="#000000")
+        self.Button1_2_1.configure(background="#edf0f3")
+        self.Button1_2_1.configure(command=open_file(
+            'Target images', self.Entry1_1_1, single=False))
+        self.Button1_2_1.configure(compound='left')
+        self.Button1_2_1.configure(foreground="#000000")
+        self.Button1_2_1.configure(highlightbackground="#edf0f3")
+        self.Button1_2_1.configure(highlightcolor="black")
+        self.Button1_2_1.configure(text='''Open''')
+
+        self.che48 = tk.IntVar()
         self.Checkbutton1 = tk.Checkbutton(self.top)
-        self.Checkbutton1.place(relx=0.04, rely=0.75, relheight=0.079
-                                , relwidth=0.44)
+        # hide, not implemented
+        # self.Checkbutton1.place(relx=0.04, rely=0.75, relheight=0.079,
+        #                         relwidth=0.44)
         self.Checkbutton1.configure(activebackground="beige")
         self.Checkbutton1.configure(activeforeground="#000000")
         self.Checkbutton1.configure(anchor='w')
@@ -314,11 +317,15 @@ class root_mode1:
         self.Checkbutton1.configure(variable=self.che48)
 
         self.Button2 = tk.Button(self.top)
-        self.Button2.place(relx=0.58, rely=0.732, height=38, width=107)
+        # self.Button2.place(relx=0.58, rely=0.732, height=38, width=107)
+        self.Button2.place(relx=0.38, rely=0.732, height=40, width=100)
         self.Button2.configure(activebackground="beige")
         self.Button2.configure(activeforeground="#000000")
         self.Button2.configure(background="#edf0f3")
-        self.Button2.configure(command=run_mode1)
+        self.Button2.configure(command=run(
+            mode=1, ref1=self.ref1, ref2=self.ref2,
+            images=self.images))
+        # mode=1, ref1=self.Entry1, ref2=self.Entry1_1, images=self.Entry1_1_1))
         self.Button2.configure(compound='left')
         self.Button2.configure(foreground="#000000")
         self.Button2.configure(highlightbackground="#edf0f3")
@@ -326,10 +333,10 @@ class root_mode1:
         self.Button2.configure(text='''Run''')
 
 
-class root_mode2:
+class RootMode2:
     def __init__(self, top=None):
-        '''This class configures and populates the toplevel window.
-           top is the toplevel containing window.'''
+        """This class configures and populates the toplevel window.
+           top is the toplevel containing window."""
         _bgcolor = '#edf0f3'  # Closest X11 color: 'gray94'
         _fgcolor = '#000000'  # X11 color: 'black'
         _compcolor = 'gray40'  # X11 color: #666666
@@ -374,9 +381,8 @@ class root_mode2:
         self.Label1.configure(highlightcolor="black")
         self.Label1.configure(text='''Reference image''')
         self.tooltip_font = "TkDefaultFont"
-        self.Label1_tooltip = \
-            ToolTip(self.Label1, self.tooltip_font,
-                    '''Left negative, right positive''')
+        self.Label1_tooltip = ToolTip(self.Label1, self.tooltip_font,
+                                      'Left negative, right positive')
 
         self.Entry1 = tk.Entry(self.Frame1_2)
         self.Entry1.place(relx=0.396, rely=0.125, height=30, relwidth=0.435)
@@ -1046,13 +1052,12 @@ def help():
 def run_mode1():
     global _top2, _w2
     _top2 = tk.Toplevel(root)
-    _w2 = root_mode1(_top2)
+    _w2 = RootMode1(_top2)
 
 def run_mode2():
-    # Creates a toplevel widget.
     global _top3, _w3
     _top3 = tk.Toplevel(root)
-    _w3 = root_mode2(_top3)
+    _w3 = RootMode2(_top3)
 
 
 def run_mode3():
@@ -1068,9 +1073,22 @@ def run_mode4():
     _w5 = root_1_1_1(_top5)
 
 
-def run():
+def run(mode, ref1=None, ref2=None, images=None):
     # call core
-    pass
+    def call():
+        if (ref1 is not None and ref1.get() == '' or
+                ref2 is not None and ref2.get() == '' or
+                images is not None and images.get() == ''):
+            messagebox.showerror(message='Empty input!')
+            return
+
+        ref1_s = ref1.get() if ref1 is not None else ''
+        ref2_s = ref2.get() if ref1 is not None else ''
+        images_s = images.get() if ref1 is not None else ''
+        cmd = (f'-mode {mode} -ref1 {ref1_s} -ref2 {ref2_s} '
+               f'-targets {images_s}')
+        messagebox.showinfo(message=cmd)
+    return call
 
 
 def main(*args):
