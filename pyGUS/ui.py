@@ -131,7 +131,7 @@ class Root:
         self.b_help.configure(text='''Help''')
 
 
-class RootMode1:
+class Mode1:
     def __init__(self, top=None):
         '''This class configures and populates the toplevel window.
            top is the toplevel containing window.'''
@@ -332,7 +332,7 @@ class RootMode1:
         self.Button2.configure(text='''Run''')
 
 
-class RootMode2:
+class Mode2:
     def __init__(self, top=None):
         """This class configures and populates the toplevel window.
            top is the toplevel containing window."""
@@ -472,7 +472,7 @@ class RootMode2:
         self.Button2.configure(text='''Run''')
 
 
-class RootMode3:
+class Mode3:
     def __init__(self, top=None):
         _bgcolor = '#edf0f3'  # Closest X11 color: 'gray94'
         _fgcolor = '#000000'  # X11 color: 'black'
@@ -663,7 +663,7 @@ class RootMode3:
         self.Button2.configure(text='''Run''')
 
 
-class RootMode4:
+class Mode4:
     def __init__(self, top=None):
         '''This class configures and populates the toplevel window.
            top is the toplevel containing window.'''
@@ -1056,25 +1056,25 @@ def help():
 def run_mode1():
     global _top2, _w2
     _top2 = tk.Toplevel(root)
-    _w2 = RootMode1(_top2)
+    _w2 = Mode1(_top2)
 
 def run_mode2():
     global _top3, _w3
     _top3 = tk.Toplevel(root)
-    _w3 = RootMode2(_top3)
+    _w3 = Mode2(_top3)
 
 
 def run_mode3():
     # Creates a toplevel widget.
     global _top4, _w4
     _top4 = tk.Toplevel(root)
-    _w4 = RootMode3(_top4)
+    _w4 = Mode3(_top4)
 
 
 def run_mode4():
     global _top5, _w5
     _top5 = tk.Toplevel(root)
-    _w5 = RootMode4(_top5)
+    _w5 = Mode4(_top5)
 
 
 def run(mode, ref1=None, ref2=None, images=None):
