@@ -472,10 +472,8 @@ class RootMode2:
         self.Button2.configure(text='''Run''')
 
 
-class root_mode3:
+class RootMode3:
     def __init__(self, top=None):
-        '''This class configures and populates the toplevel window.
-           top is the toplevel containing window.'''
         _bgcolor = '#edf0f3'  # Closest X11 color: 'gray94'
         _fgcolor = '#000000'  # X11 color: 'black'
         _compcolor = 'gray40'  # X11 color: #666666
@@ -499,7 +497,7 @@ class root_mode3:
         self.top = top
         self.ref1 = tk.StringVar()
         self.ref2 = tk.StringVar()
-        self.targets = tk.StringVar()
+        self.images = tk.StringVar()
 
         self.Frame1_3 = tk.Frame(self.top)
         self.Frame1_3.place(relx=0.04, rely=0.071, relheight=0.143
@@ -522,9 +520,9 @@ class root_mode3:
         self.Label1.configure(highlightcolor="black")
         self.Label1.configure(text='''Negative reference image''')
         self.tooltip_font = "TkDefaultFont"
-        self.Label1_tooltip = \
-            ToolTip(self.Label1, self.tooltip_font,
-                    '''Left negative reference, right color checker''')
+        self.Label1_tooltip = ToolTip(
+            self.Label1, self.tooltip_font,
+            'Left negative reference, right color checker')
 
         self.Entry1 = tk.Entry(self.Frame1_3)
         self.Entry1.place(relx=0.395, rely=0.125, height=30, relwidth=0.439)
@@ -543,7 +541,8 @@ class root_mode3:
         self.Button1.configure(activebackground="beige")
         self.Button1.configure(activeforeground="#000000")
         self.Button1.configure(background="#edf0f3")
-        self.Button1.configure(command=open_file)
+        self.Button1.configure(command=open_file(
+            'Negative reference with color checker', self.Entry1))
         self.Button1.configure(compound='left')
         self.Button1.configure(foreground="#000000")
         self.Button1.configure(highlightbackground="#edf0f3")
@@ -571,21 +570,9 @@ class root_mode3:
         self.Label1_1.configure(highlightcolor="black")
         self.Label1_1.configure(text='''Positive reference image''')
         self.tooltip_font = "TkDefaultFont"
-        self.Label1_1_tooltip = \
-            ToolTip(self.Label1_1, self.tooltip_font,
-                    '''Left positive reference, right color checker''')
-
-        self.Button1_2 = tk.Button(self.Frame1_1_2)
-        self.Button1_2.place(relx=0.833, rely=0.125, height=30, width=70)
-        self.Button1_2.configure(activebackground="beige")
-        self.Button1_2.configure(activeforeground="#000000")
-        self.Button1_2.configure(background="#edf0f3")
-        self.Button1_2.configure(command=open_file)
-        self.Button1_2.configure(compound='left')
-        self.Button1_2.configure(foreground="#000000")
-        self.Button1_2.configure(highlightbackground="#edf0f3")
-        self.Button1_2.configure(highlightcolor="black")
-        self.Button1_2.configure(text='''Open''')
+        self.Label1_1_tooltip = ToolTip(
+            self.Label1_1, self.tooltip_font,
+            'Left positive reference, right color checker')
 
         self.Entry1_1 = tk.Entry(self.Frame1_1_2)
         self.Entry1_1.place(relx=0.395, rely=0.125, height=30, relwidth=0.439)
@@ -598,6 +585,19 @@ class root_mode3:
         self.Entry1_1.configure(selectbackground="#c4c4c4")
         self.Entry1_1.configure(selectforeground="black")
         self.Entry1_1.configure(textvariable=self.ref2)
+
+        self.Button1_2 = tk.Button(self.Frame1_1_2)
+        self.Button1_2.place(relx=0.833, rely=0.125, height=30, width=70)
+        self.Button1_2.configure(activebackground="beige")
+        self.Button1_2.configure(activeforeground="#000000")
+        self.Button1_2.configure(background="#edf0f3")
+        self.Button1_2.configure(command=open_file(
+            'Positive reference with color checker', self.Entry1_1))
+        self.Button1_2.configure(compound='left')
+        self.Button1_2.configure(foreground="#000000")
+        self.Button1_2.configure(highlightbackground="#edf0f3")
+        self.Button1_2.configure(highlightcolor="black")
+        self.Button1_2.configure(text='''Open''')
 
         self.Frame1_1_1_2 = tk.Frame(self.top)
         self.Frame1_1_1_2.place(relx=0.04, rely=0.571, relheight=0.143
@@ -620,21 +620,9 @@ class root_mode3:
         self.Label1_1_1.configure(highlightcolor="black")
         self.Label1_1_1.configure(text='''Target images''')
         self.tooltip_font = "TkDefaultFont"
-        self.Label1_1_1_tooltip = \
-            ToolTip(self.Label1_1_1, self.tooltip_font,
-                    '''Left target, right color checker''')
-
-        self.Button1_2_1 = tk.Button(self.Frame1_1_1_2)
-        self.Button1_2_1.place(relx=0.833, rely=0.125, height=30, width=70)
-        self.Button1_2_1.configure(activebackground="beige")
-        self.Button1_2_1.configure(activeforeground="#000000")
-        self.Button1_2_1.configure(background="#edf0f3")
-        self.Button1_2_1.configure(command=open_file)
-        self.Button1_2_1.configure(compound='left')
-        self.Button1_2_1.configure(foreground="#000000")
-        self.Button1_2_1.configure(highlightbackground="#edf0f3")
-        self.Button1_2_1.configure(highlightcolor="black")
-        self.Button1_2_1.configure(text='''Open''')
+        self.Label1_1_1_tooltip = ToolTip(
+            self.Label1_1_1, self.tooltip_font,
+            'Left target, right color checker')
 
         self.Entry1_1_1 = tk.Entry(self.Frame1_1_1_2)
         self.Entry1_1_1.place(relx=0.395, rely=0.125, height=30, relwidth=0.439)
@@ -646,14 +634,28 @@ class root_mode3:
         self.Entry1_1_1.configure(insertbackground="black")
         self.Entry1_1_1.configure(selectbackground="#c4c4c4")
         self.Entry1_1_1.configure(selectforeground="black")
-        self.Entry1_1_1.configure(textvariable=self.targets)
+        self.Entry1_1_1.configure(textvariable=self.images)
+
+        self.Button1_2_1 = tk.Button(self.Frame1_1_1_2)
+        self.Button1_2_1.place(relx=0.833, rely=0.125, height=30, width=70)
+        self.Button1_2_1.configure(activebackground="beige")
+        self.Button1_2_1.configure(activeforeground="#000000")
+        self.Button1_2_1.configure(background="#edf0f3")
+        self.Button1_2_1.configure(command=open_file(
+            'Left target, right color checker', self.Entry1_1_1, single=False))
+        self.Button1_2_1.configure(compound='left')
+        self.Button1_2_1.configure(foreground="#000000")
+        self.Button1_2_1.configure(highlightbackground="#edf0f3")
+        self.Button1_2_1.configure(highlightcolor="black")
+        self.Button1_2_1.configure(text='''Open''')
 
         self.Button2 = tk.Button(self.top)
         self.Button2.place(relx=0.38, rely=0.786, height=40, width=100)
         self.Button2.configure(activebackground="beige")
         self.Button2.configure(activeforeground="#000000")
         self.Button2.configure(background="#edf0f3")
-        self.Button2.configure(command=run_mode3)
+        self.Button2.configure(command=run(
+            mode=3, ref1=self.ref1, ref2=self.ref2, images=self.images))
         self.Button2.configure(compound='left')
         self.Button2.configure(foreground="#000000")
         self.Button2.configure(highlightbackground="#edf0f3")
@@ -661,7 +663,7 @@ class root_mode3:
         self.Button2.configure(text='''Run''')
 
 
-class root_1_1_1:
+class RootMode4:
     def __init__(self, top=None):
         '''This class configures and populates the toplevel window.
            top is the toplevel containing window.'''
@@ -1066,13 +1068,13 @@ def run_mode3():
     # Creates a toplevel widget.
     global _top4, _w4
     _top4 = tk.Toplevel(root)
-    _w4 = root_mode3(_top4)
+    _w4 = RootMode3(_top4)
 
 
 def run_mode4():
     global _top5, _w5
     _top5 = tk.Toplevel(root)
-    _w5 = root_1_1_1(_top5)
+    _w5 = RootMode4(_top5)
 
 
 def run(mode, ref1=None, ref2=None, images=None):
@@ -1090,6 +1092,7 @@ def run(mode, ref1=None, ref2=None, images=None):
         cmd = (f'-mode {mode} -ref1 {s_list[0]} -ref2 {s_list[1]} '
                f'-targets {s_list[2]}')
         messagebox.showinfo(message=cmd)
+        # todo: call
     return call
 
 
