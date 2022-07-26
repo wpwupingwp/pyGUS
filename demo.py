@@ -48,10 +48,10 @@ def demo_show_colorchecker():
 
 
 def demo_show_detected_checker():
-    utils.color_calibrate('card2.jpeg', draw_detected=True)
+    utils.color_calibrate('example/color/card2.jpeg', draw_detected=True)
     cv2.waitKey()
     cv2.destroyAllWindows()
-    utils.color_calibrate('s2.png', draw_detected=True)
+    utils.color_calibrate('example/color/s2.png', draw_detected=True)
     cv2.waitKey()
     cv2.destroyAllWindows()
     utils.color_calibrate('example/color/DSC_8081.JPG', draw_detected=True)
