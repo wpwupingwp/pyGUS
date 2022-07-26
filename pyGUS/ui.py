@@ -5,13 +5,14 @@
 #    Jul 26, 2022 04:34:12 PM CST  platform: Darwin
 
 from logging import handlers
+from pkg_resources import resource_filename
 from time import time
 from tkinter import filedialog, messagebox, scrolledtext
 import logging
 import queue
+import sys
 import tkinter as tk
 import tkinter.ttk as ttk
-from pkg_resources import resource_filename
 import webbrowser
 
 from global_vars import log, FMT, DATEFMT
@@ -134,8 +135,6 @@ class Root:
 
 class Mode1:
     def __init__(self, top=None):
-        '''This class configures and populates the toplevel window.
-           top is the toplevel containing window.'''
         _bgcolor = '#edf0f3'  # Closest X11 color: 'gray94'
         _fgcolor = '#000000'  # X11 color: 'black'
         _compcolor = 'gray40'  # X11 color: #666666
@@ -208,8 +207,8 @@ class Mode1:
         self.Button1.configure(text='''Open''')
 
         self.Frame2 = tk.Frame(self.top)
-        self.Frame2.place(relx=0.04, rely=0.286, relheight=0.143
-                          , relwidth=0.912)
+        self.Frame2.place(relx=0.04, rely=0.286, relheight=0.143,
+                          relwidth=0.912)
         self.Frame2.configure(relief='groove')
         self.Frame2.configure(borderwidth="2")
         self.Frame2.configure(relief="groove")
@@ -254,8 +253,7 @@ class Mode1:
         self.Button2.configure(text='''Open''')
 
         self.Frame3 = tk.Frame(self.top)
-        self.Frame3.place(relx=0.04, rely=0.5, relheight=0.143
-                          , relwidth=0.912)
+        self.Frame3.place(relx=0.04, rely=0.5, relheight=0.143, relwidth=0.912)
         self.Frame3.configure(relief='groove')
         self.Frame3.configure(borderwidth="2")
         self.Frame3.configure(relief="groove")
@@ -410,8 +408,7 @@ class Mode2:
         self.Button1.configure(text='''Open''')
 
         self.Frame2 = tk.Frame(self.top)
-        self.Frame2.place(relx=0.04, rely=0.4, relheight=0.2
-                          , relwidth=0.92)
+        self.Frame2.place(relx=0.04, rely=0.4, relheight=0.2, relwidth=0.92)
         self.Frame2.configure(relief='groove')
         self.Frame2.configure(borderwidth="2")
         self.Frame2.configure(relief="groove")
@@ -501,8 +498,8 @@ class Mode3:
         self.images = tk.StringVar()
 
         self.Frame1 = tk.Frame(self.top)
-        self.Frame1.place(relx=0.04, rely=0.071, relheight=0.143
-                          , relwidth=0.912)
+        self.Frame1.place(relx=0.04, rely=0.071, relheight=0.143,
+                          relwidth=0.912)
         self.Frame1.configure(relief='groove')
         self.Frame1.configure(borderwidth="2")
         self.Frame1.configure(relief="groove")
@@ -551,8 +548,8 @@ class Mode3:
         self.Button1.configure(text='''Open''')
 
         self.Frame2 = tk.Frame(self.top)
-        self.Frame2.place(relx=0.04, rely=0.321, relheight=0.143
-                          , relwidth=0.912)
+        self.Frame2.place(relx=0.04, rely=0.321, relheight=0.143,
+                          relwidth=0.912)
         self.Frame2.configure(relief='groove')
         self.Frame2.configure(borderwidth="2")
         self.Frame2.configure(relief="groove")
@@ -601,8 +598,8 @@ class Mode3:
         self.Button2.configure(text='''Open''')
 
         self.Frame3 = tk.Frame(self.top)
-        self.Frame3.place(relx=0.04, rely=0.571, relheight=0.143
-                          , relwidth=0.912)
+        self.Frame3.place(relx=0.04, rely=0.571, relheight=0.143,
+                          relwidth=0.912)
         self.Frame3.configure(relief='groove')
         self.Frame3.configure(borderwidth="2")
         self.Frame3.configure(relief="groove")
@@ -666,8 +663,6 @@ class Mode3:
 
 class Mode4:
     def __init__(self, top=None):
-        '''This class configures and populates the toplevel window.
-           top is the toplevel containing window.'''
         _bgcolor = '#edf0f3'  # Closest X11 color: 'gray94'
         _fgcolor = '#000000'  # X11 color: 'black'
         _compcolor = 'gray40'  # X11 color: #666666
@@ -692,8 +687,8 @@ class Mode4:
         self.images = tk.StringVar()
 
         self.Frame = tk.Frame(self.top)
-        self.Frame.place(relx=0.04, rely=0.167, relheight=0.333
-                         , relwidth=0.912)
+        self.Frame.place(relx=0.04, rely=0.167, relheight=0.333,
+                         relwidth=0.912)
         self.Frame.configure(relief='groove')
         self.Frame.configure(borderwidth="2")
         self.Frame.configure(relief="groove")
@@ -755,8 +750,6 @@ class Mode4:
 
 class Scroll:
     def __init__(self, top=None):
-        '''This class configures and populates the toplevel window.
-           top is the toplevel containing window.'''
         _bgcolor = '#edf0f3'  # Closest X11 color: 'gray94'
         _fgcolor = '#000000'  # X11 color: 'black'
         _compcolor = 'gray40'  # X11 color: #666666
@@ -772,8 +765,8 @@ class Scroll:
             self.style.theme_use('winnative')
         self.style.configure('.', background=_bgcolor)
         self.style.configure('.', foreground=_fgcolor)
-        self.style.map('.', background=
-        [('selected', _compcolor), ('active', _ana2color)])
+        self.style.map('.', background=[('selected', _compcolor),
+                                        ('active', _ana2color)])
 
         top.geometry("500x200+2225+402")
         top.minsize(72, 15)
