@@ -199,7 +199,7 @@ def mode_4(ref1, ref2, targets):
         cropped3, mask3 = select_polygon(img_copy, name_dict['target'][0],
                                          name_dict['target'][1])
         try:
-            cv2.imshow('Press any key to continue', img_copy)
+            cv2.imshow('Press space bar to continue', img_copy)
             cv2.waitKey()
             cv2.destroyAllWindows()
         except cv2.error:

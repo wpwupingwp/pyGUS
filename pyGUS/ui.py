@@ -974,7 +974,7 @@ def run(mode, ref1=None, ref2=None, images=None):
 
         cmd = (f'-mode {mode} -ref1 {s_list[0]} -ref2 {s_list[1]} '
                f'-images {s_list[2]}')
-        messagebox.showinfo(message=cmd)
+        # messagebox.showinfo(message=cmd)
         # todo: opencv imshow could only run in main thread
         # r = threading.Thread(target=thread_wrap, args=(core.cli_main, cmd),
         # daemon=True)
