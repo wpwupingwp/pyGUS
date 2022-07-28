@@ -768,7 +768,6 @@ def cli_main(arg_str=None):
     csv_file = None
     if message is not None:
         show_error(message)
-        # return svg_file, csv_file, message
     log.info(f'Running mode {arg.mode}...')
     log.info(f'Negative reference image: {negative}')
     log.info(f'Positive reference image: {positive}')

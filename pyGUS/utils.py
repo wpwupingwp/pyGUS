@@ -21,8 +21,10 @@ def if_exist(filename) -> str:
 
 
 def show_error(msg):
+    # show error message and quit
     if global_vars.is_gui:
         from tkinter import messagebox
+        msg = msg + '   QUIT NOW    '
         messagebox.showerror(message=msg)
     else:
         log.error(msg)
