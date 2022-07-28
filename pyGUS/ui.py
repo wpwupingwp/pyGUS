@@ -11,13 +11,14 @@ from tkinter import filedialog, messagebox, scrolledtext
 import logging
 import queue
 import sys
-import threading
 import tkinter as tk
 import tkinter.ttk as ttk
 import webbrowser
 
-from pyGUS.global_vars import log, FMT, DATEFMT, is_gui
-from pyGUS import core
+from pyGUS import core, global_vars
+
+
+log = global_vars.log
 
 
 def thread_wrap(function, arg_str):
@@ -820,7 +821,8 @@ class Scroll:
         for i in log.handlers:
             log.removeHandler(i)
         log_queue = queue.Queue()
-        formatter = logging.Formatter(fmt=FMT, datefmt=DATEFMT)
+        formatter = logging.Formatter(fmt=global_vars.FMT,
+                                      datefmt=global_vars.DATEFMT)
         # do not add formatter to queuehandler, or msg will be formatted twice
         queue_handler = handlers.QueueHandler(log_queue)
         # give poll() time to quit
@@ -985,7 +987,7 @@ def run(mode, ref1=None, ref2=None, images=None):
 
 
 def ui_main():
-    is_gui = True
+    global_vars.is_gui = True
     global root
     root = tk.Tk()
     root.protocol('WM_DELETE_WINDOW', root.destroy)

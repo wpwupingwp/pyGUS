@@ -4,9 +4,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from pyGUS.global_vars import log, is_gui
-if is_gui:
-    from tkinter import messagebox
+from pyGUS import global_vars
+log = global_vars.log
 
 
 def if_exist(filename) -> str:
@@ -22,7 +21,8 @@ def if_exist(filename) -> str:
 
 
 def show_error(msg):
-    if is_gui:
+    if global_vars.is_gui:
+        from tkinter import messagebox
         messagebox.showerror(message=msg)
     else:
         log.error(msg)

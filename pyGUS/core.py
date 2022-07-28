@@ -188,6 +188,8 @@ def mode_4(ref1, ref2, targets):
     for target in targets:
         log.info(f'Analyzing {target}')
         img = cv2.imread(target)
+        if img is None:
+            show_error(f'Bad image file {target}')
         cropped1, mask1 = select_polygon(img, name_dict['neg'][0],
                                          name_dict['neg'][1])
         cropped2, mask2 = select_polygon(img, name_dict['pos'][0],
@@ -252,7 +254,8 @@ def get_left_right_mask(filtered_result, level_cnt, img):
      fake_inner, inner_background) = filtered_result
     # target, ref
     left, right = get_left_right(big_external_contours, level_cnt)
-    assert left is not None and right is not None, 'Object not found.'
+    if left is None and right is None:
+        show_error('Object not found.')
     left_right_mask = list()
     for target in left, right:
         self_index = target[4]
@@ -556,8 +559,8 @@ def draw_images(filtered_result, level_cnt, img, simple=False, show=False,
 
 
 def get_real_blue(original_image, neg_ref_value, pos_ref_value):
-    assert neg_ref_value <= pos_ref_value
-    assert pos_ref_value > 0
+    if neg_ref_value > pos_ref_value or pos_ref_value <= 0:
+        show_error('Bad negative and positive reference values.')
     b, g, r = cv2.split(original_image)
     factor = 1
     revert_b = revert(b)
@@ -567,8 +570,8 @@ def get_real_blue(original_image, neg_ref_value, pos_ref_value):
 
 def get_real_blue_2(original_image, neg_ref_value, pos_ref_value):
     # todo, 255-b is not real blue part
-    assert neg_ref_value <= pos_ref_value
-    assert pos_ref_value > 0
+    if neg_ref_value > pos_ref_value or pos_ref_value <= 0:
+        show_error('Bad negative and positive reference values.')
     factor = 1
     b, g, r = cv2.split(original_image)
     pos_ref_value = round(pos_ref_value)
@@ -642,7 +645,8 @@ def split_image(left_cnt, right_cnt, img):
     img_copy = img.copy()
     x1, y1, w1, h1 = cv2.boundingRect(left_cnt)
     x2, y2, w2, h2 = cv2.boundingRect(right_cnt)
-    assert x1 < x1 + w1 < x2 < x2 + w2
+    if not (x1 < x1 + w1 < x2 < x2 + w2):
+        show_error('Split image failed.')
     middle = (x1 + w1 + x2) // 2
     target = img_copy[:, :middle]
     ref = img_copy[:, middle:]
@@ -706,9 +710,7 @@ def write_image(results, labels, out):
                                       showmedians=False, showextrema=False,
                                       widths=0.4)
     except ValueError:
-        error_msg = 'Failed to plot results due to bad values.'
-        show_error(error_msg)
-        return None
+        show_error('Failed to plot results due to bad values.')
     for pc in violin_parts['bodies']:
         pc.set_facecolor('#0d56ff')
         pc.set_edgecolor('black')
@@ -766,7 +768,7 @@ def cli_main(arg_str=None):
     csv_file = None
     if message is not None:
         show_error(message)
-        return svg_file, csv_file, message
+        # return svg_file, csv_file, message
     log.info(f'Running mode {arg.mode}...')
     log.info(f'Negative reference image: {negative}')
     log.info(f'Positive reference image: {positive}')
@@ -776,8 +778,6 @@ def cli_main(arg_str=None):
     run_dict = {1: mode_1, 2: mode_2, 3: mode_3, 4: mode_4}
     run = run_dict[arg.mode]
     neg_result, pos_result, target_results = run(negative, positive, targets)
-    if error_msg is not None:
-        return None, None, error_msg
     # add ref results
     target_results.append(pos_result)
     target_results.append(neg_result)
