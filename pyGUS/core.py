@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from pyGUS.global_vars import log
-from pyGUS.utils import select_polygon, color_calibrate, if_exist
+from pyGUS.utils import select_polygon, color_calibrate, if_exist, show_error
 
 
 # todo: color correction test
@@ -201,8 +201,9 @@ def mode_4(ref1, ref2, targets):
             cv2.waitKey()
             cv2.destroyAllWindows()
         except cv2.error:
-            log.error('Bad selection.')
-            raise SystemExit(-3)
+            error_msg = 'Bad selection.'
+            show_error(error_msg)
+            return neg_result, pos_result, target_results
         # todo: is it ok to directly use calculate to get ref value?
         neg_result = calculate(img, mask1, neg_ref_value=0)
         neg_ref_value, neg_std, *_ = neg_result
@@ -458,7 +459,7 @@ def get_left_right(big_external_contours, level_cnt):
     left = None
     right = None
     if len(big_external_contours) == 0:
-        log.error('Cannot find targets in the image.')
+        show_error('Cannot find targets in the image.')
     elif len(big_external_contours) == 1:
         left = big_external_contours[0]
         log.info('Only detected one target in the image.')
@@ -475,8 +476,7 @@ def get_left_right(big_external_contours, level_cnt):
             if y1 > y2:
                 y1, h1, y2, h2 = y2, h2, y1, h1
             if y1 + h1 > y2:
-                # todo: show error in window
-                log.error('Target and reference are overlapped!')
+                show_error('Target and reference are overlapped!')
                 # left = right = None
     return left, right
 
@@ -706,8 +706,9 @@ def write_image(results, labels, out):
                                       showmedians=False, showextrema=False,
                                       widths=0.4)
     except ValueError:
-        log.error('Failed to plot results due to bad values.')
-        raise SystemExit(-2)
+        error_msg = 'Failed to plot results due to bad values.'
+        show_error(error_msg)
+        return None
     for pc in violin_parts['bodies']:
         pc.set_facecolor('#0d56ff')
         pc.set_edgecolor('black')
@@ -764,7 +765,7 @@ def cli_main(arg_str=None):
     svg_file = None
     csv_file = None
     if message is not None:
-        log.error(message)
+        show_error(message)
         return svg_file, csv_file, message
     log.info(f'Running mode {arg.mode}...')
     log.info(f'Negative reference image: {negative}')
@@ -775,6 +776,8 @@ def cli_main(arg_str=None):
     run_dict = {1: mode_1, 2: mode_2, 3: mode_3, 4: mode_4}
     run = run_dict[arg.mode]
     neg_result, pos_result, target_results = run(negative, positive, targets)
+    if error_msg is not None:
+        return None, None, error_msg
     # add ref results
     target_results.append(pos_result)
     target_results.append(neg_result)
@@ -791,7 +794,7 @@ def cli_main(arg_str=None):
     cv2.destroyAllWindows()
     log.info('Done.')
     # todo: 30s per image, too slow
-    return svg_file, csv_file, None
+    return svg_file, csv_file
 
 
 if __name__ == '__main__':

@@ -11,3 +11,4 @@ default_level = logging.INFO
 # default_level = logging.DEBUG
 coloredlogs.install(level=default_level, fmt=FMT, datefmt=DATEFMT)
 log = logging.getLogger('pyGUS')
+is_gui = False

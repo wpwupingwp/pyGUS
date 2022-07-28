@@ -4,7 +4,9 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from pyGUS.global_vars import log
+from pyGUS.global_vars import log, is_gui
+if is_gui:
+    from tkinter import messagebox
 
 
 def if_exist(filename) -> str:
@@ -13,10 +15,18 @@ def if_exist(filename) -> str:
         filename: Path
     """
     if not filename.exists():
-        log.error(f'{filename} does not exist. Please check the input.')
+        show_error(f'{filename} does not exist. Please check the input.')
         raise SystemExit(-1)
     else:
         return str(filename)
+
+
+def show_error(msg):
+    if is_gui:
+        messagebox.showerror(message=msg)
+    else:
+        log.error(msg)
+    raise SystemExit(-10)
 
 
 def get_crop(img, r):

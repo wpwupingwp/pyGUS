@@ -11,13 +11,34 @@ from tkinter import filedialog, messagebox, scrolledtext
 import logging
 import queue
 import sys
+import threading
 import tkinter as tk
 import tkinter.ttk as ttk
 import webbrowser
 
-from pyGUS.global_vars import log, FMT, DATEFMT
+from pyGUS.global_vars import log, FMT, DATEFMT, is_gui
 from pyGUS import core
 
+
+def thread_wrap(function, arg_str):
+    """
+    Wrap for callback.
+    Args:
+        function(callable): function to call
+        arg_str(str): string for function's argparse
+    """
+    try:
+        result = function(arg_str)
+    except Exception as e:
+        log.exception(str(e))
+        log.exception('Abort.')
+        messagebox.showerror('Abort.')
+        return
+    if result[0]:
+        messagebox.showinfo(f'Done. See {result[1]} for details.')
+    else:
+        messagebox.showinfo(f'Fail. See {result[1]} for details.')
+    return
 
 class Root:
     def __init__(self, top=None):
@@ -773,7 +794,7 @@ class Scroll:
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
-        top.title("Mode 2")
+        top.title("Log")
         top.configure(background="#edf0f3")
         top.configure(highlightbackground="#d9d9d9")
         top.configure(highlightcolor="black")
@@ -790,7 +811,7 @@ class Scroll:
                     break
             # to avoid orphan poll()
             if log.hasHandlers():
-                self.Scrolledtext1.after(10, poll)
+                self.Scrolledtext1.after(1, poll)
             else:
                 return
 
@@ -952,12 +973,19 @@ def run(mode, ref1=None, ref2=None, images=None):
         cmd = (f'-mode {mode} -ref1 {s_list[0]} -ref2 {s_list[1]} '
                f'-images {s_list[2]}')
         messagebox.showinfo(message=cmd)
-        # todo: scroll text
-        core.cli_main(cmd)
+        # todo: opencv imshow could only run in main thread
+        # r = threading.Thread(target=thread_wrap, args=(core.cli_main, cmd), daemon=True)
+        # r.start()
+        if mode != 4:
+            messagebox.showinfo(message='Running...')
+        svg_file, csv_file = core.cli_main(cmd)
+        messagebox.showinfo(message=f'Output file {svg_file} {csv_file}')
+        # scroll = Scroll(root)
     return call
 
 
 def ui_main():
+    is_gui = True
     global root
     root = tk.Tk()
     root.protocol('WM_DELETE_WINDOW', root.destroy)
