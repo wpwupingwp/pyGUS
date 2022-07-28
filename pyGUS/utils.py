@@ -53,6 +53,7 @@ def select_polygon(raw_img, title='', color=(255, 255, 255)):
         mask:
     """
     # init
+    assert global_vars.is_gui
     name = (f'{title} (Left click to add points, right click to finish, '
             f'Esc to quit)')
     img = raw_img.copy()
