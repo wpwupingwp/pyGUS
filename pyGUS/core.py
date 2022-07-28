@@ -179,9 +179,10 @@ def mode_4(ref1, ref2, targets):
     """
     Select region manually
     """
-    name_dict = {'neg': ('Negative reference', (0, 0, 255)),
-                 'pos': ('Positive reference', (0, 255, 0)),
-                 'target': ('Target region', (255, 0, 0))}
+    #
+    name_dict = {'neg': ('Negative reference', hex2bgr('#FF6B6B')),
+                 'pos': ('Positive reference', hex2bgr('#FFd93D')),
+                 'target': ('Target region', hex2bgr('#6BCB77'))}
     neg_result = []
     pos_result = []
     target_results = []
@@ -190,16 +191,15 @@ def mode_4(ref1, ref2, targets):
         img = cv2.imread(target)
         if img is None:
             show_error(f'Bad image file {target}')
-        cropped1, mask1 = select_polygon(img, name_dict['neg'][0],
+        img_copy = img.copy()
+        cropped1, mask1 = select_polygon(img_copy, name_dict['neg'][0],
                                          name_dict['neg'][1])
-        cropped2, mask2 = select_polygon(img, name_dict['pos'][0],
+        cropped2, mask2 = select_polygon(img_copy, name_dict['pos'][0],
                                          name_dict['pos'][1])
-        cropped3, mask3 = select_polygon(img, name_dict['target'][0],
+        cropped3, mask3 = select_polygon(img_copy, name_dict['target'][0],
                                          name_dict['target'][1])
         try:
-            cv2.imshow('Selected negative reference region', cropped1)
-            cv2.imshow('Selected positive reference region', cropped2)
-            cv2.imshow('Selected target region', cropped3)
+            cv2.imshow('Press any key to continue', img_copy)
             cv2.waitKey()
             cv2.destroyAllWindows()
         except cv2.error:

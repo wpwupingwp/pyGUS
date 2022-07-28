@@ -41,11 +41,11 @@ def select_box(img, text='Select the region, then press ENTER'):
     return cropped, r
 
 
-def select_polygon(raw_img, title='', color=(255, 255, 255)):
+def select_polygon(img, title='', color=(255, 255, 255)):
     """
     Select polygon region.
     Args:
-        raw_img:
+        img:
         title:
         color:
     Returns:
@@ -56,7 +56,6 @@ def select_polygon(raw_img, title='', color=(255, 255, 255)):
     assert global_vars.is_gui
     name = (f'{title} (Left click to add points, right click to finish, '
             f'Esc to quit)')
-    img = raw_img.copy()
     done = False
     current = (0, 0)
     points = list()
@@ -65,7 +64,6 @@ def select_polygon(raw_img, title='', color=(255, 255, 255)):
     box = None
 
     def on_mouse(event, x, y, buttons, user_param):
-        # print(event, x, y)
         nonlocal done, current, points
         if done:
             return
