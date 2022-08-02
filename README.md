@@ -77,3 +77,8 @@ flowchart LR
     end
 
 ```
+## build
+```
+python3 -m build --wheel
+```
+
