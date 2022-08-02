@@ -3,9 +3,13 @@ import argparse
 import csv
 from pathlib import Path
 
+# for nuitka
+from matplotlib.backends import backend_pdf
 import cv2
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+matplotlib.use('Agg')
 
 from pyGUS.global_vars import log
 from pyGUS.utils import select_polygon, color_calibrate, if_exist, show_error
@@ -764,7 +768,7 @@ def cli_main(arg_str=None):
     log.info('Welcome to pyGUS.')
     arg = parse_arg(arg_str)
     negative, positive, targets, message = get_input(arg)
-    svg_file = None
+    pdf_file = None
     csv_file = None
     if message is not None:
         show_error(message)
@@ -781,19 +785,19 @@ def cli_main(arg_str=None):
     target_results.append(pos_result)
     target_results.append(neg_result)
     targets.extend(('Positive reference', 'Negative reference'))
-    svg_file = Path(targets[0]).parent / 'Result.svg'
-    csv_file = svg_file.with_suffix('.csv')
-    for f in svg_file, csv_file:
+    pdf_file = Path(targets[0]).parent / 'Result.pdf'
+    csv_file = pdf_file.with_suffix('.csv')
+    for f in pdf_file, csv_file:
         if f.exists():
             log.warning(f'{f} exists, overwrite.')
-    write_image(target_results, targets, svg_file)
+    write_image(target_results, targets, pdf_file)
     write_csv(target_results, targets, csv_file)
     # wait or poll
     cv2.pollKey()
     cv2.destroyAllWindows()
     log.info('Done.')
     # todo: 30s per image, too slow
-    return svg_file, csv_file
+    return pdf_file, csv_file
 
 
 if __name__ == '__main__':
