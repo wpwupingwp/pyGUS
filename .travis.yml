@@ -12,7 +12,7 @@ matrix:
               - python setup.py bdist_wheel
               - pip3 install dist/*.whl
           script:
-              - python -m novowrap --help
+              - python -m pyGUS --help
 install:
     - pip3 install --upgrade setuptools
     - pip3 install -r requirements.txt
