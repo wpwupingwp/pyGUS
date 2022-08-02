@@ -1,0 +1,36 @@
+matrix:
+    include:
+        - name: "Python 3.10 on Windows"
+          os: windows
+          language: shell
+          env: PATH=/c/Python310:/c/Python310/Scripts:$PATH
+          before_install:
+              - choco install python --version=3.10
+              - python -m pip install --upgrade pip
+              - pip install pywin32
+          after_install: 
+              - python setup.py bdist_wheel
+              - pip3 install dist/*.whl
+          script:
+              - python -m novowrap --help
+install:
+    - pip3 install --upgrade setuptools
+    - pip3 install -r requirements.txt
+    - pip3 install pyinstaller
+before_deploy:
+    - pyinstaller pyGUS -n pyGUS
+    - dir || ls
+    - tar -czf novowrap-$TRAVIS_OS_NAME-$TRAVIS_TAG.tgz -C dist pyGUS
+    - dir || ls
+deploy:
+    - provider: releases
+      api_key: $GITHUB_TOKEN
+      file_glob: true
+      file: "*.tgz"
+      skip_cleanup: true
+      draft: true
+      on:
+          tags: true
+      name: $TRAVIS_TAG
+after_deploy:
+    - dir || ls
