@@ -22,7 +22,6 @@ from pyGUS.utils import select_polygon, color_calibrate, if_exist, show_error
 # todo mode 3 test: two object for each image, left target, right color card
 # todo: mode 4 test: select area by mouse
 # todo: calculate values, statistic analysis
-# todo: GUI
 # todo: manual
 # todo: manuscript
 
