@@ -616,6 +616,8 @@ def calculate(original_image, target_mask, neg_ref_value=0, pos_ref_value=255):
     express_mask[revert_b <= amplified_neg_ref] = 0
     # cv2.contourArea return different value with np.count_nonzero
     total_area = np.count_nonzero(target_mask)
+    if total_area == 0:
+        show_error('Cannot detect expression region.')
     express_area = np.count_nonzero(express_mask)
     # todo: how to get correct ratio
     express_ratio = express_area / total_area
