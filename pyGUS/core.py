@@ -40,7 +40,7 @@ def parse_arg(arg_str):
     arg.add_argument('-mode', type=int, choices=(1, 2, 3, 4), required=True,
                      help=('1. single target in each image; '
                            '2. target and positive reference in each image; '
-                           '3. target and colorchecker in each image; '
+                           '3. target and color checker in each image; '
                            '4. manually select target regions with mouse'))
     if arg_str is None:
         return arg.parse_args()
@@ -266,7 +266,10 @@ def get_left_right_mask(filtered_result, level_cnt, img):
         show_error('Object not found.')
     left_right_mask = list()
     for target in left, right:
-        self_index = target[4]
+        try:
+            self_index = target[4]
+        except TypeError:
+            show_error('Detect edge failed.')
         log.debug(f'target {target}')
         log.debug(f'self {self_index}')
         related_fake_inner = [i for i in fake_inner if i[3] == self_index]
@@ -324,13 +327,15 @@ def threshold(img, show=False):
     return th3
 
 
-def get_clean_edge(image):
+def make_clean(image):
     # blur->dilate->erode
+    # ensure CV_8U
+    image = cv2.convertScaleAbs(image, alpha=1, beta=0)
     blur = cv2.GaussianBlur(image, (5, 5), 0)
     dilate = cv2.dilate(blur, None)
     erode_edge = cv2.erode(dilate, None)
     if debug:
-        cv2.imshow('edge', erode_edge)
+        cv2.imshow('clean_edge', erode_edge)
     return erode_edge
 
 
@@ -346,12 +351,10 @@ def get_edge(image):
     combine = revert(g // 2 + r // 2)
     edge = auto_Canny(combine)
     # blur edge, not original image
-    blur = cv2.GaussianBlur(edge, (5, 5), 0)
-    dilate = cv2.dilate(blur, None)
-    erode_edge = get_clean_edge(dilate)
+    erode_edge = make_clean(edge)
     if debug:
         cv2.imshow('revert_combine', combine)
-        cv2.imshow('edge', edge)
+        cv2.imshow('edge', erode_edge)
     return erode_edge
 
 
@@ -364,22 +367,18 @@ def get_edge2(image):
     ysobel = cv2.convertScaleAbs(ysobel, alpha=1, beta=0)
     sobel_or = cv2.bitwise_or(xsobel, ysobel)
     sobel_add = cv2.addWeighted(xsobel, 0.5, ysobel, 0.5, 0)
-    s_blur = cv2.GaussianBlur(sobel_or, (3, 3), 0)
-    s2_blur = cv2.GaussianBlur(sobel_add, (3, 3), 0)
-    s_dilate = cv2.dilate(s_blur, None)
-    s2_dilate = cv2.dilate(s2_blur, None)
-    s_erode = cv2.erode(s_dilate, None)
-    s2_erode = cv2.erode(s2_dilate, None)
+    s_clean = make_clean(sobel_or)
+    s2_clean = make_clean(sobel_add)
     # s_equal = cv2.equalizeHist(s_erode)
     cv2.imshow('sobel', sobel_or)
-    cv2.imshow('sobel2', s_blur)
+    cv2.imshow('sobel2', sobel_add)
+    cv2.imshow('s_clean', s_clean)
+    cv2.imshow('s2_clean', s2_clean)
     scharr_x = cv2.Scharr(combine, cv2.CV_8U, 1, 0)
     scharr_y = cv2.Scharr(combine, cv2.CV_8U, 1, 0)
     scharr = cv2.addWeighted(scharr_x, 0.5, scharr_y, 0.5, 0)
     sc_equal = cv2.equalizeHist(scharr)
-    ss = cv2.convertScaleAbs(s_blur, alpha=1.5, beta=10)
-    cv2.imshow('ss', ss )
-    s_cnt, _ = cv2.findContours(s_erode, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    s_cnt, _ = cv2.findContours(scharr, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     s_img = np.zeros(image.shape[:2])
     for i in s_cnt:
         cv2.drawContours(s_img, [i], 0, (255, 255, 255), 2)
@@ -392,10 +391,8 @@ def get_edge2(image):
         cv2.imshow('sobel_equal', s_equal)
         cv2.imshow('sobel2_equal', s2_equal)
     laplacian = cv2.Laplacian(combine, cv2.CV_64F)
-    laplician = cv2.convertScaleAbs(laplacian, alpha=1, beta=0)
     cv2.imshow('laplacian', laplacian)
-
-    pass
+    return s2_clean
 
 
 def revert(img):
@@ -732,7 +729,8 @@ def get_contour(img_file):
         pass
         # threshold(img, show=True)
     edge = get_edge(img)
-    get_edge2(img)
+    edge2 = get_edge2(img)
+    cv2.waitKey()
     # APPROX_NONE to avoid omitting dots
     contours, raw_hierarchy = cv2.findContours(edge, cv2.RETR_TREE,
                                                cv2.CHAIN_APPROX_NONE)

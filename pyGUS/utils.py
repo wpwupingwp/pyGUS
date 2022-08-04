@@ -37,7 +37,7 @@ def get_crop(img, r):
     return cropped
 
 
-def select_box(img, text='Select the region, then press ENTER'):
+def select_box(img, text='Select the region, then press SPACE BAR'):
     r = cv2.selectROI(text, img)
     cropped = get_crop(img, r)
     return cropped, r
