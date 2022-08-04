@@ -117,9 +117,9 @@ def mode_2(ref1, ref2, targets):
     neg_result = calculate(ref_img, neg_mask)
     neg_ref_value = neg_result[0]
     if debug:
-        cv2.imshow('raw', ref_img)
+        # cv2.imshow('raw', ref_img)
         cv2.imshow('neg', neg_mask)
-        cv2.imshow('pos', pos_mask)
+        # cv2.imshow('pos', pos_mask)
         cv2.waitKey()
     pos_result = calculate(ref_img, pos_mask, neg_ref_value=neg_ref_value)
     pos_ref_value = pos_result[0]
@@ -324,6 +324,16 @@ def threshold(img, show=False):
     return th3
 
 
+def get_clean_edge(image):
+    # blur->dilate->erode
+    blur = cv2.GaussianBlur(image, (5, 5), 0)
+    dilate = cv2.dilate(blur, None)
+    erode_edge = cv2.erode(dilate, None)
+    if debug:
+        cv2.imshow('edge', erode_edge)
+    return erode_edge
+
+
 def get_edge(image):
     """
     Args:
@@ -338,11 +348,54 @@ def get_edge(image):
     # blur edge, not original image
     blur = cv2.GaussianBlur(edge, (5, 5), 0)
     dilate = cv2.dilate(blur, None)
-    erode_edge = cv2.erode(dilate, None)
+    erode_edge = get_clean_edge(dilate)
     if debug:
         cv2.imshow('revert_combine', combine)
         cv2.imshow('edge', edge)
     return erode_edge
+
+
+def get_edge2(image):
+    b, g, r = cv2.split(image)
+    combine = revert(g // 2 + r // 2)
+    xsobel = cv2.Sobel(combine, cv2.CV_64F, 0, 1, ksize=5)
+    xsobel = cv2.convertScaleAbs(xsobel, alpha=1, beta=0)
+    ysobel = cv2.Sobel(combine, cv2.CV_64F, 1, 0, ksize=5)
+    ysobel = cv2.convertScaleAbs(ysobel, alpha=1, beta=0)
+    sobel_or = cv2.bitwise_or(xsobel, ysobel)
+    sobel_add = cv2.addWeighted(xsobel, 0.5, ysobel, 0.5, 0)
+    s_blur = cv2.GaussianBlur(sobel_or, (3, 3), 0)
+    s2_blur = cv2.GaussianBlur(sobel_add, (3, 3), 0)
+    s_dilate = cv2.dilate(s_blur, None)
+    s2_dilate = cv2.dilate(s2_blur, None)
+    s_erode = cv2.erode(s_dilate, None)
+    s2_erode = cv2.erode(s2_dilate, None)
+    # s_equal = cv2.equalizeHist(s_erode)
+    cv2.imshow('sobel', sobel_or)
+    cv2.imshow('sobel2', s_blur)
+    scharr_x = cv2.Scharr(combine, cv2.CV_8U, 1, 0)
+    scharr_y = cv2.Scharr(combine, cv2.CV_8U, 1, 0)
+    scharr = cv2.addWeighted(scharr_x, 0.5, scharr_y, 0.5, 0)
+    sc_equal = cv2.equalizeHist(scharr)
+    ss = cv2.convertScaleAbs(s_blur, alpha=1.5, beta=10)
+    cv2.imshow('ss', ss )
+    s_cnt, _ = cv2.findContours(s_erode, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    s_img = np.zeros(image.shape[:2])
+    for i in s_cnt:
+        cv2.drawContours(s_img, [i], 0, (255, 255, 255), 2)
+    cv2.imshow('scnt', s_img)
+    if 1>2:
+        cv2.imshow('sobel_add', sobel_add)
+        cv2.imshow('sobel2_blur', s2_blur)
+        cv2.imshow('sobel_edge', s_erode)
+        cv2.imshow('sobel2_edge', s2_erode)
+        cv2.imshow('sobel_equal', s_equal)
+        cv2.imshow('sobel2_equal', s2_equal)
+    laplacian = cv2.Laplacian(combine, cv2.CV_64F)
+    laplician = cv2.convertScaleAbs(laplacian, alpha=1, beta=0)
+    cv2.imshow('laplacian', laplacian)
+
+    pass
 
 
 def revert(img):
@@ -676,8 +729,10 @@ def get_contour(img_file):
     # use green channel
     # todo: g or b
     if debug:
-        threshold(img, show=True)
+        pass
+        # threshold(img, show=True)
     edge = get_edge(img)
+    get_edge2(img)
     # APPROX_NONE to avoid omitting dots
     contours, raw_hierarchy = cv2.findContours(edge, cv2.RETR_TREE,
                                                cv2.CHAIN_APPROX_NONE)
