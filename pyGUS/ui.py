@@ -54,7 +54,7 @@ class Root:
         _tabbg2 = 'grey89'
         _bgmode = 'light'
 
-        top.geometry("280x300+2243+223")
+        top.geometry("280x300+843+223")
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
@@ -169,7 +169,7 @@ class Mode1:
         _tabbg2 = 'grey89'
         _bgmode = 'light'
 
-        top.geometry("500x280+2597+46")
+        top.geometry("500x280+597+46")
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
@@ -369,7 +369,7 @@ class Mode2:
         _tabbg2 = 'grey89'
         _bgmode = 'light'
 
-        top.geometry("500x200+2630+378")
+        top.geometry("500x200+630+378")
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
@@ -506,7 +506,7 @@ class Mode3:
         _tabbg2 = 'grey89'
         _bgmode = 'light'
 
-        top.geometry("500x280+2639+615")
+        top.geometry("500x280+639+615")
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
@@ -697,7 +697,7 @@ class Mode4:
         _tabbg2 = 'grey89'
         _bgmode = 'light'
 
-        top.geometry("500x120+2138+702")
+        top.geometry("500x120+138+702")
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
@@ -791,7 +791,7 @@ class Scroll:
         self.style.map('.', background=[('selected', _compcolor),
                                         ('active', _ana2color)])
 
-        top.geometry("500x200+2225+402")
+        top.geometry("500x200+225+402")
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
