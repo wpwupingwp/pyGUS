@@ -97,6 +97,7 @@ def manual_ref(img, text=None):
     neg_area = neg.shape[0] * neg.shape[1]
     neg_result = [neg_ref_value, neg_std, neg_area, neg_ref_value, neg_std,
                   neg_area, 0, 0]
+    todo()
     return neg_result, neg_mask
 
 
@@ -196,22 +197,17 @@ def mode_3(ref1, ref2, targets, auto_ref):
     ###
     if auto_ref:
         neg_filtered_result, neg_level_cnt, neg_img = get_contour(ok_neg)
-        neg_left_mask, neg_right_mask = get_left_right_mask(neg_filtered_result,
-                                                            neg_level_cnt, neg_img)
+        neg_left_mask, neg_right_mask = get_left_right_mask(
+            neg_filtered_result, neg_level_cnt, neg_img)
         neg_result = calculate(neg_img, neg_left_mask)
-        pos_filtered_result, pos_level_cnt, pos_img = get_contour(ok_pos)
-        pos_left_mask, pos_right_mask = get_left_right_mask(pos_filtered_result,
-                                                            pos_level_cnt,
-                                                            pos_img)
-        pos_result = calculate(pos_img, pos_left_mask)
     else:
         neg_img = cv2.imread(ok_neg)
-        pos_img = cv2.imread(ok_pos)
         neg_result, neg_mask = manual_ref(neg_img, NEG_TEXT)
-        pos_result, pos_mask = manual_ref(pos_img, POS_TEXT)
         neg_filtered_result, neg_level_cnt = [], []
-        pos_filtered_result, pos_level_cnt = [], []
-    # right_result = calculate(img, right_mask, neg_ref_value, pos_ref_value)
+    pos_filtered_result, pos_level_cnt, pos_img = get_contour(ok_pos)
+    pos_left_mask, pos_right_mask = get_left_right_mask(
+        pos_filtered_result, pos_level_cnt, pos_img)
+    pos_result = calculate(pos_img, pos_left_mask)
     neg_ref_value = neg_result[0]
     pos_ref_value = pos_result[0]
     log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
