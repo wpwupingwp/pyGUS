@@ -38,6 +38,7 @@ def get_crop(img, r):
 
 
 def select_box(img, text='Select the region, then press SPACE BAR'):
+    cv2.pollKey()
     r = cv2.selectROI(text, img)
     cropped = get_crop(img, r)
     return cropped, r

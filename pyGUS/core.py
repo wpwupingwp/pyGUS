@@ -14,7 +14,12 @@ matplotlib.use('Agg')
 from pyGUS.global_vars import log, debug
 from pyGUS.utils import select_box, select_polygon
 from pyGUS.utils import color_calibrate, if_exist, show_error
+
 MANUAL = 'manual'
+NEG_TEXT = ('Select negative expression region as reference, '
+            'press SPACE BAR to finish')
+POS_TEXT = ('Select positive expression region as reference, '
+            'press SPACE BAR to finish')
 
 
 # todo: color correction test
@@ -75,7 +80,7 @@ def get_input(arg):
     if arg.mode not in (2, 4):
         positive = Path(arg.ref2).absolute()
         positive = if_exist(positive)
-    auto_negative = bool(arg.auto_ref)
+    auto_ref = bool(arg.auto_ref)
     return negative, positive, targets, auto_ref, message
 
 
@@ -95,19 +100,18 @@ def manual_ref(img, text=None):
     return neg_result, neg_mask
 
 
-def mode_1(negative, positive, targets, auto_negative):
+def mode_1(negative, positive, targets, auto_ref):
     # ignore light change
     # first: negative
     # second: positive
     # third and after: target
-    if auto_negative:
+    if auto_ref:
         neg_filtered_result, neg_level_cnt, neg_img = get_contour(negative)
         neg_mask = get_single_mask(neg_filtered_result, neg_level_cnt, neg_img)
         neg_result = calculate(neg_img, neg_mask)
     else:
         neg_img = cv2.imread(negative)
-        neg_result, neg_mask = manual_ref(
-            negative, 'Select negative expression region as reference 1')
+        neg_result, neg_mask = manual_ref(negative, NEG_TEXT)
         neg_filtered_result = []
         neg_level_cnt = []
     neg_ref_value = neg_result[0]
@@ -127,44 +131,35 @@ def mode_1(negative, positive, targets, auto_negative):
                                show=False, filename=target)
     draw_images(pos_filtered_result, pos_level_cnt, pos_img, show=False,
                 simple=True, filename=positive)
-    if auto_negative:
+    if auto_ref:
         draw_images(neg_filtered_result, neg_level_cnt, neg_img, show=False,
                     simple=True, filename=negative)
     return neg_result, pos_result, target_results
 
 
-def mode_2(ref1, ref2, targets, auto_negative):
+def mode_2(ref1, ref2, targets, auto_ref):
     # use negative to calibrate positive, and then measure each target
     # assume positive in each image is same, ignore light change
     # first left: negative, first right: positive
     # next left: object, next right: positive
     # ignore small_external, inner_contours,
     negative_positive_ref = ref1
-    if auto_negative:
+    if auto_ref:
         ref_filtered_result, ref_level_cnt, ref_img = get_contour(
             negative_positive_ref)
         neg_mask, pos_mask = get_left_right_mask(ref_filtered_result,
                                                  ref_level_cnt, ref_img)
         neg_result = calculate(ref_img, neg_mask)
         neg_ref_value = neg_result[0]
-        if debug:
-            # cv2.imshow('raw', ref_img)
-            cv2.imshow('neg', neg_mask)
-            # cv2.imshow('pos', pos_mask)
-            cv2.waitKey()
         pos_result = calculate(ref_img, pos_mask, neg_ref_value=neg_ref_value)
-        pos_ref_value = pos_result[0]
     else:
         ref_img = cv2.imread(negative_positive_ref)
-        neg_result, neg_mask = manual_ref(img)
-        pos, _ = select_box(
-            ref_img, text='Select positive expression region as reference')
-        pos_ref_value, pos_std = cv2.meanStdDev(pos)
-        pos_ref_value, pos_std = pos_ref_value[0][0], pos_std[0][0]
-        pos_area = pos.shape[0] * pos.shape[1]
-        pos_result = [pos_ref_value, pos_std, pos_area, pos_ref_value, pos_std,
-                      pos_area, 0, 0]
-        pass
+        neg_result, neg_mask = manual_ref(ref_img, NEG_TEXT)
+        pos_result, pos_mask = manual_ref(ref_img, POS_TEXT)
+        ref_filtered_result = []
+        ref_level_cnt = []
+    neg_ref_value = neg_result[0]
+    pos_ref_value = pos_result[0]
     log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
     target_results = []
     for target in targets:
@@ -176,11 +171,10 @@ def mode_2(ref1, ref2, targets, auto_negative):
         target_results.append(target_result)
         img_dict = draw_images(filtered_result, level_cnt, img, show=False,
                                simple=True, filename=target)
-    if not auto_negative:
+    if not auto_ref:
         ref_img_dict = draw_images(ref_filtered_result, ref_level_cnt, ref_img,
                                    show=False, simple=True,
                                    filename=negative_positive_ref)
-        neg_mask =
     if debug:
         masked_neg = cv2.bitwise_and(ref_img, ref_img, mask=neg_mask)
         cv2.imshow('masked negative reference', 255 - masked_neg)
@@ -189,7 +183,7 @@ def mode_2(ref1, ref2, targets, auto_negative):
     return neg_result, pos_result, target_results
 
 
-def mode_3(ref1, ref2, targets):
+def mode_3(ref1, ref2, targets, auto_ref):
     # use color card to calibrate each image
     # first left: negative, first right: card
     # second left: positive, second right: card
@@ -200,16 +194,25 @@ def mode_3(ref1, ref2, targets):
     ok_pos = color_calibrate(positive)
     ok_targets = [color_calibrate(i) for i in targets]
     ###
-    neg_filtered_result, neg_level_cnt, neg_img = get_contour(ok_neg)
-    neg_left_mask, neg_right_mask = get_left_right_mask(neg_filtered_result,
-                                                        neg_level_cnt, neg_img)
-    neg_result = calculate(neg_img, neg_left_mask)
-    neg_ref_value = neg_result[0]
+    if auto_ref:
+        neg_filtered_result, neg_level_cnt, neg_img = get_contour(ok_neg)
+        neg_left_mask, neg_right_mask = get_left_right_mask(neg_filtered_result,
+                                                            neg_level_cnt, neg_img)
+        neg_result = calculate(neg_img, neg_left_mask)
+        pos_filtered_result, pos_level_cnt, pos_img = get_contour(ok_pos)
+        pos_left_mask, pos_right_mask = get_left_right_mask(pos_filtered_result,
+                                                            pos_level_cnt,
+                                                            pos_img)
+        pos_result = calculate(pos_img, pos_left_mask)
+    else:
+        neg_img = cv2.imread(ok_neg)
+        pos_img = cv2.imread(ok_pos)
+        neg_result, neg_mask = manual_ref(neg_img, NEG_TEXT)
+        pos_result, pos_mask = manual_ref(pos_img, POS_TEXT)
+        neg_filtered_result, neg_level_cnt = [], []
+        pos_filtered_result, pos_level_cnt = [], []
     # right_result = calculate(img, right_mask, neg_ref_value, pos_ref_value)
-    pos_filtered_result, pos_level_cnt, pos_img = get_contour(ok_pos)
-    pos_left_mask, pos_right_mask = get_left_right_mask(pos_filtered_result,
-                                                        pos_level_cnt, pos_img)
-    pos_result = calculate(pos_img, pos_left_mask)
+    neg_ref_value = neg_result[0]
     pos_ref_value = pos_result[0]
     log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
     target_results = []
@@ -774,7 +777,7 @@ def get_contour(img_file):
         pass
         # threshold(img, show=True)
     edge = get_edge(img)
-    edge2 = get_edge2(img)
+    # edge2 = get_edge2(img)
     cv2.waitKey()
     # APPROX_NONE to avoid omitting dots
     contours, raw_hierarchy = cv2.findContours(edge, cv2.RETR_TREE,
@@ -888,7 +891,7 @@ def cli_main(arg_str=None):
     run_dict = {1: mode_1, 2: mode_2, 3: mode_3, 4: mode_4}
     run = run_dict[arg.mode]
     neg_result, pos_result, target_results = run(negative, positive, targets,
-                                                 auto_negative)
+                                                 auto_ref)
     # add ref results
     target_results.append(pos_result)
     target_results.append(neg_result)
