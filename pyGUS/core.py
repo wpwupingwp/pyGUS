@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 matplotlib.use('Agg')
 
-from pyGUS.global_vars import log
+from pyGUS.global_vars import log, debug
 from pyGUS.utils import select_polygon, color_calibrate, if_exist, show_error
 
 
@@ -116,6 +116,11 @@ def mode_2(ref1, ref2, targets):
                                              ref_level_cnt, ref_img)
     neg_result = calculate(ref_img, neg_mask)
     neg_ref_value = neg_result[0]
+    if debug:
+        cv2.imshow('raw', ref_img)
+        cv2.imshow('neg', neg_mask)
+        cv2.imshow('pos', pos_mask)
+        cv2.waitKey()
     pos_result = calculate(ref_img, pos_mask, neg_ref_value=neg_ref_value)
     pos_ref_value = pos_result[0]
     log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
@@ -293,10 +298,10 @@ def threshold(img, show=False):
     h, w = img.shape[:2]
     # mask = np.zeros([h + 2, w + 2], np.uint8)
     # ret1, th1 = cv2.threshold(img, 16, 255, cv2.THRESH_BINARY)
-    ret2, th2 = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     equalize = cv2.equalizeHist(blur)
     r, t = cv2.threshold(equalize, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    edge = auto_Canny(255 - th2)
+    ret2, th2 = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    edge = auto_Canny(255 - t)
     # cv2.floodFill(th2, mask=mask, seedPoint=(1,1), newVal=0, loDiff=3,
     # upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
     log.debug(f'h * w: {h} {w}')
@@ -310,29 +315,33 @@ def threshold(img, show=False):
     # cv2.THRESH_BINARY, 11, 4)
     # th3 = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
     # cv2.THRESH_BINARY, 11, 2)
-    th3 = auto_Canny(th2)
+    th3 = auto_Canny(t)
     if show:
         cv2.imshow('th2', th2)
         cv2.imshow('threshold', t)
-        cv2.imshow('t_edge', edge)
+        cv2.imshow('edge', edge)
     log.debug(f'ret2 {ret2}')
     return th3
 
 
 def get_edge(image):
+    """
+    Args:
+        image: raw BGR image
+    Returns:
+        erode_edge: edge
+    """
     # edge->blur->dilate->erode->contours
-    # img_equalize = cv2.equalizeHist(image)
-    # clahe = cv2.createCLAHE()
-    # sharped = clahe.apply(image)
-    # blur1 = cv2.GaussianBlur(img_equalize, (3, 3), 0)
-    img_equalize = image
-    # threshold(image)
-    edge = auto_Canny(img_equalize)
+    b, g, r = cv2.split(image)
+    combine = revert(g // 2 + r // 2)
+    edge = auto_Canny(combine)
     # blur edge, not original image
     blur = cv2.GaussianBlur(edge, (5, 5), 0)
     dilate = cv2.dilate(blur, None)
     erode_edge = cv2.erode(dilate, None)
-    # cv2.imshow('edge', edge)
+    if debug:
+        cv2.imshow('revert_combine', combine)
+        cv2.imshow('edge', edge)
     return erode_edge
 
 
@@ -663,13 +672,12 @@ def get_contour(img_file):
     log.info(f'Analyzing {img_file}')
     img = cv2.imread(img_file)
     # show_channel(img)
-    b, g, r = cv2.split(img)
     # reverse to get better edge
     # use green channel
     # todo: g or b
-    revert_img = revert(g // 2 + r // 2)
-    # revert_img = revert(g)
-    edge = get_edge(revert_img)
+    if debug:
+        threshold(img, show=True)
+    edge = get_edge(img)
     # APPROX_NONE to avoid omitting dots
     contours, raw_hierarchy = cv2.findContours(edge, cv2.RETR_TREE,
                                                cv2.CHAIN_APPROX_NONE)
@@ -795,6 +803,8 @@ def cli_main(arg_str=None):
     write_csv(target_results, targets, csv_file)
     # wait or poll
     cv2.pollKey()
+    if debug:
+        cv2.waitKey()
     cv2.destroyAllWindows()
     log.info('Done.')
     # todo: 30s per image, too slow
