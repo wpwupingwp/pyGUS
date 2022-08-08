@@ -98,7 +98,7 @@ def manual_ref(img, text=None):
     ref_value, std = cv2.meanStdDev(cropped)
     ref_value, std = ref_value[0][0], std[0][0]
     area = cropped.shape[0] * cropped.shape[1]
-    result = [ref_value, std, area, ref_value, std, area, 0, 0]
+    result = [ref_value, std, area, ref_value, std, area, 0, cropped.flatten()]
     # todo
     return result, mask
 
