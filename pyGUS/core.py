@@ -666,6 +666,7 @@ def draw_images(filtered_result, level_cnt, img, simple=False, show=False,
             log.debug(f'Write image {out_filename}')
     return img_dict
 
+
 def remove_yellow(b, g, r):
     yellow_part = np.minimum(g, r)
     b2 = b.astype('int')
