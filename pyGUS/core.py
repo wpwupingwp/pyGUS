@@ -666,13 +666,23 @@ def draw_images(filtered_result, level_cnt, img, simple=False, show=False,
             log.debug(f'Write image {out_filename}')
     return img_dict
 
+def remove_yellow(b, g, r):
+    yellow_part = np.minimum(g, r)
+    b2 = b.astype('int')
+    b2 -= yellow_part
+    b2[b2<0] = 255
+    b2 = b2.astype('uint8')
+    return b2
+
 
 def get_real_blue(original_image, neg_ref_value, pos_ref_value):
     if neg_ref_value > pos_ref_value or pos_ref_value <= 0:
         show_error('Bad negative and positive reference values.')
     b, g, r = cv2.split(original_image)
     factor = 1
-    revert_b = revert(b)
+    b2 = remove_yellow(b, g, r)
+    revert_b = revert(b2)
+    # revert_b = revert(b)
     amplified_neg_ref = int(factor * neg_ref_value)
     return revert_b, amplified_neg_ref
 
