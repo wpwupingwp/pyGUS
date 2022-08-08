@@ -12,7 +12,7 @@ import numpy as np
 matplotlib.use('Agg')
 
 from pyGUS.global_vars import log, debug
-from pyGUS.utils import select_box, select_polygon
+from pyGUS.utils import select_box, select_polygon, get_crop
 from pyGUS.utils import color_calibrate, if_exist, show_error
 
 MANUAL = 'manual'
@@ -86,19 +86,21 @@ def get_input(arg):
 
 def manual_ref(img, text=None):
     if text is not None:
-        neg, box = select_box(img, text)
+        raw, box = select_box(img, text)
     else:
-        neg, box = select_box(img)
-    x, y, w, h = box
-    neg_mask = np.zeros(img.shape[:2], dtype='uint8')
-    cv2.rectangle(neg_mask, (x, y), (x+w, y+h), (255, 255, 255), -1)
-    neg_ref_value, neg_std = cv2.meanStdDev(neg)
-    neg_ref_value, neg_std = neg_ref_value[0][0], neg_std[0][0]
-    neg_area = neg.shape[0] * neg.shape[1]
-    neg_result = [neg_ref_value, neg_std, neg_area, neg_ref_value, neg_std,
-                  neg_area, 0, 0]
-    todo()
-    return neg_result, neg_mask
+        raw, box = select_box(img)
+    blue, _ = get_real_blue(img, 0, 255)
+    cropped = get_crop(blue, box)
+    mask = np.zeros(img.shape[:2], dtype='uint8')
+    # cv2.rectangle(neg_mask, (x, y), (x+w, y+h), (255, 255, 255), -1)
+    cv2.imshow('mask', mask)
+    cv2.imshow('masked', cv2.bitwise_and(img, img, mask=mask))
+    ref_value, std = cv2.meanStdDev(cropped)
+    ref_value, std = ref_value[0][0], std[0][0]
+    area = cropped.shape[0] * cropped.shape[1]
+    result = [ref_value, std, area, ref_value, std, area, 0, 0]
+    # todo
+    return result, mask
 
 
 def mode_1(negative, positive, targets, auto_ref):
@@ -132,9 +134,9 @@ def mode_1(negative, positive, targets, auto_ref):
                                show=False, filename=target)
     draw_images(pos_filtered_result, pos_level_cnt, pos_img, show=False,
                 simple=True, filename=positive)
-    if auto_ref:
-        draw_images(neg_filtered_result, neg_level_cnt, neg_img, show=False,
-                    simple=True, filename=negative)
+    # if auto_ref:
+    #     draw_images(neg_filtered_result, neg_level_cnt, neg_img, show=False,
+    #                 simple=True, filename=negative)
     return neg_result, pos_result, target_results
 
 
@@ -172,10 +174,10 @@ def mode_2(ref1, ref2, targets, auto_ref):
         target_results.append(target_result)
         img_dict = draw_images(filtered_result, level_cnt, img, show=False,
                                simple=True, filename=target)
-    if not auto_ref:
-        ref_img_dict = draw_images(ref_filtered_result, ref_level_cnt, ref_img,
-                                   show=False, simple=True,
-                                   filename=negative_positive_ref)
+    # if not auto_ref:
+    #     ref_img_dict = draw_images(ref_filtered_result, ref_level_cnt, ref_img,
+    #                                show=False, simple=True,
+    #                                filename=negative_positive_ref)
     if debug:
         masked_neg = cv2.bitwise_and(ref_img, ref_img, mask=neg_mask)
         cv2.imshow('masked negative reference', 255 - masked_neg)
@@ -220,10 +222,10 @@ def mode_3(ref1, ref2, targets, auto_ref):
         target_results.append(target_result)
         img_dict = draw_images(filtered_result, level_cnt, img, show=False,
                                simple=True, filename=target)
-    neg_img_dict = draw_images(neg_filtered_result, neg_level_cnt, neg_img,
-                               show=False, simple=True, filename=negative)
-    pos_img_dict = draw_images(pos_filtered_result, pos_level_cnt, pos_img,
-                               show=False, simple=True, filename=positive)
+    # neg_img_dict = draw_images(neg_filtered_result, neg_level_cnt, neg_img,
+    #                            show=False, simple=True, filename=negative)
+    # pos_img_dict = draw_images(pos_filtered_result, pos_level_cnt, pos_img,
+    #                            show=False, simple=True, filename=positive)
     return neg_result, pos_result, target_results
 
 
@@ -375,11 +377,12 @@ def make_clean(image):
     # blur->dilate->erode
     # ensure CV_8U
     image = cv2.convertScaleAbs(image, alpha=1, beta=0)
+    # gaussian is better than median
     blur = cv2.GaussianBlur(image, (5, 5), 0)
     dilate = cv2.dilate(blur, None)
     erode_edge = cv2.erode(dilate, None)
     if debug:
-        cv2.imshow('clean_edge', erode_edge)
+        pass
     return erode_edge
 
 
@@ -411,7 +414,7 @@ def get_edge2(image):
     ysobel = cv2.convertScaleAbs(ysobel, alpha=1, beta=0)
     sobel_or = cv2.bitwise_or(xsobel, ysobel)
     sobel_add = cv2.addWeighted(xsobel, 0.5, ysobel, 0.5, 0)
-    s_clean = make_clean(sobel_or)
+    s_clean = cv2.medianBlur(sobel_or, 3)
     s2_clean = make_clean(sobel_add)
     # s_equal = cv2.equalizeHist(s_erode)
     cv2.imshow('sobel', sobel_or)

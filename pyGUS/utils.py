@@ -32,8 +32,9 @@ def show_error(msg):
 
 
 def get_crop(img, r):
+    print('box', r)
     x, y, w, h = r
-    cropped = img[int(y):(y + h), int(x):int(x + w)]
+    cropped = img[int(y):int(y + h), int(x):int(x + w)]
     return cropped
 
 
