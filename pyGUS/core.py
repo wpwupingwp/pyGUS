@@ -395,7 +395,7 @@ def get_edge(image):
     """
     # edge->blur->dilate->erode->contours
     b, g, r = cv2.split(image)
-    combine = revert(g // 2 + r // 2)
+    combine = revert(g//2 + r//2)
     edge = auto_Canny(combine)
     # blur edge, not original image
     erode_edge = make_clean(edge)
@@ -680,8 +680,8 @@ def get_real_blue(original_image, neg_ref_value, pos_ref_value):
         show_error('Bad negative and positive reference values.')
     b, g, r = cv2.split(original_image)
     factor = 1
-    b2 = remove_yellow(b, g, r)
-    revert_b = revert(b2)
+    # b = remove_yellow(b, g, r)
+    revert_b = revert(b)
     # revert_b = revert(b)
     amplified_neg_ref = int(factor * neg_ref_value)
     return revert_b, amplified_neg_ref
