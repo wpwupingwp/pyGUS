@@ -99,7 +99,6 @@ def manual_ref(img, text=None):
     ref_value, std = ref_value[0][0], std[0][0]
     area = cropped.shape[0] * cropped.shape[1]
     result = [ref_value, std, area, ref_value, std, area, 0, cropped.flatten()]
-    # todo
     return result, mask
 
 
@@ -179,10 +178,11 @@ def mode_2(ref1, ref2, targets, auto_ref):
     #                                show=False, simple=True,
     #                                filename=negative_positive_ref)
     if debug:
-        masked_neg = cv2.bitwise_and(ref_img, ref_img, mask=neg_mask)
-        cv2.imshow('masked negative reference', 255 - masked_neg)
-        masked_pos = cv2.bitwise_and(ref_img, ref_img, mask=pos_mask)
-        cv2.imshow('masked positive reference', 255 - masked_pos)
+        pass
+        # masked_neg = cv2.bitwise_and(ref_img, ref_img, mask=neg_mask)
+        # cv2.imshow('masked negative reference', 255 - masked_neg)
+        # masked_pos = cv2.bitwise_and(ref_img, ref_img, mask=pos_mask)
+        # cv2.imshow('masked positive reference', 255 - masked_pos)
     return neg_result, pos_result, target_results
 
 
@@ -804,7 +804,6 @@ def write_image(results, labels, out):
         out: output filename
     Returns:
         out: figure file
-
     """
     # result = (express_value, express_std, express_area, total_value,
     # total_std, total_area, express_ratio, express_flatten)
@@ -817,7 +816,7 @@ def write_image(results, labels, out):
     ax1 = plt.subplot(211)
     _ = results[0][-1]
     x = np.arange(1, len(labels) + 1)
-    width = 0.2
+    width = 0.1
     try:
         violin_parts = ax1.violinplot([i[-1] for i in results], showmeans=False,
                                       showmedians=False, showextrema=False,
@@ -840,8 +839,8 @@ def write_image(results, labels, out):
     rects2 = ax2.bar(x + width / 2, [i[5] for i in results], width=width,
                      alpha=0.4,
                      color='orange', label='Total area')
-    ax2.bar_label(rects1, padding=3)
-    ax2.bar_label(rects2, padding=3)
+    ax2.bar_label(rects1, label_type='center')
+    ax2.bar_label(rects2, label_type='center', padding=10)
     ax2.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
     ax2.legend()
     ax2.set_ylabel('Area (pixels)')
