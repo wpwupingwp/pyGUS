@@ -819,6 +819,7 @@ def write_image(results, labels, out):
     # result = (express_value, express_std, express_area, total_value,
     # total_std, total_area, express_ratio, express_flatten)
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    short_labels = [Path(i).name for i in labels]
     if len(labels) <= 5:
         figsize = (10, 6)
     else:
@@ -834,13 +835,19 @@ def write_image(results, labels, out):
                                       widths=0.4)
     except ValueError:
         show_error('Failed to plot results due to bad values.')
+    if 1>2:
+        import seaborn as sns
+        a = sns.violinplot(data=[i[-1] for i in results])
+        a.set_xticklabels(short_labels)
+        aa = a.get_figure()
+        aa.savefig()
+
     for pc in violin_parts['bodies']:
         pc.set_facecolor('#0d56ff')
         pc.set_edgecolor('black')
     ax1.set_xlabel('Sample')
     ax1.set_ylabel('Expression value', color='b')
     ax1.set_yticks(np.linspace(0, 256, 9))
-    short_labels = [Path(i).name for i in labels]
     ax1.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
     # ax2 = ax1.twinx()
     ax2 = plt.subplot(212)
