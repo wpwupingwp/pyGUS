@@ -229,7 +229,7 @@ def mode_3(ref1, ref2, targets, auto_ref):
     return neg_result, pos_result, target_results
 
 
-def mode_4(ref1, ref2, targets):
+def mode_4(ref1, ref2, targets, auto_ref):
     """
     Select region manually
     """
