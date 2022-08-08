@@ -844,7 +844,9 @@ def write_image(results, labels, out):
     ax1.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
     # ax2 = ax1.twinx()
     ax2 = plt.subplot(212)
-    rects1 = ax2.bar(x - width / 2, [i[2] for i in results], width=width,
+    neg_no_express = [i[2] for i in results]
+    neg_no_express[-1] = 0
+    rects1 = ax2.bar(x - width / 2, neg_no_express, width=width,
                      alpha=0.4,
                      color='green', label='Express area')
     rects2 = ax2.bar(x + width / 2, [i[5] for i in results], width=width,
