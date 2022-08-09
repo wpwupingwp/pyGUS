@@ -828,42 +828,38 @@ def write_image(results, labels, out):
     ax1 = plt.subplot(211)
     _ = results[0][-1]
     x = np.arange(1, len(labels) + 1)
-    width = 0.1
+    width = 0.3
+    violin_data = np.array([i[-1] for i in results], dtype='object')
     try:
-        violin_parts = ax1.violinplot([i[-1] for i in results], showmeans=False,
+        violin_parts = ax1.violinplot(violin_data, showmeans=True,
                                       showmedians=False, showextrema=False,
                                       widths=0.4)
     except ValueError:
         show_error('Failed to plot results due to bad values.')
-    if 1>2:
-        import seaborn as sns
-        a = sns.violinplot(data=[i[-1] for i in results])
-        a.set_xticklabels(short_labels)
-        aa = a.get_figure()
-        aa.savefig()
-
     for pc in violin_parts['bodies']:
         pc.set_facecolor('#0d56ff')
         pc.set_edgecolor('black')
     ax1.set_xlabel('Sample')
-    ax1.set_ylabel('Expression value', color='b')
+    ax1.set_ylabel('Expression value')
     ax1.set_yticks(np.linspace(0, 256, 9))
     ax1.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
     # ax2 = ax1.twinx()
     ax2 = plt.subplot(212)
-    neg_no_express = [i[2] for i in results]
-    neg_no_express[-1] = 0
-    rects1 = ax2.bar(x - width / 2, neg_no_express, width=width,
+    express_area = [i[2] for i in results]
+    total_area = [i[5] for i in results]
+    no_express_area = [t-e for t, e in zip(total_area, express_area)]
+    express_area[-1] = 0
+    rects1 = ax2.bar(x, express_area, width=width,
                      alpha=0.4,
-                     color='green', label='Express area')
-    rects2 = ax2.bar(x + width / 2, [i[5] for i in results], width=width,
-                     alpha=0.4,
-                     color='orange', label='Total area')
+                     color='green', label='Expression region')
+    rects2 = ax2.bar(x, no_express_area, width=width,
+                     bottom=express_area, alpha=0.4,
+                     color='orange', label='No expression region')
     ax2.bar_label(rects1, label_type='center')
-    ax2.bar_label(rects2, label_type='center', padding=10)
+    ax2.bar_label(rects2, label_type='center')
     ax2.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
     ax2.legend()
-    ax2.set_ylabel('Area (pixels)')
+    ax2.set_ylabel('Region area (pixels)')
     plt.tight_layout()
     plt.savefig(out)
     log.info(f'Output figure file {out}')
@@ -880,8 +876,8 @@ def write_csv(all_result, targets, out):
     Returns:
         out:
     """
-    header = ('Name,Express value, Express std,Express area, Total value,'
-              'Total std,Total Area,Express ratio')
+    header = ('Name,Expression value, Expression std,Expression area,'
+              'Total value,Total std,Total area,Expression ratio')
     with open(out, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f, delimiter=',', quotechar='"',
                             quoting=csv.QUOTE_MINIMAL)
