@@ -863,18 +863,15 @@ def write_image(results, labels, out):
     log.info(f'Output figure file {out}')
     return out
 
-def get_zscore(values_with_ref):
+
+def get_zscore(values):
     """
-    Values contains negative/positive reference at the end
     Args:
-        values_with_ref: value list
+        values: value list
     Returns:
         z_scores: list
     """
     z_scores = []
-    if len(values_with_ref) <= 3:
-        return [0, ]
-    values = [i[0] for i in values_with_ref[:-2]]
     mean = np.mean(values)
     std = np.std(values)
     if std == 0:
@@ -898,8 +895,9 @@ def write_csv(all_result, targets, out):
     header = ('Name,Expression value, Expression std,Expression area,'
               'Total value,Total std,Total area,Expression ratio,'
               'Z-score,Outlier')
-    z_scores = get_zscore(all_result)
     z_score_threshold = 3
+    values = [i[0] for i in all_result[:-2]]
+    z_scores = get_zscore(values)
     with open(out, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f, delimiter=',', quotechar='"',
                             quoting=csv.QUOTE_MINIMAL)
