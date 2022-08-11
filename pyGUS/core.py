@@ -381,8 +381,6 @@ def make_clean(image):
     blur = cv2.GaussianBlur(image, (5, 5), 0)
     dilate = cv2.dilate(blur, None)
     erode_edge = cv2.erode(dilate, None)
-    if debug:
-        pass
     return erode_edge
 
 
@@ -865,6 +863,27 @@ def write_image(results, labels, out):
     log.info(f'Output figure file {out}')
     return out
 
+def get_zscore(values_with_ref):
+    """
+    Values contains negative/positive reference at the end
+    Args:
+        values_with_ref: value list
+    Returns:
+        z_scores: list
+    """
+    z_scores = []
+    if len(values_with_ref) <= 3:
+        return [0, ]
+    values = [i[0] for i in values_with_ref[:-2]]
+    mean = np.mean(values)
+    std = np.std(values)
+    if std == 0:
+        return [0, ] * len(values)
+    for i in values:
+        z_score = (i-mean) / std
+        z_scores.append(z_score)
+    return z_scores
+
 
 def write_csv(all_result, targets, out):
     """
@@ -877,13 +896,19 @@ def write_csv(all_result, targets, out):
         out:
     """
     header = ('Name,Expression value, Expression std,Expression area,'
-              'Total value,Total std,Total area,Expression ratio')
+              'Total value,Total std,Total area,Expression ratio,'
+              'Z-score,Outlier')
+    z_scores = get_zscore(all_result)
+    z_score_threshold = 3
     with open(out, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f, delimiter=',', quotechar='"',
                             quoting=csv.QUOTE_MINIMAL)
         writer.writerow(header.split(','))
-        for name, result in zip(targets, all_result):
-            writer.writerow([name, *result[:-1]])
+        for name, result, z_score in zip(targets, all_result, z_scores):
+            is_outlier = (np.abs(z_score) > z_score_threshold)
+            if is_outlier:
+                log.warning(f'{name} has abnormal expression value.')
+            writer.writerow([name, *result[:-1], z_score, is_outlier])
     log.info(f'Output table file {out}')
     return out
 
