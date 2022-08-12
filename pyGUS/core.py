@@ -530,19 +530,27 @@ def filter_contours(img, level_cnt: dict) -> (list, list, list):
         inner_background:
     """
     external_contours = []
-    external_area = {}
+    external_area = []
     inner_contours = []
     for level, cnt in level_cnt.items():
         next_, previous_, first_child, parent, self_ = level
         # -1 means no parent -> external
         if parent == -1:
             external_contours.append(level)
-            external_area[level] = cv2.contourArea(level_cnt[level])
+            external_area.append(cv2.contourArea(level_cnt[level]))
         else:
             inner_contours.append(level)
-    external_contours.sort(key=lambda x: external_area[x], reverse=True)
+    z_scores = get_zscore(external_area)
+    external_area_dict = dict(zip(external_contours, external_area))
+    external_zscore_dict = dict(zip(external_contours, z_scores))
+    external_contours.sort(key=lambda x: external_area_dict[x], reverse=True)
     # a picture only contains at most TWO target (sample and reference)
     big_external_contours = external_contours[:2]
+    for i in big_external_contours:
+        # less than 1 means not big enough
+        if external_zscore_dict[i] < 1:
+            log.info('Found abnormal contours.')
+            return None
     try:
         small_external_contours = external_contours[2:]
     except IndexError:
@@ -796,6 +804,9 @@ def get_contour(img_file):
     # APPROX_NONE to avoid omitting dots
     contours, raw_hierarchy = cv2.findContours(edge, cv2.RETR_TREE,
                                                cv2.CHAIN_APPROX_NONE)
+    # at least two objects
+    if len(contours) < 3:
+        show_error('Cannot find objects in given image.')
     hierarchy = []
     # raw hierarchy is [[[1,1,1,1]]]
     for index, value in enumerate(raw_hierarchy[0]):
