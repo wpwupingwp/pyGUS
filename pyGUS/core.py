@@ -529,17 +529,18 @@ def filter_contours(img, level_cnt: dict) -> (list, list, list):
         fake_inner:
         inner_background:
     """
-    external_contours = list()
-    inner_contours = list()
+    external_contours = []
+    external_area = {}
+    inner_contours = []
     for level, cnt in level_cnt.items():
         next_, previous_, first_child, parent, self_ = level
         # -1 means no parent -> external
         if parent == -1:
             external_contours.append(level)
+            external_area[level] = cv2.contourArea(level_cnt[level])
         else:
             inner_contours.append(level)
-    external_contours.sort(key=lambda key: cv2.contourArea(level_cnt[key]),
-                           reverse=True)
+    external_contours.sort(key=lambda x: external_area[x], reverse=True)
     # a picture only contains at most TWO target (sample and reference)
     big_external_contours = external_contours[:2]
     try:
@@ -773,6 +774,11 @@ def split_image(left_cnt, right_cnt, img):
     return target, ref
 
 
+def get_low_contrast_contour(img_file):
+    todo
+    pass
+
+
 def get_contour(img_file):
     # .png .jpg .tiff
     log.info(f'Analyzing {img_file}')
@@ -786,17 +792,17 @@ def get_contour(img_file):
         # threshold(img, show=True)
     edge = get_edge(img)
     # edge2 = get_edge2(img)
-    cv2.waitKey()
+    # cv2.waitKey()
     # APPROX_NONE to avoid omitting dots
     contours, raw_hierarchy = cv2.findContours(edge, cv2.RETR_TREE,
                                                cv2.CHAIN_APPROX_NONE)
-    hierarchy = list()
+    hierarchy = []
     # raw hierarchy is [[[1,1,1,1]]]
     for index, value in enumerate(raw_hierarchy[0]):
         # [next, previous, child, parent, self]
         new_value = np.append(value, index)
         hierarchy.append(new_value)
-    level_cnt = dict()
+    level_cnt = {}
     for key, value in zip(hierarchy, contours):
         level_cnt[tuple(key)] = value
     filtered_result = filter_contours(img, level_cnt)
