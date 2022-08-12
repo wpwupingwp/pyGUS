@@ -9,6 +9,7 @@ import cv2
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+
 matplotlib.use('Agg')
 
 from pyGUS.global_vars import log, debug
@@ -124,7 +125,8 @@ def mode_1(negative, positive, targets, auto_ref):
         neg_filtered_result = []
         neg_level_cnt = []
     neg_ref_value = neg_result[0]
-    pos_filtered_result, pos_level_cnt, pos_img = get_contour(positive)
+    pos_level_cnt, pos_img = get_contour(positive)
+    pos_filtered_result = filter_contours(pos_img, pos_level_cnt)
     pos_mask = get_single_mask(pos_filtered_result, pos_level_cnt, pos_img)
     pos_result = calculate(pos_img, pos_mask, neg_ref_value=neg_ref_value)
     pos_ref_value = pos_result[0]
@@ -182,9 +184,11 @@ def mode_2(ref1, ref2, targets, auto_ref):
         level_cnt, img = get_contour(target)
         filtered_result = filter_contours(img, level_cnt)
         if filtered_result is not None:
-            target_mask, pos_mask_ = get_left_right_mask(filtered_result, level_cnt,
+            target_mask, pos_mask_ = get_left_right_mask(filtered_result,
+                                                         level_cnt,
                                                          img)
-            target_result = calculate(img, target_mask, neg_ref_value=neg_ref_value,
+            target_result = calculate(img, target_mask,
+                                      neg_ref_value=neg_ref_value,
                                       pos_ref_value=pos_ref_value)
         else:
             log.info(GENERAL_TEXT)
@@ -230,7 +234,8 @@ def mode_3(ref1, ref2, targets, auto_ref):
         neg_img = cv2.imread(ok_neg)
         neg_result, neg_mask = manual_ref(neg_img, NEG_TEXT)
         neg_filtered_result, neg_level_cnt = None, None
-    pos_filtered_result, pos_level_cnt, pos_img = get_contour(ok_pos)
+    pos_level_cnt, pos_img = get_contour(ok_pos)
+    pos_filtered_result = filter_contours(pos_img, pos_level_cnt)
     pos_left_mask, pos_right_mask = get_left_right_mask(
         pos_filtered_result, pos_level_cnt, pos_img)
     pos_result = calculate(pos_img, pos_left_mask)
@@ -242,9 +247,11 @@ def mode_3(ref1, ref2, targets, auto_ref):
         level_cnt, img = get_contour(target)
         filtered_result = filter_contours(img, level_cnt)
         if filtered_result is not None:
-            left_mask, right_mask = get_left_right_mask(filtered_result, level_cnt,
+            left_mask, right_mask = get_left_right_mask(filtered_result,
+                                                        level_cnt,
                                                         img)
-            target_result = calculate(img, left_mask, neg_ref_value, pos_ref_value)
+            target_result = calculate(img, left_mask, neg_ref_value,
+                                      pos_ref_value)
         else:
             log.info(GENERAL_TEXT)
             target_result, target_mask = manual_ref(img, text=SHORT_TEXT,
@@ -423,7 +430,7 @@ def get_edge(image):
     """
     # edge->blur->dilate->erode->contours
     b, g, r = cv2.split(image)
-    combine = revert(g//2 + r//2)
+    combine = revert(g // 2 + r // 2)
     edge = auto_Canny(combine)
     # blur edge, not original image
     erode_edge = make_clean(edge)
@@ -458,7 +465,7 @@ def get_edge2(image):
     for i in s_cnt:
         cv2.drawContours(s_img, [i], 0, (255, 255, 255), 2)
     cv2.imshow('scnt', s_img)
-    if 1>2:
+    if 1 > 2:
         cv2.imshow('sobel_add', sobel_add)
         cv2.imshow('sobel2_blur', s2_blur)
         cv2.imshow('sobel_edge', s_erode)
@@ -711,7 +718,7 @@ def remove_yellow(b, g, r):
     yellow_part = np.minimum(g, r)
     b2 = b.astype('int')
     b2 -= yellow_part
-    b2[b2<0] = 255
+    b2[b2 < 0] = 255
     b2 = b2.astype('uint8')
     return b2
 
@@ -879,7 +886,7 @@ def write_image(results, labels, out):
     if len(labels) <= 5:
         figsize = (10, 6)
     else:
-        figsize = (10*len(labels)/5, 6)
+        figsize = (10 * len(labels) / 5, 6)
     fig = plt.figure(figsize=figsize)
     ax1 = plt.subplot(211)
     _ = results[0][-1]
@@ -903,7 +910,7 @@ def write_image(results, labels, out):
     ax2 = plt.subplot(212)
     express_area = [i[2] for i in results]
     total_area = [i[5] for i in results]
-    no_express_area = [t-e for t, e in zip(total_area, express_area)]
+    no_express_area = [t - e for t, e in zip(total_area, express_area)]
     express_area[-1] = 0
     rects1 = ax2.bar(x, express_area, width=width,
                      alpha=0.4,
@@ -935,7 +942,7 @@ def get_zscore(values):
     if std == 0:
         return [0, ] * len(values)
     for i in values:
-        z_score = (i-mean) / std
+        z_score = (i - mean) / std
         z_scores.append(z_score)
     return z_scores
 
