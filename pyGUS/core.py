@@ -84,7 +84,11 @@ def get_input(arg):
     return negative, positive, targets, auto_ref, message
 
 
-def manual_ref(img, text=None):
+def manual_ref(img, text=None, method='box'):
+    if method == 'box':
+        select = select_box
+    else:
+        select = select_polygon
     if text is not None:
         raw, box = select_box(img, text)
     else:
@@ -93,8 +97,9 @@ def manual_ref(img, text=None):
     cropped = get_crop(blue, box)
     mask = np.zeros(img.shape[:2], dtype='uint8')
     # cv2.rectangle(neg_mask, (x, y), (x+w, y+h), (255, 255, 255), -1)
-    cv2.imshow('mask', mask)
-    cv2.imshow('masked', cv2.bitwise_and(img, img, mask=mask))
+    if debug:
+        cv2.imshow('mask', mask)
+        cv2.imshow('masked', cv2.bitwise_and(img, img, mask=mask))
     ref_value, std = cv2.meanStdDev(cropped)
     ref_value, std = ref_value[0][0], std[0][0]
     area = cropped.shape[0] * cropped.shape[1]
@@ -782,9 +787,20 @@ def split_image(left_cnt, right_cnt, img):
     return target, ref
 
 
-def get_low_contrast_contour(img_file):
-    todo
-    pass
+def get_contour_wrapper(img_file, neg_ref_value, pos_ref_value):
+    filtered_result, level_cnt, img = get_contour(img_file)
+    if filtered_result is not None:
+        mask = get_single_mask(filtered_result, level_cnt, img)
+        result = calculate(img, mask, neg_ref_value=neg_ref_value,
+                           pos_ref_value=pos_ref_value)
+    else:
+        log.info('Failed to detect target with extremely low contrast.')
+        log.info('Please manually select target region.')
+        result, mask = manual_ref(
+            img,
+            text='Failed to detect target region, please manually select.',
+            method='polygon')
+    return result, mask, filtered_result, level_cnt, img
 
 
 def get_contour(img_file):
