@@ -14,7 +14,7 @@ matplotlib.use('Agg')
 
 from pyGUS.global_vars import log, debug
 from pyGUS.utils import select_box, select_polygon, get_crop
-from pyGUS.utils import color_calibrate, if_exist, show_error
+from pyGUS.utils import color_calibrate, if_exist, imshow, show_error
 
 MANUAL = 'manual'
 NEG_TEXT = ('Select negative expression region as reference, '
@@ -102,8 +102,8 @@ def manual_ref(img, text=None, method='box'):
     mask = np.zeros(img.shape[:2], dtype='uint8')
     # cv2.rectangle(neg_mask, (x, y), (x+w, y+h), (255, 255, 255), -1)
     if debug:
-        cv2.imshow('mask', mask)
-        cv2.imshow('masked', cv2.bitwise_and(img, img, mask=mask))
+        imshow('mask', mask)
+        imshow('masked', cv2.bitwise_and(img, img, mask=mask))
     ref_value, std = cv2.meanStdDev(cropped)
     ref_value, std = ref_value[0][0], std[0][0]
     area = cropped.shape[0] * cropped.shape[1]
@@ -290,7 +290,7 @@ def mode_4(ref1, ref2, targets, auto_ref):
         cropped3, mask3 = select_polygon(img_copy, name_dict['target'][0],
                                          name_dict['target'][1])
         try:
-            cv2.imshow('Press space bar to continue', img_copy)
+            imshow('Press space bar to continue', img_copy)
             cv2.waitKey()
             cv2.destroyAllWindows()
         except cv2.error:
@@ -403,9 +403,9 @@ def threshold(img, show=False):
     # cv2.THRESH_BINARY, 11, 2)
     th3 = auto_Canny(t)
     if show:
-        cv2.imshow('th2', th2)
-        cv2.imshow('threshold', t)
-        cv2.imshow('edge', edge)
+        imshow('th2', th2)
+        imshow('threshold', t)
+        imshow('edge', edge)
     log.debug(f'ret2 {ret2}')
     return th3
 
@@ -435,8 +435,8 @@ def get_edge(image):
     # blur edge, not original image
     erode_edge = make_clean(edge)
     if debug:
-        cv2.imshow('revert_combine', combine)
-        cv2.imshow('edge', erode_edge)
+        imshow('revert_combine', combine)
+        imshow('edge', erode_edge)
     return erode_edge
 
 
@@ -452,10 +452,10 @@ def get_edge2(image):
     s_clean = cv2.medianBlur(sobel_or, 3)
     s2_clean = make_clean(sobel_add)
     # s_equal = cv2.equalizeHist(s_erode)
-    cv2.imshow('sobel', sobel_or)
-    cv2.imshow('sobel2', sobel_add)
-    cv2.imshow('s_clean', s_clean)
-    cv2.imshow('s2_clean', s2_clean)
+    imshow('sobel', sobel_or)
+    imshow('sobel2', sobel_add)
+    imshow('s_clean', s_clean)
+    imshow('s2_clean', s2_clean)
     scharr_x = cv2.Scharr(combine, cv2.CV_8U, 1, 0)
     scharr_y = cv2.Scharr(combine, cv2.CV_8U, 1, 0)
     scharr = cv2.addWeighted(scharr_x, 0.5, scharr_y, 0.5, 0)
@@ -464,16 +464,16 @@ def get_edge2(image):
     s_img = np.zeros(image.shape[:2])
     for i in s_cnt:
         cv2.drawContours(s_img, [i], 0, (255, 255, 255), 2)
-    cv2.imshow('scnt', s_img)
+    imshow('scnt', s_img)
     if 1 > 2:
-        cv2.imshow('sobel_add', sobel_add)
-        cv2.imshow('sobel2_blur', s2_blur)
-        cv2.imshow('sobel_edge', s_erode)
-        cv2.imshow('sobel2_edge', s2_erode)
-        cv2.imshow('sobel_equal', s_equal)
-        cv2.imshow('sobel2_equal', s2_equal)
+        imshow('sobel_add', sobel_add)
+        imshow('sobel2_blur', s2_blur)
+        imshow('sobel_edge', s_erode)
+        imshow('sobel2_edge', s2_erode)
+        imshow('sobel_equal', s_equal)
+        imshow('sobel2_equal', s2_equal)
     laplacian = cv2.Laplacian(combine, cv2.CV_64F)
-    cv2.imshow('laplacian', laplacian)
+    imshow('laplacian', laplacian)
     return s2_clean
 
 
@@ -507,7 +507,7 @@ def get_background_value(img, external_contours, level_cnt):
         cnt = level_cnt[external]
         cv2.fillPoly(mask, [cnt], (0, 0, 0))
     mean, std = cv2.meanStdDev(img, mask=mask)
-    # cv2.imshow('Background masked', masked)
+    # imshow('Background masked', masked)
     return mean[0][0], std[0][0]
 
 
@@ -642,8 +642,8 @@ def show_channel(img):
     # opencv use BGR
     b, g, r = cv2.split(img)
     for title, value in zip(['b', 'g', 'r'], [b, g, r]):
-        cv2.imshow(title + 'revert', 255 - value)
-        cv2.imshow(title, value)
+        imshow(title + 'revert', 255 - value)
+        imshow(title, value)
 
 
 def hex2bgr(hex_str: str):
@@ -704,7 +704,7 @@ def draw_images(filtered_result, level_cnt, img, simple=False, show=False,
     drawing(real_background, color_red)
     for title, image in img_dict.items():
         if show:
-            cv2.imshow(title, image)
+            imshow(title, image)
         if filename is not None:
             out_p = Path(filename)
             out_filename = str(out_p.parent / out_p.with_name(

@@ -20,6 +20,11 @@ def if_exist(filename) -> str:
         return str(filename)
 
 
+def imshow(name, img):
+    cv2.namedWindow(name, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
+    cv2.imshow(name, img)
+
+
 def show_error(msg):
     # show error message and quit
     if global_vars.is_gui:
@@ -78,14 +83,14 @@ def select_polygon(img, title='', color=(255, 255, 255)):
         elif event == cv2.EVENT_RBUTTONDOWN:
             done = True
 
-    cv2.imshow(name, img)
+    imshow(name, img)
     cv2.pollKey()
     cv2.setMouseCallback(name, on_mouse)
     while not done:
         if len(points) > 0:
             cv2.polylines(img, np.array([points]), False, color, 3)
             cv2.circle(img, points[-1], 2, color, 3)
-        cv2.imshow(name, img)
+        imshow(name, img)
         # Esc
         if cv2.waitKey(50) == 27:
             done = True
@@ -97,7 +102,7 @@ def select_polygon(img, title='', color=(255, 255, 255)):
         cropped = get_crop(img, box)
     else:
         pass
-    cv2.imshow(name, img)
+    imshow(name, img)
     cv2.pollKey()
     cv2.destroyWindow(name)
     return cropped, mask
@@ -178,7 +183,7 @@ def color_calibrate(img_file: Path, draw_detected=False):
         cdraw = cv2.mcc.CCheckerDraw_create(checker)
         img_draw = img.copy()
         cdraw.draw(img_draw)
-        cv2.imshow('Detected colorchecker', img_draw)
+        imshow('Detected colorchecker', img_draw)
     # get ccm
     charts_rgb = checker.getChartsRGB()
     src = charts_rgb[:, 1].copy().reshape(24, 1, 3)
