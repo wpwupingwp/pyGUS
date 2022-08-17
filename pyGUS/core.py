@@ -121,7 +121,7 @@ def mode_1(negative, positive, targets, auto_ref):
          neg_img) = get_contour_wrapper(negative, 0, 255, NEG_TEXT)
     else:
         neg_img = cv2.imread(negative)
-        neg_result, neg_mask = manual_ref(negative, NEG_TEXT)
+        neg_result, neg_mask = manual_ref(neg_img, NEG_TEXT)
         neg_filtered_result = []
         neg_level_cnt = []
     neg_ref_value = neg_result[0]
