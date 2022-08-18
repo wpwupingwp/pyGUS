@@ -430,7 +430,7 @@ def get_edge(image):
     """
     # edge->blur->dilate->erode->contours
     b, g, r = cv2.split(image)
-    combine = revert(g // 2 + r // 2)
+    combine = revert(g //3 + r // 3 + b // 3)
     edge = auto_Canny(combine)
     # blur edge, not original image
     erode_edge = make_clean(edge)
