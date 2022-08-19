@@ -126,7 +126,7 @@ def mode_1(negative, positive, targets, auto_ref):
         neg_level_cnt = []
     neg_ref_value = neg_result[0]
     pos_level_cnt, pos_img = get_contour(positive)
-    pos_filtered_result = filter_contours(pos_img, pos_level_cnt)
+    pos_filtered_result = filter_contours(pos_img, pos_level_cnt, big=1)
     pos_mask = get_single_mask(pos_filtered_result, pos_level_cnt, pos_img)
     pos_result = calculate(pos_img, pos_mask, neg_ref_value=neg_ref_value)
     pos_ref_value = pos_result[0]
@@ -554,11 +554,12 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
     return fake_inner, inner_background
 
 
-def filter_contours(img, level_cnt: dict):
+def filter_contours(img, level_cnt: dict, big=2):
     """
     Args:
         img: original image
         level_cnt(dict):
+        big: number of big external contours
     Returns:
         big:
         small:
@@ -582,7 +583,7 @@ def filter_contours(img, level_cnt: dict):
     external_zscore_dict = dict(zip(external_contours, z_scores))
     external_contours.sort(key=lambda x: external_area_dict[x], reverse=True)
     # a picture only contains at most TWO target (sample and reference)
-    big_external_contours = external_contours[:2]
+    big_external_contours = external_contours[:big]
     for i in big_external_contours:
         # less than 1 means not big enough
         if external_zscore_dict[i] < 1:
@@ -940,7 +941,7 @@ def get_zscore(values):
     mean = np.mean(values)
     std = np.std(values)
     if std == 0:
-        return [0, ] * len(values)
+        return [1, ] * len(values)
     for i in values:
         z_score = (i - mean) / std
         z_scores.append(z_score)
