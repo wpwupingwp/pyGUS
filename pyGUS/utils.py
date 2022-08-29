@@ -8,7 +8,7 @@ from pyGUS import global_vars
 log = global_vars.log
 
 
-def if_exist(filename) -> str:
+def if_exist(filename: Path) -> str:
     """
     Args:
         filename: Path
@@ -20,12 +20,12 @@ def if_exist(filename) -> str:
         return str(filename)
 
 
-def imshow(name, img):
+def imshow(name: str, img: np.array) -> None:
     cv2.namedWindow(name, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
     cv2.imshow(name, img)
 
 
-def show_error(msg):
+def show_error(msg: str) -> None:
     # show error message and quit
     if global_vars.is_gui:
         from tkinter import messagebox
@@ -36,30 +36,26 @@ def show_error(msg):
     raise SystemExit(-10)
 
 
-def get_crop(img, r):
+def get_crop(img: np.array, r: list) -> np.array:
+    # deprecated
     print('box', r)
     x, y, w, h = r
     cropped = img[int(y):int(y + h), int(x):int(x + w)]
     return cropped
 
 
-def select_box(img, text='Select the region, then press SPACE BAR'):
+def select_box(img: np.array, text='Select the region, then press SPACE BAR'
+               ) -> np.array:
     cv2.pollKey()
-    r = cv2.selectROI(text, img)
-    cropped = get_crop(img, r)
-    return cropped, r
+    x, y, w, h = cv2.selectROI(text, img)
+    mask = np.zeros(img.shape[:2], dtype='uint8')
+    cv2.rectangle(mask, (x, y), (x+w, y+h), 255, -1)
+    return mask
 
 
-def select_polygon(img, title='', color=(255, 255, 255)):
+def select_polygon(img: np.array, title='', color=(255, 255, 255)) -> np.array:
     """
     Select polygon region.
-    Args:
-        img:
-        title:
-        color:
-    Returns:
-        cropped:
-        mask:
     """
     # init
     # assert global_vars.is_gui
@@ -98,14 +94,13 @@ def select_polygon(img, title='', color=(255, 255, 255)):
     if len(points) > 0:
         cv2.fillPoly(img, points_array, color)
         cv2.fillPoly(mask, points_array, (255, 255, 255))
-        box = cv2.boundingRect(points_array)
-        cropped = get_crop(img, box)
+        # box = cv2.boundingRect(points_array)
     else:
         pass
     imshow(name, img)
     cv2.pollKey()
     cv2.destroyWindow(name)
-    return cropped, mask
+    return mask
 
 
 def draw_colorchecker(out='card.jpg'):

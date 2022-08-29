@@ -97,20 +97,19 @@ def manual_ref(img: np.array, text=None, method='box') -> (list, np.array):
     else:
         select = select_polygon
     if text is not None:
-        raw, box = select_box(img, text)
+        mask = select(img, text)
     else:
-        raw, box = select_box(img)
+        mask = select(img)
     blue, _ = get_real_blue(img, 0, 255)
-    cropped = get_crop(blue, box)
-    mask = np.zeros(img.shape[:2], dtype='uint8')
-    # cv2.rectangle(neg_mask, (x, y), (x+w, y+h), (255, 255, 255), -1)
     if debug:
         imshow('mask', mask)
         imshow('masked', cv2.bitwise_and(img, img, mask=mask))
-    ref_value, std = cv2.meanStdDev(cropped)
+    ref_value, std = cv2.meanStdDev(blue, mask=mask)
     ref_value, std = ref_value[0][0], std[0][0]
-    area = cropped.shape[0] * cropped.shape[1]
-    result = [ref_value, std, area, ref_value, std, area, 0, cropped.flatten()]
+    area = np.count_nonzero(mask)
+    masked = cv2.bitwise_and(blue, blue, mask=mask)
+    flatten = masked[masked > 0]
+    result = [ref_value, std, area, ref_value, std, area, 0, flatten]
     return result, mask
 
 
