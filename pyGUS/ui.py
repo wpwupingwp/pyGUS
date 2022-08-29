@@ -41,6 +41,7 @@ def thread_wrap(function, arg_str):
         messagebox.showinfo(f'Fail. See {result[1]} for details.')
     return
 
+
 class Root:
     def __init__(self, top=None):
         _bgcolor = '#edf0f3'  # Closest X11 color: 'gray94'

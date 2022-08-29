@@ -146,10 +146,6 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
     for target in targets:
         (target_result, target_mask, filtered_result, level_cnt,
          img) = get_contour_wrapper(target, neg_ref_value, pos_ref_value)
-        # filtered_result, level_cnt, img = get_contour(target)
-        # target_mask = get_single_mask(filtered_result, level_cnt, img)
-        # target_result = calculate(img, target_mask, neg_ref_value=neg_ref_value,
-        #                           pos_ref_value=pos_ref_value)
         target_results.append(target_result)
         img_dict = draw_images(filtered_result, level_cnt, img, simple=True,
                                show=False, filename=target)
@@ -212,10 +208,6 @@ def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
         target_results.append(target_result)
         img_dict = draw_images(filtered_result, level_cnt, img, show=False,
                                simple=True, filename=target)
-    # if not auto_ref:
-    #     ref_img_dict = draw_images(ref_filtered_result, ref_level_cnt, ref_img,
-    #                                show=False, simple=True,
-    #                                filename=negative_positive_ref)
     if debug:
         pass
         # masked_neg = cv2.bitwise_and(ref_img, ref_img, mask=neg_mask)
@@ -345,14 +337,15 @@ def fill_mask(shape: list, target: list, fake_inner: list,
 
 
 def get_single_mask(filtered_result: list, level_cnt: dict,
-                    img: np.array ) -> np.array:
+                    img: np.array) -> np.array:
     # big_external + fake_inner - inner_background
     (big_external_contours, small_external_contours, inner_contours,
      fake_inner, inner_background) = filtered_result
     target = big_external_contours[0]
     self_index = target[4]
-    # log.debug(f'self {self_index}')
-    # log.debug(f'contour area {cv2.contourArea(target)}')
+    if debug:
+        log.debug(f'self {self_index}')
+        log.debug(f'contour area {cv2.contourArea(target)}')
     mask = fill_mask(img.shape[:2], target, fake_inner, inner_background,
                      level_cnt)
     return mask
@@ -454,7 +447,7 @@ def get_edge(image: np.array) -> np.array:
     """
     # edge->blur->dilate->erode->contours
     b, g, r = cv2.split(image)
-    combine = revert(g //3 + r // 3 + b // 3)
+    combine = revert(g // 3 + r // 3 + b // 3)
     edge = auto_Canny(combine)
     # blur edge, not original image
     erode_edge = make_clean(edge)
@@ -535,7 +528,7 @@ def get_background_value(img: np.array, external_contours: list,
 def remove_fake_inner_cnt(img: np.array, level_cnt: dict,
                           big_external_contours: list,
                           external_contours: list,
-                          inner_contours: list) -> (list,list):
+                          inner_contours: list) -> (list, list):
     fake_inner = list()
     inner_background = list()
     b, g, r = cv2.split(img)
