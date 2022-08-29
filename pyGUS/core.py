@@ -328,7 +328,8 @@ def mode_4(_: str, __: str, targets: list, auto_ref: bool
     return neg_result, pos_result, target_results
 
 
-def fill_mask(shape, target, fake_inner, inner_background, level_cnt) -> np.array:
+def fill_mask(shape: list, target: list, fake_inner: list,
+              inner_background: list, level_cnt: dict) -> np.array:
     cnt = level_cnt[target]
     white = (255, 255, 255)
     black = (0, 0, 0)
@@ -344,7 +345,8 @@ def fill_mask(shape, target, fake_inner, inner_background, level_cnt) -> np.arra
     return mask
 
 
-def get_single_mask(filtered_result, level_cnt, img):
+def get_single_mask(filtered_result: list, level_cnt: dict,
+                    img: np.array ) -> np.array:
     # big_external + fake_inner - inner_background
     (big_external_contours, small_external_contours, inner_contours,
      fake_inner, inner_background) = filtered_result
@@ -357,7 +359,8 @@ def get_single_mask(filtered_result, level_cnt, img):
     return mask
 
 
-def get_left_right_mask(filtered_result, level_cnt, img):
+def get_left_right_mask(filtered_result: list, level_cnt: dict,
+                        img: np.array) -> (np.array, np.array):
     (big_external_contours, small_external_contours, inner_contours,
      fake_inner, inner_background) = filtered_result
     # target, ref
@@ -382,8 +385,10 @@ def get_left_right_mask(filtered_result, level_cnt, img):
     return left_mask, right_mask
 
 
-def auto_Canny(image, sigma=0.33):
-    # compute the median of the single channel pixel intensities
+def auto_Canny(image: np.array, sigma=0.33) -> np.array:
+    """
+    Compute the median of the single channel pixel intensities
+    """
     v = np.median(image)
     # use edited lower bound
     lower = int(max(0, (1.0 - sigma * 2) * v))
@@ -392,8 +397,11 @@ def auto_Canny(image, sigma=0.33):
     return edge
 
 
-def threshold(img, show=False):
-    # todo: find suitable edge to split target and edge
+def threshold(img: np.array, show=False) -> np.array:
+    """
+    Try to find suitable edge to split target and edge
+    Paused.
+    """
     r, g, b = cv2.split(img)
     r_g = r // 2 + g // 2
     r_g_reverse = 255 - r_g
@@ -427,7 +435,7 @@ def threshold(img, show=False):
     return th3
 
 
-def make_clean(image):
+def make_clean(image: np.array) -> np.array:
     # blur->dilate->erode
     # ensure CV_8U
     image = cv2.convertScaleAbs(image, alpha=1, beta=0)
@@ -438,7 +446,7 @@ def make_clean(image):
     return erode_edge
 
 
-def get_edge(image):
+def get_edge(image: np.array) -> np.array:
     """
     Args:
         image: raw BGR image
@@ -457,7 +465,7 @@ def get_edge(image):
     return erode_edge
 
 
-def get_edge2(image):
+def get_edge2(image: np.array) -> np.array:
     b, g, r = cv2.split(image)
     combine = revert(g // 2 + r // 2)
     xsobel = cv2.Sobel(combine, cv2.CV_64F, 0, 1, ksize=5)
@@ -482,30 +490,26 @@ def get_edge2(image):
     for i in s_cnt:
         cv2.drawContours(s_img, [i], 0, (255, 255, 255), 2)
     imshow('scnt', s_img)
-    if 1 > 2:
+    if debug:
         imshow('sobel_add', sobel_add)
-        imshow('sobel2_blur', s2_blur)
-        imshow('sobel_edge', s_erode)
-        imshow('sobel2_edge', s2_erode)
-        imshow('sobel_equal', s_equal)
-        imshow('sobel2_equal', s2_equal)
     laplacian = cv2.Laplacian(combine, cv2.CV_64F)
     imshow('laplacian', laplacian)
     return s2_clean
 
 
-def revert(img):
+def revert(img: np.array) -> np.array:
     return 255 - img
 
 
-def get_arc_epsilon(max_contour, ratio=0.0001):
+def get_arc_epsilon(max_contour: np.array, ratio=0.0001) -> float:
     log.debug(f'Max contour area: {cv2.contourArea(max_contour)}')
     arc_epsilon = cv2.arcLength(max_contour, True) * ratio
     log.debug(f'Set arc epsilon: {arc_epsilon}')
     return arc_epsilon
 
 
-def get_contour_value(img, cnt, with_std=True):
+def get_contour_value(img: np.array, cnt: np.array,
+                      with_std=True) -> (float, float):
     # fill contour with (255,255,255)
     mask = np.zeros(img.shape[:2], dtype='uint8')
     cv2.fillPoly(mask, [cnt], (255, 255, 255))
@@ -514,10 +518,11 @@ def get_contour_value(img, cnt, with_std=True):
         return mean[0][0], std[0][0]
     else:
         mean = cv2.mean(img, mask=mask)
-        return mean[0], 0
+        return mean[0], 0.0
 
 
-def get_background_value(img, external_contours, level_cnt):
+def get_background_value(img: np.array, external_contours: list,
+                         level_cnt: dict) -> (float, float):
     # assume background value is greater than negative reference value
     mask = np.ones(img.shape[:2], dtype='uint8')
     for external in external_contours:
@@ -528,8 +533,10 @@ def get_background_value(img, external_contours, level_cnt):
     return mean[0][0], std[0][0]
 
 
-def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
-                          external_contours, inner_contours):
+def remove_fake_inner_cnt(img: np.array, level_cnt: dict,
+                          big_external_contours: list,
+                          external_contours: list,
+                          inner_contours: list) -> (list,list):
     fake_inner = list()
     inner_background = list()
     b, g, r = cv2.split(img)
@@ -571,7 +578,8 @@ def remove_fake_inner_cnt(img, level_cnt, big_external_contours,
     return fake_inner, inner_background
 
 
-def filter_contours(img, level_cnt: dict, big=2):
+def filter_contours(img: np.array, level_cnt: dict,
+                    big=2) -> (list, list, list, list, list):
     """
     Args:
         img: original image
@@ -617,17 +625,12 @@ def filter_contours(img, level_cnt: dict, big=2):
             fake_inner, inner_background)
 
 
-def get_left_right(big_external_contours, level_cnt):
+def get_left_right(big_external_contours: list,
+                   level_cnt: dict) -> (np.array, np.array):
     """
     Left is target, right is ref
     Split images to left and right according to bounding rectangle of
     external contours.
-    Args:
-        big_external_contours:
-        level_cnt:
-    Returns:
-        left:
-        right:
     Return None for errors.
     """
     left = None
@@ -655,7 +658,7 @@ def get_left_right(big_external_contours, level_cnt):
     return left, right
 
 
-def show_channel(img):
+def show_channel(img: np.array) -> None:
     # show rgb channel
     # opencv use BGR
     b, g, r = cv2.split(img)
@@ -664,7 +667,7 @@ def show_channel(img):
         imshow(title, value)
 
 
-def hex2bgr(hex_str: str):
+def hex2bgr(hex_str: str) -> (int, int, int):
     """
     Args:
         hex_str: #FFFFFF
@@ -678,10 +681,13 @@ def hex2bgr(hex_str: str):
     return b, g, r
 
 
-def draw_images(filtered_result, level_cnt, img, simple=False, show=False,
-                filename=None):
+def draw_images(filtered_result: list, level_cnt: dict, img: np.array,
+                simple=False, show=False, filename=None) -> dict:
+    """
+    Return None for empty
+    """
     if filtered_result is None:
-        return None
+        return {}
 
     def drawing(levels, color):
         line_width = 2
@@ -732,7 +738,7 @@ def draw_images(filtered_result, level_cnt, img, simple=False, show=False,
     return img_dict
 
 
-def remove_yellow(b, g, r):
+def remove_yellow(b: np.array, g: np.array, r: np.array) -> np.array:
     yellow_part = np.minimum(g, r)
     b2 = b.astype('int')
     b2 -= yellow_part
@@ -741,8 +747,9 @@ def remove_yellow(b, g, r):
     return b2
 
 
-def get_real_blue(original_image, neg_ref_value, pos_ref_value):
-    if neg_ref_value > pos_ref_value or pos_ref_value <= 0:
+def get_real_blue(original_image: np.array, neg_ref_value: float,
+                  pos_ref_value: float) -> (np.array, int):
+    if neg_ref_value > pos_ref_value or pos_ref_value <= 0.0:
         show_error('Bad negative and positive reference values.')
     b, g, r = cv2.split(original_image)
     factor = 1
@@ -753,8 +760,12 @@ def get_real_blue(original_image, neg_ref_value, pos_ref_value):
     return revert_b, amplified_neg_ref
 
 
-def get_real_blue_2(original_image, neg_ref_value, pos_ref_value):
-    # todo, 255-b is not real blue part
+def get_real_blue2(original_image: np.array, neg_ref_value: float,
+                   pos_ref_value: float) -> (np.array, int):
+    """
+    255-b is not real blue part
+    Paused
+    """
     if neg_ref_value > pos_ref_value or pos_ref_value <= 0:
         show_error('Bad negative and positive reference values.')
     factor = 1
@@ -776,7 +787,8 @@ def get_real_blue_2(original_image, neg_ref_value, pos_ref_value):
     return revert_b, amplified_neg_ref
 
 
-def calculate(original_image, target_mask, neg_ref_value=0, pos_ref_value=255):
+def calculate(original_image: np.array, target_mask: np.array,
+              neg_ref_value=0.0, pos_ref_value=255.0) -> tuple:
     """
     Calculate given region's value.
     Args:
@@ -790,6 +802,8 @@ def calculate(original_image, target_mask, neg_ref_value=0, pos_ref_value=255):
     """
     # todo: remove green
     # blue express area
+    neg_ref_value = int(neg_ref_value)
+    pos_ref_value = int(pos_ref_value)
     revert_b, amplified_neg_ref = get_real_blue(original_image, neg_ref_value,
                                                 pos_ref_value)
     # cv2.imshow('revert blue', revert_b)
@@ -818,7 +832,8 @@ def calculate(original_image, target_mask, neg_ref_value=0, pos_ref_value=255):
     return result
 
 
-def split_image(left_cnt, right_cnt, img):
+def split_image(left_cnt: np.array, right_cnt: np.array,
+                img: np.array) -> (np.array, np.array):
     """
     Target in left, reference in right
     Args:
@@ -840,8 +855,9 @@ def split_image(left_cnt, right_cnt, img):
     return target, ref
 
 
-def get_contour_wrapper(img_file, neg_ref_value, pos_ref_value,
-                        text=GENERAL_TEXT):
+def get_contour_wrapper(
+        img_file: str, neg_ref_value: float, pos_ref_value: float,
+        text=GENERAL_TEXT) -> (tuple, np.array, list, dict, np.array):
     level_cnt, img = get_contour(img_file)
     filtered_result = filter_contours(img, level_cnt)
     if filtered_result is not None:
@@ -854,7 +870,7 @@ def get_contour_wrapper(img_file, neg_ref_value, pos_ref_value,
     return result, mask, filtered_result, level_cnt, img
 
 
-def get_contour(img_file):
+def get_contour(img_file: str) -> (dict, np.array):
     # .png .jpg .tiff
     log.info(f'Analyzing {img_file}')
     img = cv2.imread(img_file)
@@ -886,7 +902,7 @@ def get_contour(img_file):
     return level_cnt, img
 
 
-def write_image(results, labels, out):
+def write_image(results: tuple, labels: list, out: Path) -> Path:
     """
     violin outer and inner
     or violin outer and bar inner
@@ -947,7 +963,7 @@ def write_image(results, labels, out):
     return out
 
 
-def get_zscore(values):
+def get_zscore(values: list) -> list:
     """
     Args:
         values: value list
@@ -965,15 +981,9 @@ def get_zscore(values):
     return z_scores
 
 
-def write_csv(all_result, targets, out):
+def write_csv(all_result: list, targets: list, out: Path) -> Path:
     """
     Output csv
-    Args:
-        all_result:
-        targets:
-        out:
-    Returns:
-        out:
     """
     header = ('Name,Expression value, Expression std,Expression area,'
               'Total value,Total std,Total area,Expression ratio,'
@@ -994,7 +1004,7 @@ def write_csv(all_result, targets, out):
     return out
 
 
-def cli_main(arg_str=None):
+def cli_main(arg_str=None) -> (Path, Path):
     log.info('Welcome to pyGUS.')
     arg = parse_arg(arg_str)
     negative, positive, targets, auto_ref, message = get_input(arg)
