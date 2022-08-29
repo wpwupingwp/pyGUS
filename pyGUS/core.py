@@ -62,7 +62,7 @@ def parse_arg(arg_str):
         return arg.parse_args(arg_str.split(' '))
 
 
-def get_input(arg):
+def get_input(arg) -> (str, str, list[str], bool, str):
     message = None
     negative = None
     positive = None
@@ -88,7 +88,10 @@ def get_input(arg):
     return negative, positive, targets, auto_ref, message
 
 
-def manual_ref(img, text=None, method='box'):
+def manual_ref(img: np.array, text=None, method='box') -> (list, np.array):
+    """
+    Select reference region manually
+    """
     if method == 'box':
         select = select_box
     else:
@@ -111,11 +114,20 @@ def manual_ref(img, text=None, method='box'):
     return result, mask
 
 
-def mode_1(negative, positive, targets, auto_ref):
-    # ignore light change
-    # first: negative
-    # second: positive
-    # third and after: target
+def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
+        list, list, list):
+    """
+    Ignore light change
+    Args:
+        negative:
+        positive:
+        targets:
+        auto_ref:
+    Returns:
+        neg_result
+        pos_result
+        target_results
+    """
     if auto_ref:
         (neg_result, neg_mask, neg_filtered_result, neg_level_cnt,
          neg_img) = get_contour_wrapper(negative, 0, 255, NEG_TEXT)
@@ -142,6 +154,9 @@ def mode_1(negative, positive, targets, auto_ref):
         target_results.append(target_result)
         img_dict = draw_images(filtered_result, level_cnt, img, simple=True,
                                show=False, filename=target)
+        if debug:
+            imshow('mask', target_mask)
+            imshow('masked', cv2.bitwise_and(img, img, mask=target_mask))
     draw_images(pos_filtered_result, pos_level_cnt, pos_img, show=False,
                 simple=True, filename=positive)
     # if auto_ref:
@@ -150,12 +165,13 @@ def mode_1(negative, positive, targets, auto_ref):
     return neg_result, pos_result, target_results
 
 
-def mode_2(ref1, ref2, targets, auto_ref):
-    # use negative to calibrate positive, and then measure each target
-    # assume positive in each image is same, ignore light change
-    # first left: negative, first right: positive
-    # next left: object, next right: positive
-    # ignore small_external, inner_contours,
+def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
+        list, list, list):
+    """
+    use negative to calibrate positive, and then measure each target
+    assume positive in each image is same, ignore light change
+    ignore small_external, inner_contours
+    """
     negative_positive_ref = ref1
     if auto_ref:
         ref_level_cnt, ref_img = get_contour(negative_positive_ref)
@@ -210,7 +226,8 @@ def mode_2(ref1, ref2, targets, auto_ref):
     return neg_result, pos_result, target_results
 
 
-def mode_3(ref1, ref2, targets, auto_ref):
+def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
+        list, list, list):
     # use color card to calibrate each image
     # first left: negative, first right: card
     # second left: positive, second right: card
@@ -266,11 +283,11 @@ def mode_3(ref1, ref2, targets, auto_ref):
     return neg_result, pos_result, target_results
 
 
-def mode_4(ref1, ref2, targets, auto_ref):
+def mode_4(_: str, __: str, targets: list, auto_ref: bool
+           ) -> (list, list, list):
     """
     Select region manually
     """
-    #
     name_dict = {'neg': ('Negative reference', hex2bgr('#FF6B6B')),
                  'pos': ('Positive reference', hex2bgr('#FFd93D')),
                  'target': ('Target region', hex2bgr('#6BCB77'))}
@@ -311,7 +328,7 @@ def mode_4(ref1, ref2, targets, auto_ref):
     return neg_result, pos_result, target_results
 
 
-def fill_mask(shape, target, fake_inner, inner_background, level_cnt):
+def fill_mask(shape, target, fake_inner, inner_background, level_cnt) -> np.array:
     cnt = level_cnt[target]
     white = (255, 255, 255)
     black = (0, 0, 0)

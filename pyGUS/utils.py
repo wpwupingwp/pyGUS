@@ -165,7 +165,7 @@ def resize(img, new_height, new_width):
     return img_new
 
 
-def color_calibrate(img_file: Path, draw_detected=False):
+def color_calibrate(img_file: str, draw_detected=False):
     """
     Use color card to calibrate colors
     Args:
