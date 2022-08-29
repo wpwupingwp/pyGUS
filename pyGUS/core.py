@@ -13,7 +13,7 @@ import numpy as np
 matplotlib.use('Agg')
 
 from pyGUS.global_vars import log, debug
-from pyGUS.utils import select_box, select_polygon, get_crop
+from pyGUS.utils import select_box, select_polygon
 from pyGUS.utils import color_calibrate, if_exist, imshow, show_error
 
 MANUAL = 'manual'
@@ -282,8 +282,8 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
     return neg_result, pos_result, target_results
 
 
-def mode_4(_: str, __: str, targets: list, auto_ref: bool
-           ) -> (list, list, list):
+def mode_4(_: str, __: str, targets: list, auto_ref: bool) -> (list, list,
+                                                               list):
     """
     Select region manually
     """
@@ -299,12 +299,12 @@ def mode_4(_: str, __: str, targets: list, auto_ref: bool
         if img is None:
             show_error(f'Bad image file {target}')
         img_copy = img.copy()
-        cropped1, mask1 = select_polygon(img_copy, name_dict['neg'][0],
-                                         name_dict['neg'][1])
-        cropped2, mask2 = select_polygon(img_copy, name_dict['pos'][0],
-                                         name_dict['pos'][1])
-        cropped3, mask3 = select_polygon(img_copy, name_dict['target'][0],
-                                         name_dict['target'][1])
+        mask1 = select_polygon(img_copy, name_dict['neg'][0],
+                               name_dict['neg'][1])
+        mask2 = select_polygon(img_copy, name_dict['pos'][0],
+                               name_dict['pos'][1])
+        mask3 = select_polygon(img_copy, name_dict['target'][0],
+                               name_dict['target'][1])
         try:
             imshow('Press space bar to continue', img_copy)
             cv2.waitKey()
