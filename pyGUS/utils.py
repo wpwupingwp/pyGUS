@@ -103,7 +103,7 @@ def select_polygon(img: np.array, title='', color=(255, 255, 255)) -> np.array:
     return mask
 
 
-def draw_colorchecker(out='card.jpg'):
+def draw_colorchecker(out='card.jpg') -> str:
     # https://github.com/opencv/opencv_contrib/blob/4.x/modules/mcc/src/dictionary.hpp
     # default size : 2080x1400
     colors = (
@@ -149,7 +149,7 @@ def draw_colorchecker(out='card.jpg'):
     return out
 
 
-def resize(img, new_height, new_width):
+def resize(img: np.array, new_height: int, new_width: int) -> np.array:
     # keep original w/h ratio
     height, width = img.shape[:2]
     if width / height >= new_width / new_height:
@@ -160,7 +160,7 @@ def resize(img, new_height, new_width):
     return img_new
 
 
-def color_calibrate(img_file: str, draw_detected=False):
+def color_calibrate(img_file: str, draw_detected=False) -> str:
     """
     Use color card to calibrate colors
     Args:
