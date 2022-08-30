@@ -26,13 +26,11 @@ GENERAL_TEXT = ('Failed to detect target with extremely low contrast. '
 SHORT_TEXT = 'Failed to get target region, please manually select'
 
 
-# todo: color correction test
 # todo mode 1 test: single object for each image, manually select positive,
 #  negative, targets
 # todo mode 2 test: two object for each image, left target, right positive
 # todo mode 3 test: two object for each image, left target, right color card
 # todo: mode 4 test: select area by mouse
-# todo: calculate values, statistic analysis
 # todo: manual
 # todo: manuscript
 
@@ -118,10 +116,10 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
     """
     Ignore light change
     Args:
-        negative:
-        positive:
-        targets:
-        auto_ref:
+        negative: negative reference image
+        positive: positive reference
+        targets: target images
+        auto_ref: automatic detect reference region or no
     Returns:
         neg_result
         pos_result
