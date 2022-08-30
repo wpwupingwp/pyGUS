@@ -30,13 +30,13 @@ def get_window_size() -> (int, int):
     return w, h
 
 
-def imshow(name: str, img: np.array) -> None:
+def get_ok_size_window(name: str, img_width: int, img_height: int
+                       ) -> (str, cv2.namedWindow):
     screen_width, screen_height = get_window_size()
-    # w,h vs h, w
-    img_height, img_width = img.shape[:2]
     width, height = img_width, img_height
+    resized = False
     if img_height > 0.9 * screen_height or img_width > 0.9 * screen_width:
-        log.info(f'Image is too big({img_width}*{img_height}), resize to show.')
+        resized = True
         height = img_height * (screen_width / img_width)
         width = screen_width
         if height > screen_height:
@@ -45,7 +45,17 @@ def imshow(name: str, img: np.array) -> None:
         width, height = int(width*0.9), int(height*0.9)
     cv2.namedWindow(name, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(name, width=width, height=height)
+    return name, resized
+
+
+def imshow(name: str, img: np.array) -> bool:
+    # w,h vs h, w
+    img_height, img_width = img.shape[:2]
+    window, resized = get_ok_size_window(name, img_width, img_height)
+    if resized:
+        log.debug(f'Image is too big({img_width}*{img_height}), resize.')
     cv2.imshow(name, img)
+    return resized
 
 
 def show_error(msg: str) -> None:
@@ -67,9 +77,11 @@ def get_crop(img: np.array, r: list) -> np.array:
     return cropped
 
 
-def select_box(img: np.array, text='Select the region, then press SPACE BAR'
-               ) -> np.array:
+def select_box(img: np.array, text='Select the region, then press SPACE BAR',
+               color=(255, 255, 255)) -> np.array:
     cv2.pollKey()
+    img_height, img_width = img.shape[:2]
+    window, resized = get_ok_size_window(text, img_width, img_height)
     x, y, w, h = cv2.selectROI(text, img)
     mask = np.zeros(img.shape[:2], dtype='uint8')
     cv2.rectangle(mask, (x, y), (x+w, y+h), 255, -1)
