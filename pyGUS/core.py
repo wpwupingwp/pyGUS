@@ -1029,7 +1029,6 @@ def cli_main(arg_str=None) -> (Path, Path):
         cv2.waitKey()
     cv2.destroyAllWindows()
     log.info('Done.')
-    # todo: 30s per image, too slow
     return pdf_file, csv_file
 
 
