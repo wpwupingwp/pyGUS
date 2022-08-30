@@ -341,9 +341,6 @@ def get_single_mask(filtered_result: list, level_cnt: dict,
      fake_inner, inner_background) = filtered_result
     target = big_external_contours[0]
     self_index = target[4]
-    if debug:
-        log.debug(f'self {self_index}')
-        log.debug(f'contour area {cv2.contourArea(target)}')
     mask = fill_mask(img.shape[:2], target, fake_inner, inner_background,
                      level_cnt)
     return mask
