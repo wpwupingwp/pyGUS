@@ -20,8 +20,31 @@ def if_exist(filename: Path) -> str:
         return str(filename)
 
 
+def get_window_size() -> (int, int):
+    from tkinter import Tk
+    _ = Tk()
+    _.withdraw()
+    w = _.winfo_screenwidth()
+    h = _.winfo_screenheight()
+    _.destroy()
+    return w, h
+
+
 def imshow(name: str, img: np.array) -> None:
-    cv2.namedWindow(name, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
+    screen_width, screen_height = get_window_size()
+    # w,h vs h, w
+    img_height, img_width = img.shape[:2]
+    width, height = img_width, img_height
+    if img_height > 0.9 * screen_height or img_width > 0.9 * screen_width:
+        log.info(f'Image is too big({img_width}*{img_height}), resize to show.')
+        height = img_height * (screen_width / img_width)
+        width = screen_width
+        if height > screen_height:
+            width = width * (screen_height / height)
+            height = screen_height
+        width, height = int(width*0.9), int(height*0.9)
+    cv2.namedWindow(name, cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(name, width=width, height=height)
     cv2.imshow(name, img)
 
 
