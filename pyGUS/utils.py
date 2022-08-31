@@ -15,12 +15,13 @@ class Quit(SystemExit):
 
 def if_exist(filename: Path) -> str:
     """
-    Args:
-        filename: Path
+    Check if given file exists.
+    Check if given file is valid image file.
     """
     if not filename.exists():
         show_error(f'{filename} does not exist. Please check the input.')
-        raise SystemExit(-1)
+    elif cv2.imread(str(filename)) is None:
+        show_error(f'{filename} is not valid image file.')
     else:
         return str(filename)
 
