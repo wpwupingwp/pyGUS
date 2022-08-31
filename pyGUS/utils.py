@@ -176,14 +176,13 @@ def draw_colorchecker(out='card.jpg') -> str:
     factor = 2
     w = 150 * factor
     gap = 20 * factor
-    w_and_gap = w + gap
+    w_gap = w + gap
     image = np.zeros((4 * w + 5 * gap, 6 * w + 7 * gap, 3))
     for i in range(4):
         for j in range(6):
-            image[(gap + i * w_and_gap):(gap + i * w_and_gap + w),
-                  (gap + j * w_and_gap):(gap + j * w_and_gap + w), :] = rgb[
-                                                                       (i * 6
-                                                                        + j), :]
+            x = i * 6 + j
+            image[(gap + i * w_gap):(gap + i * w_gap + w),
+                  (gap + j * w_gap):(gap + j * w_gap + w), :] = rgb[x, :]
     image = image.astype(np.uint8)
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     cv2.imwrite(out, image)
