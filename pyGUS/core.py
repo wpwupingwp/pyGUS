@@ -290,18 +290,18 @@ def mode_4(_: str, __: str, targets: list, auto_ref: bool) -> (list, list,
         if img is None:
             show_error(f'Bad image file {target}')
         img_copy = img.copy()
+        mask1, mask2, mask3 = None, None, None
         mask1 = select_polygon(img_copy, name_dict['neg'][0],
                                name_dict['neg'][1])
-        if mask1 is None:
-            return None, None, None
-        mask2 = select_polygon(img_copy, name_dict['pos'][0],
-                               name_dict['pos'][1])
-        if mask2 is None:
-            return None, None, None
-        mask3 = select_polygon(img_copy, name_dict['target'][0],
-                               name_dict['target'][1])
-        if mask3 is None:
-            return None, None, None
+        if mask1 is not None:
+            mask2 = select_polygon(img_copy, name_dict['pos'][0],
+                                   name_dict['pos'][1])
+            if mask2 is not None:
+                mask3 = select_polygon(img_copy, name_dict['target'][0],
+                                       name_dict['target'][1])
+        for i in mask1, mask2, mask3:
+            if i is None:
+                return None, None, None
         try:
             imshow('Press space bar to continue', img_copy)
             cv2.waitKey()
