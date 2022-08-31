@@ -1001,7 +1001,8 @@ def run(mode, ref1=None, ref2=None, images=None):
         # r.start()
         from pyGUS.utils import Quit
         if mode != 4:
-            messagebox.showinfo(message='Running...')
+            pass
+            # messagebox.showinfo(message='Running...')
         try:
             svg_file, csv_file = core.cli_main(cmd)
         except Quit:
