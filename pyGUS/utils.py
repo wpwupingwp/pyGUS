@@ -8,6 +8,11 @@ from pyGUS import global_vars
 log = global_vars.log
 
 
+class Quit(SystemExit):
+    def __init__(self, code):
+        super().__init__(code)
+
+
 def if_exist(filename: Path) -> str:
     """
     Args:
@@ -65,12 +70,12 @@ def show_error(msg: str) -> None:
     # show error message and quit
     if global_vars.is_gui:
         from tkinter import messagebox
-        msg = msg + '   QUIT NOW    '
+        msg += '   Abort.'
         log.error(msg)
         messagebox.showerror(message=msg)
     else:
         log.error(msg)
-    raise SystemExit(-10)
+    raise Quit(-10)
 
 
 def get_crop(img: np.array, r: list) -> np.array:

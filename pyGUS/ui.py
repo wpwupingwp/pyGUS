@@ -999,9 +999,13 @@ def run(mode, ref1=None, ref2=None, images=None):
         # r = threading.Thread(target=thread_wrap, args=(core.cli_main, cmd),
         # daemon=True)
         # r.start()
+        from pyGUS.utils import Quit
         if mode != 4:
             messagebox.showinfo(message='Running...')
-        svg_file, csv_file = core.cli_main(cmd)
+        try:
+            svg_file, csv_file = core.cli_main(cmd)
+        except Quit:
+            return
         if svg_file is not None and csv_file is not None:
             messagebox.showinfo(message=f'Output file {svg_file} {csv_file}')
         else:

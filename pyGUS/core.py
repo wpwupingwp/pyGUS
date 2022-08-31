@@ -367,6 +367,7 @@ def get_left_right_mask(filtered_result: list, level_cnt: dict,
             self_index = target[4]
         except TypeError:
             show_error('Detect edge failed.')
+            return
         log.debug(f'target {target}')
         log.debug(f'self {self_index}')
         related_fake_inner = [i for i in fake_inner if i[3] == self_index]
@@ -927,6 +928,7 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
                                       widths=0.4)
     except ValueError:
         show_error('Failed to plot results due to bad values.')
+        return Path()
     for pc in violin_parts['bodies']:
         pc.set_facecolor('#0d56ff')
         pc.set_edgecolor('black')
