@@ -1,6 +1,10 @@
 #!/usr/bin/python3)
 
 from pathlib import Path
+import io
+import os
+import sys
+
 import cv2
 import numpy as np
 
@@ -92,7 +96,17 @@ def select_box(img: np.array, text='Select the region, then press any key',
     cv2.pollKey()
     img_height, img_width = img.shape[:2]
     window, resized = get_ok_size_window(text, img_width, img_height)
+    # hide opencv stdout
+    sys_stdout = sys.stdout.fileno()
+    saved_sys_stdout = os.dup(sys_stdout)
+    tmp = open(os.devnull, 'wb')
+    sys.stdout.close()
+    os.dup2(tmp.fileno(), sys_stdout)
+    sys.stdout = io.TextIOWrapper(os.fdopen(tmp.fileno(), 'wb'))
     x, y, w, h = cv2.selectROI(text, img)
+    sys.stdout.close()
+    # stop hide
+    sys.stdout = io.TextIOWrapper(os.fdopen(saved_sys_stdout, 'wb'))
     mask = np.zeros(img.shape[:2], dtype='uint8')
     cv2.rectangle(mask, (x, y), (x+w, y+h), 255, -1)
     cv2.destroyWindow(text)
