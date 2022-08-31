@@ -99,7 +99,7 @@ def select_polygon(img: np.array, title='', color=(255, 255, 255)) -> np.array:
     # init
     # assert global_vars.is_gui
     name = (f'{title} (Left click to add points, right click to finish, '
-            f'Esc to quit)')
+            f'Esc to abort)')
     log.info(name)
     done = False
     current = (0, 0)
@@ -129,7 +129,8 @@ def select_polygon(img: np.array, title='', color=(255, 255, 255)) -> np.array:
         imshow(name, img)
         # Esc
         if cv2.waitKey(50) == 27:
-            done = True
+            cv2.destroyWindow(name)
+            return None
     points_array = np.array([points])
     if len(points) > 0:
         cv2.fillPoly(img, points_array, color)

@@ -1002,7 +1002,10 @@ def run(mode, ref1=None, ref2=None, images=None):
         if mode != 4:
             messagebox.showinfo(message='Running...')
         svg_file, csv_file = core.cli_main(cmd)
-        messagebox.showinfo(message=f'Output file {svg_file} {csv_file}')
+        if svg_file is not None and csv_file is not None:
+            messagebox.showinfo(message=f'Output file {svg_file} {csv_file}')
+        else:
+            messagebox.showinfo(message='Abort.')
         # scroll = Scroll(root)
     return call
 
