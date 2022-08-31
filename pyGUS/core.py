@@ -927,6 +927,7 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
                                       showmedians=False, showextrema=False,
                                       widths=0.4)
     except ValueError:
+        print(violin_data)
         show_error('Failed to plot results due to bad values.')
         return Path()
     for pc in violin_parts['bodies']:

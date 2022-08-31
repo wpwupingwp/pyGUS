@@ -95,6 +95,7 @@ def select_box(img: np.array, text='Select the region, then press any key',
     x, y, w, h = cv2.selectROI(text, img)
     mask = np.zeros(img.shape[:2], dtype='uint8')
     cv2.rectangle(mask, (x, y), (x+w, y+h), 255, -1)
+    cv2.destroyWindow(text)
     return mask
 
 
