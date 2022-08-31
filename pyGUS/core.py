@@ -18,8 +18,8 @@ from pyGUS.utils import select_box
 from pyGUS.utils import color_calibrate, if_exist, imshow, show_error
 
 MANUAL = 'manual'
-NEG_TEXT = 'Drag mouse to select negative expression region as reference'
-POS_TEXT = 'Drag mouse to select positive expression region as reference'
+NEG_TEXT = 'Click mouse to select negative expression region as reference'
+POS_TEXT = 'Click mouse to select positive expression region as reference'
 GENERAL_TEXT = ('Failed to detect target with extremely low contrast. '
                 'Please manually select target region.')
 SHORT_TEXT = 'Click mouse to select target region'
@@ -93,7 +93,7 @@ def manual_ref(img: np.array, text=None, method='box') -> (list, np.array):
     img_copy = img.copy()
     if method == 'box':
         select = select_box
-        # select = select_polygon
+        select = select_polygon
     else:
         select = select_polygon
     if text is not None:
