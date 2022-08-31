@@ -42,12 +42,16 @@ def thread_wrap(function, arg_str):
     return
 
 
-def move_to_center(window: tk.Tk, width: int, height: int) -> None:
+def move_to_center(window: tk.Tk, width: int, height: int,
+                   is_root=False) -> None:
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width - width) // 2
     y = (screen_height - height) // 2
-    window.geometry(f'{width}x{height}+{x}+{y}')
+    if not is_root:
+        window.geometry(f'{width}x{height}+{x}+{y}')
+    else:
+        window.geometry(f'{width}x{height}+{x-width*2}+{y}')
     return
 
 
@@ -65,7 +69,7 @@ class Root:
         _bgmode = 'light'
 
         top.geometry("280x300+843+223")
-        move_to_center(top, 280, 300)
+        move_to_center(top, 280, 300, is_root=True)
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
