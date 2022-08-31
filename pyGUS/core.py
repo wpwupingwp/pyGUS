@@ -944,9 +944,10 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
     # ax2 = ax1.twinx()
     ax2 = plt.subplot(212)
     express_area = [i[2] for i in results]
+    # modify negative reference area
+    express_area[-1] = 0
     total_area = [i[5] for i in results]
     no_express_area = [t - e for t, e in zip(total_area, express_area)]
-    express_area[-1] = 0
     rects1 = ax2.bar(x, express_area, width=width,
                      alpha=0.4,
                      color='green', label='Expression region')
