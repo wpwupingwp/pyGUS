@@ -45,6 +45,9 @@ def get_ok_size_window(name: str, img_width: int, img_height: int
         width, height = int(width*0.9), int(height*0.9)
     cv2.namedWindow(name, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(name, width=width, height=height)
+    x = (screen_width - width) // 2
+    y = (screen_height - height) // 2
+    cv2.moveWindow(name, x, y)
     return name, resized
 
 
