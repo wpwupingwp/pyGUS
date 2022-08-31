@@ -303,7 +303,7 @@ def mode_4(_: str, __: str, targets: list, auto_ref: bool) -> (list, list,
             if i is None:
                 return None, None, None
         try:
-            imshow('Press space bar to continue', img_copy)
+            imshow('Press any key to continue', img_copy)
             cv2.waitKey()
             cv2.destroyAllWindows()
         except cv2.error:

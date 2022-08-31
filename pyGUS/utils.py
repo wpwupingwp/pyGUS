@@ -81,7 +81,7 @@ def get_crop(img: np.array, r: list) -> np.array:
     return cropped
 
 
-def select_box(img: np.array, text='Select the region, then press SPACE BAR',
+def select_box(img: np.array, text='Select the region, then press any key',
                color=(255, 255, 255)) -> np.array:
     cv2.pollKey()
     img_height, img_width = img.shape[:2]
