@@ -2,7 +2,7 @@
 
 import setuptools
 
-with open('README.md', 'r') as _:
+with open('README.md', 'r', encoding='utf-8') as _:
     long_description = _.read()
 
 with open('requirements.txt', 'r') as _:
