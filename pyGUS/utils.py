@@ -141,7 +141,7 @@ def select_polygon(img: np.array, title='', color=(255, 255, 255)) -> np.array:
     points_array = np.array([points])
     if len(points) > 0:
         cv2.fillPoly(img, points_array, color)
-        cv2.fillPoly(mask, points_array, (255, 255, 255))
+        cv2.fillPoly(mask, points_array, 255)
         # box = cv2.boundingRect(points_array)
     else:
         pass

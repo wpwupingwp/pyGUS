@@ -23,7 +23,7 @@ POS_TEXT = ('Select positive expression region as reference, '
             'press SPACE BAR to finish')
 GENERAL_TEXT = ('Failed to detect target with extremely low contrast. '
                 'Please manually select target region.')
-SHORT_TEXT = 'Failed to get target region, please manually select'
+SHORT_TEXT = 'Failed to detect target region, please manually select'
 
 
 # todo mode 1 test: single object for each image, manually select positive,
@@ -90,15 +90,16 @@ def manual_ref(img: np.array, text=None, method='box') -> (list, np.array):
     """
     Select reference region manually
     """
+    img_copy = img.copy()
     if method == 'box':
         select = select_box
     else:
         select = select_polygon
     if text is not None:
         log.info(text)
-        mask = select(img, text)
+        mask = select(img_copy, text)
     else:
-        mask = select(img)
+        mask = select(img_copy)
     blue, _ = get_real_blue(img, 0, 255)
     if debug:
         imshow('mask', mask)
@@ -108,6 +109,8 @@ def manual_ref(img: np.array, text=None, method='box') -> (list, np.array):
     area = np.count_nonzero(mask)
     masked = cv2.bitwise_and(blue, blue, mask=mask)
     flatten = masked[masked > 0]
+    if len(flatten) == 0:
+        flatten = np.array([0])
     result = [ref_value, std, area, ref_value, std, area, 0, flatten]
     return result, mask
 
