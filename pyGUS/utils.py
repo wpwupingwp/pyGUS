@@ -63,6 +63,7 @@ def show_error(msg: str) -> None:
     if global_vars.is_gui:
         from tkinter import messagebox
         msg = msg + '   QUIT NOW    '
+        log.error(msg)
         messagebox.showerror(message=msg)
     else:
         log.error(msg)
@@ -96,6 +97,7 @@ def select_polygon(img: np.array, title='', color=(255, 255, 255)) -> np.array:
     # assert global_vars.is_gui
     name = (f'{title} (Left click to add points, right click to finish, '
             f'Esc to quit)')
+    log.info(name)
     done = False
     current = (0, 0)
     points = list()

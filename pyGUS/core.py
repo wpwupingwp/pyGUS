@@ -95,6 +95,7 @@ def manual_ref(img: np.array, text=None, method='box') -> (list, np.array):
     else:
         select = select_polygon
     if text is not None:
+        log.info(text)
         mask = select(img, text)
     else:
         mask = select(img)
