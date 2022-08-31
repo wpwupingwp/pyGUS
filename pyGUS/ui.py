@@ -42,6 +42,15 @@ def thread_wrap(function, arg_str):
     return
 
 
+def move_to_center(window: tk.Tk, width: int, height: int) -> None:
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    x = (screen_width - width) // 2
+    y = (screen_height - height) // 2
+    window.geometry(f'{width}x{height}+{x}+{y}')
+    return
+
+
 class Root:
     def __init__(self, top=None):
         _bgcolor = '#edf0f3'  # Closest X11 color: 'gray94'
@@ -56,6 +65,7 @@ class Root:
         _bgmode = 'light'
 
         top.geometry("280x300+843+223")
+        move_to_center(top, 280, 300)
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
@@ -171,6 +181,7 @@ class Mode1:
         _bgmode = 'light'
 
         top.geometry("500x280+597+46")
+        move_to_center(top, 500, 280)
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
@@ -371,6 +382,7 @@ class Mode2:
         _bgmode = 'light'
 
         top.geometry("500x200+630+378")
+        move_to_center(top, 500, 200)
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
@@ -508,6 +520,7 @@ class Mode3:
         _bgmode = 'light'
 
         top.geometry("500x280+639+615")
+        move_to_center(top, 500, 280)
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
@@ -699,6 +712,7 @@ class Mode4:
         _bgmode = 'light'
 
         top.geometry("500x120+138+702")
+        move_to_center(top, 500, 120)
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
@@ -793,6 +807,7 @@ class Scroll:
                                         ('active', _ana2color)])
 
         top.geometry("500x200+225+402")
+        move_to_center(top, 500, 200)
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
