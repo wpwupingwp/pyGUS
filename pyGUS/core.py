@@ -13,17 +13,16 @@ import numpy as np
 matplotlib.use('Agg')
 
 from pyGUS.global_vars import log, debug
-from pyGUS.utils import select_box, select_polygon
+from pyGUS.utils import select_polygon
+from pyGUS.utils import select_box
 from pyGUS.utils import color_calibrate, if_exist, imshow, show_error
 
 MANUAL = 'manual'
-NEG_TEXT = ('Select negative expression region as reference, '
-            'press SPACE BAR to finish')
-POS_TEXT = ('Select positive expression region as reference, '
-            'press SPACE BAR to finish')
+NEG_TEXT = 'Drag mouse to select negative expression region as reference'
+POS_TEXT = 'Drag mouse to select positive expression region as reference'
 GENERAL_TEXT = ('Failed to detect target with extremely low contrast. '
                 'Please manually select target region.')
-SHORT_TEXT = 'Failed to detect target region, please manually select'
+SHORT_TEXT = 'Click mouse to select target region'
 
 
 # todo mode 1 test: single object for each image, manually select positive,
@@ -90,13 +89,15 @@ def manual_ref(img: np.array, text=None, method='box') -> (list, np.array):
     """
     Select reference region manually
     """
+    log.info(text)
     img_copy = img.copy()
     if method == 'box':
         select = select_box
+        # select = select_polygon
     else:
         select = select_polygon
     if text is not None:
-        log.info(text)
+        # log.info(text)
         mask = select(img_copy, text)
     else:
         mask = select(img_copy)
@@ -863,7 +864,7 @@ def get_contour_wrapper(
         result = calculate(img, mask, neg_ref_value=neg_ref_value,
                            pos_ref_value=pos_ref_value)
     else:
-        log.info(text)
+        # log.info(text)
         result, mask = manual_ref(img, text=SHORT_TEXT, method='polygon')
     return result, mask, filtered_result, level_cnt, img
 

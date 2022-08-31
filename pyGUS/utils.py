@@ -91,9 +91,11 @@ def get_crop(img: np.array, r: list) -> np.array:
     return cropped
 
 
-def select_box(img: np.array, text='Select the region, then press any key',
+def select_box(img: np.array, text='Drag to select, then press SPACE BAR',
                color=(255, 255, 255)) -> np.array:
     cv2.pollKey()
+    hint = 'Drag to select, then press SPACE BAR'
+    log.info(hint)
     img_height, img_width = img.shape[:2]
     window, resized = get_ok_size_window(text, img_width, img_height)
     # hide opencv stdout
@@ -113,15 +115,15 @@ def select_box(img: np.array, text='Select the region, then press any key',
     return mask
 
 
-def select_polygon(img: np.array, title='', color=(255, 255, 255)) -> np.array:
+def select_polygon(img: np.array, title='', color=(255, 0, 255)) -> np.array:
     """
     Select polygon region.
     """
     # init
     # assert global_vars.is_gui
-    name = (f'{title} (Left click to add points, right click to finish, '
-            f'Esc to abort)')
-    log.info(name)
+    name = title
+    hint = 'Left click to add points, right click to finish, Esc to abort'
+    log.info(hint)
     done = False
     current = (0, 0)
     points = list()
