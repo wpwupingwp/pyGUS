@@ -74,26 +74,74 @@ unpack and run.
 pip3 install novowrap --user
 ```
 # Usage
-## Photo
-体视镜，相机
-分辨率
-大小
-边缘
-背景
-间隔
+## Photo tips
+### Equipment 
+Cameras and stereo microscopes are recommended. Smartphones with camera
+functions are not recommended, especially models with built-in color grading.
+To reduce the effects of perspective distortion, lens with medium focal length
+(e.g. 50 mm in full-frame) is recommended. Make sure lens and camera sensor
+are free of stains.
+
+### Background 
+White board or white paper with no debris, no wrinkles, no obvious
+reflection
+
+### Lighting
+It is recommended to use the bottom lighting of the whiteboard. When
+using indoor lighting, the international standard color rendering index (Ra
+index) of the bulb is required to be no less than 85, and the color
+temperature is between 4000 k to 7000 k; when using sunlight, avoid morning
+and evening. Close overhead lighting can cause significant reflections and is
+not recommended
+
+### Focus
+The whole subject is not out of focus. Narrow down the aperture when
+shooting with a camera; adjust focus and magnification when using a stereo
+microscope to ensure that the edges of the subject are sharp
+
+### White balance
+The recommended color temperature is around 6500k, with a
+minimum of 4000k and a maximum of 7000k. When the color temperature cannot be
+adjusted, adjust other parameters until the background is displayed in white
+without obvious color cast.
+
+### Exposure compensation
+When using camera, the exposure compensation can be set
+to +1EV or +2EV to reduce the color cast of the paper. It could also reduce
+the influence of the transmittance of color cards or plants
+
+### Layout
+Based on the size of the plant, adjust the lens-to-plant distance to make the
+plant cover the frame more than 50%. The main body does not cross the border,
+and the distance is not less than 10% of the screen width.
+
+When there is only a single subject, place it in the center of the frame. When
+two subjects (two plants or plants with color card), place them on the left
+and the right, with interval between them not less than one-third of the width
+of the plant. They do not intersect, and they are not surrounded by each other
+(especially one with the long roots); there is no breakage, and the leaves do
+not overlap as much as possible. 
+
+### Output
+No toning processing. The recommended minimum resolution is 500\*500 px. When
+shooting with the camera, vignetting and distortion compensation can be turned
+on, and other adjustments (including white point, black point, contrast,
+brightness, style, etc.) should be turned off.
+
 ## Graphical interface
 If installed with pip,
 ```shell
 # Windows
-python -m novowrap
+python -m pyGUS
 # Linux and MacOS
-python3 -m novowrap
+python3 -m pyGUS
 ```
-If use the portable version, just double-click the `pyGUS.exe` or `pyGUS` in
-the folder. Then click the button to choose which mode to run. 
+If use the portable version, double-click the `pyGUS.exe`. Then click the button 
+to choose which mode to run. 
 ## Command line
-:exclamation: In Linux and macOS, Python2 is `python2` and Python3 is `python3`.  However,
-in Windows, Python3 is called `python`, too. Please notice the difference.
+:exclamation: In Linux and macOS, Python2 is `python2` and Python3 is
+`python3`.  However, in Windows, Python3 is called `python`, too. Please
+notice the difference.
 
 * Show help information
  ```shell
