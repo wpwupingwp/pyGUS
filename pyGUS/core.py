@@ -47,6 +47,8 @@ def parse_arg(arg_str):
     arg.add_argument('-auto_ref', action='store_true',
                      help='auto detect negative/positive expression region in '
                           'reference')
+    arg.add_argument('-convex', action='store_true',
+                     help='use convex hull in region detection')
     arg.add_argument('-images', nargs='*', help='Input images', required=True)
     arg.add_argument('-mode', type=int, choices=(1, 2, 3, 4), required=True,
                      help=('1. single target in each image; '
@@ -471,7 +473,7 @@ def get_edge(image: np.array) -> np.array:
     edge = auto_Canny(revert_gray)
     # blur edge, not original image
     erode_edge = make_clean(edge)
-    if debug or 1:
+    if debug:
         imshow('revert_gray', revert_gray)
         imshow('edge', erode_edge)
     return erode_edge
