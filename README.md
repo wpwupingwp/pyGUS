@@ -83,7 +83,7 @@ To reduce the effects of perspective distortion, lens with medium focal length
 are free of stains.
 
 ### Background 
-White board or white paper with no debris, no wrinkles, no obvious
+**White** board or **white** paper with no debris, no wrinkles, no obvious
 reflection
 
 ### Lighting
@@ -128,6 +128,7 @@ shooting with the camera, vignetting and distortion compensation can be turned
 on, and other adjustments (including white point, black point, contrast,
 brightness, style, etc.) should be turned off.
 
+# Usage
 ## Graphical interface
 If installed with pip,
 ```shell
@@ -155,23 +156,43 @@ notice the difference.
  # Windows
  #   mode 1
  python -m pyGUS -mode 1 -ref1 [file1] -ref2 [file2] -images [files3] [file4] ...
+ # mode 1 with automatically detect object
+ python -m pyGUS -mode 1 -auto_ref -ref1 [file1] -ref2 [file2] -images [files3] [file4] ...
  #   mode 2
  python -m pyGUS -mode 2 -ref1 [file1] -images [file2] [file3] ...
+ #   mode 2 with automatically detect object
+ python -m pyGUS -mode 2 -auto_ref -ref1 [file1] -images [file2] [file3] ...
  #   mode 3
  python -m pyGUS -mode 3 -ref1 [file1] -ref2 [file2] -images [files3] [file4] ...
+ #   mode 3 with automatically detect object
+ python -m pyGUS -mode 3 -auto_ref -ref1 [file1] -ref2 [file2] -images [files3] [file4] ...
  #   mode 4
  python -m pyGUS -mode 4 -images [file1] [file2] ...
  # Linux and macOS
  #   mode 1
  python3 -m pyGUS -mode 1 -ref1 [file1] -ref2 [file2] -images [files3] [file4] ...
+ # mode 1 with automatically detect object
+ python3 -m pyGUS -mode 1 -auto_ref -ref1 [file1] -ref2 [file2] -images [files3] [file4] ...
  #   mode 2
  python3 -m pyGUS -mode 2 -ref1 [file1] -images [file2] [file3] ...
+ #   mode 2 with automatically detect object
+ python3 -m pyGUS -mode 2 -auto_ref -ref1 [file1] -images [file2] [file3] ...
  #   mode 3
  python3 -m pyGUS -mode 3 -ref1 [file1] -ref2 [file2] -images [files3] [file4] ...
+ #   mode 3 with automatically detect object
+ python3 -m pyGUS -mode 3 -auto_ref -ref1 [file1] -ref2 [file2] -images [files3] [file4] ...
  #   mode 4
  python3 -m pyGUS -mode 4 -images [file1] [file2] ...
  ```
+## Select region
+If without `-auto_ref` option, the program require the user to manual select 
+target region with mouse. Left click to add a dot and draw lines between dots.
+Right click to link the first dot and last dot to draw a close region.
+
+If the image has extremely low contrast or the edge of the object is blur, such 
+selection is also required even with `-auto_ref` option opened.
 # Input
+All images should use white background.
 ## Negative reference
 One plant (whole or partial) with low expression or non expression.
 ## Positive reference
