@@ -828,19 +828,20 @@ def calculate(original_image: np.array, target_mask: np.array,
     # cv2.waitKey()
     express_mask = target_mask.copy()
     express_mask[revert_b <= neg_ref_value] = 0
-    target_mask_no_yellow = np.bitwise_and(target_mask, 255-yellow_mask)
     express_mask_no_yellow = np.bitwise_and(express_mask, 255-yellow_mask)
     # cv2.contourArea return different value with np.count_nonzero
     total_area = np.count_nonzero(target_mask)
     if total_area == 0:
         show_error('Cannot detect expression region.')
-    express_area = np.count_nonzero(express_mask)
+    express_area = np.count_nonzero(express_mask_no_yellow)
     # todo: how to get correct ratio
     express_ratio = express_area / total_area
     # total_sum = np.sum(revert_b[target_mask>0])
     total_value, total_std = cv2.meanStdDev(revert_b, mask=target_mask)
     total_value, total_std = total_value[0][0], total_std[0][0]
-    express_value, express_std = cv2.meanStdDev(revert_b, mask=express_mask)
+    express_value, express_std = cv2.meanStdDev(revert_b,
+                                                mask=express_mask_no_yellow)
+    # mask=express_mask_no_yellow)
     express_value, express_std = express_value[0][0], express_std[0][0]
     express_flatten_ = revert_b[express_mask > 0]
     express_flatten = express_flatten_[express_flatten_ > 0]
@@ -853,7 +854,6 @@ def calculate(original_image: np.array, target_mask: np.array,
     if debug:
         imshow('original', original_image)
         imshow('target', target_mask)
-        imshow('target no yellow', target_mask_no_yellow)
         imshow('express', express_mask)
         imshow('express no yellow', express_mask_no_yellow)
     return result
@@ -954,7 +954,6 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
     x = np.arange(1, len(labels) + 1)
     width = 0.3
     violin_data = np.array([i[-1] for i in results], dtype='object')
-    for i in violin_data: print(i.shape)
     try:
         violin_parts = ax1.violinplot(violin_data, showmeans=True,
                                       showmedians=False, showextrema=False,
