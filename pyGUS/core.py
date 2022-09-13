@@ -614,32 +614,38 @@ def filter_contours(img: np.array, level_cnt: dict, convex: bool,
         inner_background:
     """
     external_contours = []
-    external_area = []
     inner_contours = []
     for level, cnt in level_cnt.items():
         next_, previous_, first_child, parent, self_ = level
         # -1 means no parent -> external
         if parent == -1:
             external_contours.append(level)
-            external_area.append(cv2.contourArea(level_cnt[level]))
         else:
             inner_contours.append(level)
-    z_scores = get_zscore(external_area)
-    external_area_dict = dict(zip(external_contours, external_area))
-    external_zscore_dict = dict(zip(external_contours, z_scores))
+    external_area_dict = {}
+    for i in external_contours:
+        external_area_dict[i] = cv2.contourArea(level_cnt[i])
     external_contours.sort(key=lambda x: external_area_dict[x], reverse=True)
     # a picture only contains at most TWO target (sample and reference)
     big_external_contours = external_contours[:big]
     if convex:
-        new_big = []
+        # biggest contour is still biggest before and after process
         for old in big_external_contours:
             convexhull = cv2.convexHull(level_cnt[old], returnPoints=True)
             old_area = external_area_dict[old]
             new_area = cv2.contourArea(convexhull)
             log.info(f'Area before use convex hull: {old_area}')
             log.info(f'Area after use convex hull: {new_area}')
-            log.info(str(old))
+            level_cnt[old] = convexhull
+            external_area_dict[old] = new_area
+        external_contours.sort(key=lambda x: external_area_dict[x],
+                               reverse=True)
+        big_external_contours = external_contours[:big]
 
+    # list(dict.values()) does not work
+    area_list_new = [external_area_dict[i] for i in external_contours]
+    z_scores = get_zscore(area_list_new)
+    external_zscore_dict = dict(zip(external_contours, z_scores))
     for i in big_external_contours:
         # less than 1 means not big enough
         if external_zscore_dict[i] < 1:
