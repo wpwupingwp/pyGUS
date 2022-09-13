@@ -110,7 +110,7 @@ def manual_ref(img: np.array, text=None, method='box') -> (list, np.array):
     ref_value2, std2 = ref_value2[0][0], std2[0][0]
     area2 = np.count_nonzero(mask_no_yellow)
     ratio = area2 / area
-    masked = cv2.bitwise_and(blue, blue, mask=255-yellow_mask)
+    masked = cv2.bitwise_and(blue, blue, mask=mask_no_yellow)
     flatten = masked[masked > 0]
     if area > area2:
         log.info(f'Original expression area: {area}')
@@ -471,7 +471,7 @@ def get_edge(image: np.array) -> np.array:
     edge = auto_Canny(gray)
     # blur edge, not original image
     erode_edge = make_clean(edge)
-    if debug:
+    if debug or 1:
         imshow('revert_gray', revert_gray)
         imshow('edge', erode_edge)
     return erode_edge
@@ -954,6 +954,7 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
     x = np.arange(1, len(labels) + 1)
     width = 0.3
     violin_data = np.array([i[-1] for i in results], dtype='object')
+    for i in violin_data: print(i.shape)
     try:
         violin_parts = ax1.violinplot(violin_data, showmeans=True,
                                       showmedians=False, showextrema=False,
