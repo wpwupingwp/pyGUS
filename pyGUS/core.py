@@ -143,7 +143,7 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
     """
     if auto_ref:
         (neg_result, neg_mask, neg_filtered_result, neg_level_cnt,
-         neg_img) = get_contour_wrapper(negative, 0, 255, NEG_TEXT)
+         neg_img) = get_contour_wrapper(negative, 0, 255, 1, NEG_TEXT)
     else:
         neg_img = cv2.imread(negative)
         neg_result, neg_mask = manual_ref(neg_img, NEG_TEXT)
@@ -184,7 +184,7 @@ def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
     negative_positive_ref = ref1
     if auto_ref:
         ref_level_cnt, ref_img = get_contour(negative_positive_ref)
-        ref_filtered_result = filter_contours(ref_img, ref_level_cnt)
+        ref_filtered_result = filter_contours(ref_img, ref_level_cnt, big=2)
         if ref_filtered_result is not None:
             neg_mask, pos_mask = get_left_right_mask(ref_filtered_result,
                                                      ref_level_cnt, ref_img)
@@ -883,10 +883,10 @@ def split_image(left_cnt: np.array, right_cnt: np.array,
 
 
 def get_contour_wrapper(
-        img_file: str, neg_ref_value: float, pos_ref_value: float,
+        img_file: str, neg_ref_value: float, pos_ref_value: float, big: int,
         text=GENERAL_TEXT) -> (tuple, np.array, list, dict, np.array):
     level_cnt, img = get_contour(img_file)
-    filtered_result = filter_contours(img, level_cnt)
+    filtered_result = filter_contours(img, level_cnt, big=big)
     if filtered_result is not None:
         mask = get_single_mask(filtered_result, level_cnt, img)
         result = calculate(img, mask, neg_ref_value=neg_ref_value,
