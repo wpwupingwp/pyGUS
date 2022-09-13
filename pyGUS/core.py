@@ -159,7 +159,7 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
     target_results = []
     for target in targets:
         (target_result, target_mask, filtered_result, level_cnt,
-         img) = get_contour_wrapper(target, neg_ref_value, pos_ref_value)
+         img) = get_contour_wrapper(target, neg_ref_value, pos_ref_value, 1)
         target_results.append(target_result)
         img_dict = draw_images(filtered_result, level_cnt, img, simple=True,
                                show=False, filename=target)
@@ -245,7 +245,7 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
     ###
     if auto_ref:
         neg_level_cnt, neg_img = get_contour(ok_neg)
-        neg_filtered_result = filter_contours(neg_img, neg_level_cnt)
+        neg_filtered_result = filter_contours(neg_img, neg_level_cnt, big=2)
         if neg_filtered_result is not None:
             neg_left_mask, neg_right_mask = get_left_right_mask(
                 neg_filtered_result, neg_level_cnt, neg_img)
