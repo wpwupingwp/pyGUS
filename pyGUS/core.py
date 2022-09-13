@@ -464,13 +464,15 @@ def get_edge(image: np.array) -> np.array:
         erode_edge: edge
     """
     # edge->blur->dilate->erode->contours
-    b, g, r = cv2.split(image)
-    combine = revert(g // 3 + r // 3 + b // 3)
-    edge = auto_Canny(combine)
+    # b, g, r = cv2.split(image)
+    # combine = revert(g // 3 + r // 3 + b // 3)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    revert_gray = revert(gray)
+    edge = auto_Canny(gray)
     # blur edge, not original image
     erode_edge = make_clean(edge)
     if debug:
-        imshow('revert_combine', combine)
+        imshow('revert_gray', revert_gray)
         imshow('edge', erode_edge)
     return erode_edge
 
