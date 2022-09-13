@@ -468,7 +468,7 @@ def get_edge(image: np.array) -> np.array:
     # combine = revert(g // 3 + r // 3 + b // 3)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     revert_gray = revert(gray)
-    edge = auto_Canny(gray)
+    edge = auto_Canny(revert_gray)
     # blur edge, not original image
     erode_edge = make_clean(edge)
     if debug or 1:
