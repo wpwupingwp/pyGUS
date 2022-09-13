@@ -61,7 +61,7 @@ def parse_arg(arg_str):
         return arg.parse_args(arg_str.split(' '))
 
 
-def get_input(arg) -> (str, str, list[str], bool, str):
+def get_input(arg) -> (str, str, list[str], bool, bool, str):
     message = None
     negative = None
     positive = None
@@ -84,7 +84,8 @@ def get_input(arg) -> (str, str, list[str], bool, str):
         positive = Path(arg.ref2).absolute()
         positive = if_exist(positive)
     auto_ref = bool(arg.auto_ref)
-    return negative, positive, targets, auto_ref, message
+    convex = bool(arg.convex)
+    return negative, positive, targets, auto_ref, convex, message
 
 
 def manual_ref(img: np.array, text=None, method='box') -> (list, np.array):
@@ -129,7 +130,8 @@ def manual_ref(img: np.array, text=None, method='box') -> (list, np.array):
     return result, mask
 
 
-def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
+def mode_1(negative: str, positive: str, targets: list, auto_ref: bool,
+           convex: bool) -> (
         list, list, list):
     """
     Ignore light change
@@ -138,6 +140,7 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
         positive: positive reference
         targets: target images
         auto_ref: automatic detect reference region or no
+        convex: use convex hull for region detection or not
     Returns:
         neg_result
         pos_result
@@ -145,7 +148,7 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
     """
     if auto_ref:
         (neg_result, neg_mask, neg_filtered_result, neg_level_cnt,
-         neg_img) = get_contour_wrapper(negative, 0, 255, 1, NEG_TEXT)
+         neg_img) = get_contour_wrapper(negative, 0, 255, convex, 1, NEG_TEXT)
     else:
         neg_img = cv2.imread(negative)
         neg_result, neg_mask = manual_ref(neg_img, NEG_TEXT)
@@ -153,7 +156,7 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
         neg_level_cnt = []
     neg_ref_value = neg_result[0]
     pos_level_cnt, pos_img = get_contour(positive)
-    pos_filtered_result = filter_contours(pos_img, pos_level_cnt, big=1)
+    pos_filtered_result = filter_contours(pos_img, pos_level_cnt, convex, big=1)
     pos_mask = get_single_mask(pos_filtered_result, pos_level_cnt, pos_img)
     pos_result = calculate(pos_img, pos_mask, neg_ref_value=neg_ref_value)
     pos_ref_value = pos_result[0]
@@ -161,7 +164,8 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
     target_results = []
     for target in targets:
         (target_result, target_mask, filtered_result, level_cnt,
-         img) = get_contour_wrapper(target, neg_ref_value, pos_ref_value, 1)
+         img) = get_contour_wrapper(target, neg_ref_value, pos_ref_value,
+                                    convex, 1)
         target_results.append(target_result)
         img_dict = draw_images(filtered_result, level_cnt, img, simple=True,
                                show=False, filename=target)
@@ -176,7 +180,7 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
     return neg_result, pos_result, target_results
 
 
-def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
+def mode_2(ref1: str, _: str, targets: list, auto_ref: bool, convex: bool) -> (
         list, list, list):
     """
     use negative to calibrate positive, and then measure each target
@@ -186,7 +190,8 @@ def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
     negative_positive_ref = ref1
     if auto_ref:
         ref_level_cnt, ref_img = get_contour(negative_positive_ref)
-        ref_filtered_result = filter_contours(ref_img, ref_level_cnt, big=2)
+        ref_filtered_result = filter_contours(ref_img, ref_level_cnt, convex,
+                                              big=2)
         if ref_filtered_result is not None:
             neg_mask, pos_mask = get_left_right_mask(ref_filtered_result,
                                                      ref_level_cnt, ref_img)
@@ -209,7 +214,7 @@ def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
     target_results = []
     for target in targets:
         level_cnt, img = get_contour(target)
-        filtered_result = filter_contours(img, level_cnt)
+        filtered_result = filter_contours(img, level_cnt, convex)
         if filtered_result is not None:
             target_mask, pos_mask_ = get_left_right_mask(filtered_result,
                                                          level_cnt,
@@ -233,8 +238,8 @@ def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
     return neg_result, pos_result, target_results
 
 
-def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
-        list, list, list):
+def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool,
+           convex:bool) -> ( list, list, list):
     # use color card to calibrate each image
     # first left: negative, first right: card
     # second left: positive, second right: card
@@ -247,7 +252,8 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
     ###
     if auto_ref:
         neg_level_cnt, neg_img = get_contour(ok_neg)
-        neg_filtered_result = filter_contours(neg_img, neg_level_cnt, big=2)
+        neg_filtered_result = filter_contours(neg_img, neg_level_cnt, convex,
+                                              big=2)
         if neg_filtered_result is not None:
             neg_left_mask, neg_right_mask = get_left_right_mask(
                 neg_filtered_result, neg_level_cnt, neg_img)
@@ -259,7 +265,7 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
         neg_result, neg_mask = manual_ref(neg_img, NEG_TEXT)
         neg_filtered_result, neg_level_cnt = None, None
     pos_level_cnt, pos_img = get_contour(ok_pos)
-    pos_filtered_result = filter_contours(pos_img, pos_level_cnt)
+    pos_filtered_result = filter_contours(pos_img, pos_level_cnt, convex, big=2)
     pos_left_mask, pos_right_mask = get_left_right_mask(
         pos_filtered_result, pos_level_cnt, pos_img)
     pos_result = calculate(pos_img, pos_left_mask)
@@ -269,7 +275,7 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
     target_results = []
     for target in ok_targets:
         level_cnt, img = get_contour(target)
-        filtered_result = filter_contours(img, level_cnt)
+        filtered_result = filter_contours(img, level_cnt, convex, big=2)
         if filtered_result is not None:
             left_mask, right_mask = get_left_right_mask(filtered_result,
                                                         level_cnt,
@@ -592,12 +598,13 @@ def remove_fake_inner_cnt(img: np.array, level_cnt: dict,
     return fake_inner, inner_background
 
 
-def filter_contours(img: np.array, level_cnt: dict,
+def filter_contours(img: np.array, level_cnt: dict, convex: bool,
                     big=2) -> (list, list, list, list, list):
     """
     Args:
         img: original image
         level_cnt(dict):
+        convex(bool): use convex hull for edge expansion
         big: number of big external contours
     Returns:
         big:
@@ -885,10 +892,10 @@ def split_image(left_cnt: np.array, right_cnt: np.array,
 
 
 def get_contour_wrapper(
-        img_file: str, neg_ref_value: float, pos_ref_value: float, big: int,
-        text=GENERAL_TEXT) -> (tuple, np.array, list, dict, np.array):
+        img_file: str, neg_ref_value: float, pos_ref_value: float, convex: bool,
+        big: int, text=GENERAL_TEXT) -> (tuple, np.array, list, dict, np.array):
     level_cnt, img = get_contour(img_file)
-    filtered_result = filter_contours(img, level_cnt, big=big)
+    filtered_result = filter_contours(img, level_cnt, convex, big=big)
     if filtered_result is not None:
         mask = get_single_mask(filtered_result, level_cnt, img)
         result = calculate(img, mask, neg_ref_value=neg_ref_value,
@@ -1039,7 +1046,7 @@ def write_csv(all_result: list, targets: list, out: Path) -> Path:
 def cli_main(arg_str=None) -> (Path, Path):
     log.info('Welcome to pyGUS.')
     arg = parse_arg(arg_str)
-    negative, positive, targets, auto_ref, message = get_input(arg)
+    negative, positive, targets, auto_ref, convex, message = get_input(arg)
     pdf_file = None
     csv_file = None
     if message is not None:
@@ -1053,7 +1060,7 @@ def cli_main(arg_str=None) -> (Path, Path):
     run_dict = {1: mode_1, 2: mode_2, 3: mode_3, 4: mode_4}
     run = run_dict[arg.mode]
     neg_result, pos_result, target_results = run(negative, positive, targets,
-                                                 auto_ref)
+                                                 auto_ref, convex)
     for i in neg_result, pos_result, target_results:
         if i is None:
             return pdf_file, csv_file
