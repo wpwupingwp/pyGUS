@@ -239,7 +239,7 @@ def mode_2(ref1: str, _: str, targets: list, auto_ref: bool, convex: bool) -> (
 
 
 def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool,
-           convex:bool) -> ( list, list, list):
+           convex: bool) -> (list, list, list):
     # use color card to calibrate each image
     # first left: negative, first right: card
     # second left: positive, second right: card
@@ -630,6 +630,16 @@ def filter_contours(img: np.array, level_cnt: dict, convex: bool,
     external_contours.sort(key=lambda x: external_area_dict[x], reverse=True)
     # a picture only contains at most TWO target (sample and reference)
     big_external_contours = external_contours[:big]
+    if convex:
+        new_big = []
+        for old in big_external_contours:
+            convexhull = cv2.convexHull(level_cnt[old], returnPoints=True)
+            old_area = external_area_dict[old]
+            new_area = cv2.contourArea(convexhull)
+            log.info(f'Area before use convex hull: {old_area}')
+            log.info(f'Area after use convex hull: {new_area}')
+            log.info(str(old))
+
     for i in big_external_contours:
         # less than 1 means not big enough
         if external_zscore_dict[i] < 1:
@@ -1025,7 +1035,7 @@ def write_csv(all_result: list, targets: list, out: Path) -> Path:
     Output csv
     """
     header = ('Name,Expression value,Expression std,Expression area,'
-              'Total value,Total std,Total area,Expression ratio,Figure size'
+              'Total value,Total std,Total area,Expression ratio,Figure size,'
               'Z-score,Outlier')
     z_score_threshold = 3
     values = [i[0] for i in all_result[:-2]]
