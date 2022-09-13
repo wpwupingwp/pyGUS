@@ -101,18 +101,27 @@ def manual_ref(img: np.array, text=None, method='box') -> (list, np.array):
         mask = select(img_copy, text)
     else:
         mask = select(img_copy)
-    blue, _ = get_real_blue(img, 0, 255)
-    if debug:
-        imshow('mask', mask)
-        imshow('masked', cv2.bitwise_and(img, img, mask=mask))
+    blue, yellow_mask = get_real_blue(img, 0, 255)
+    mask_no_yellow = np.bitwise_and(mask, 255-yellow_mask)
     ref_value, std = cv2.meanStdDev(blue, mask=mask)
     ref_value, std = ref_value[0][0], std[0][0]
     area = np.count_nonzero(mask)
-    masked = cv2.bitwise_and(blue, blue, mask=mask)
+    ref_value2, std2 = cv2.meanStdDev(blue, mask=mask_no_yellow)
+    ref_value2, std2 = ref_value2[0][0], std2[0][0]
+    area2 = np.count_nonzero(mask_no_yellow)
+    ratio = area2 / area
+    masked = cv2.bitwise_and(blue, blue, mask=255-yellow_mask)
     flatten = masked[masked > 0]
+    if area > area2:
+        log.info(f'Original expression area: {area}')
+        log.info(f'After removing yellow region: {area2}')
     if len(flatten) == 0:
         flatten = np.array([0])
-    result = [ref_value, std, area, ref_value, std, area, 0, flatten]
+    result = [ref_value2, std2, area2, ref_value, std, area, ratio, flatten]
+    if debug:
+        imshow('mask', mask)
+        imshow('masked', cv2.bitwise_and(img, img, mask=mask))
+        imshow('b-y', cv2.bitwise_and(blue, blue, mask=255-yellow_mask))
     return result, mask
 
 
