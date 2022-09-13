@@ -117,7 +117,9 @@ def manual_ref(img: np.array, text=None, method='box') -> (list, np.array):
         log.info(f'After removing yellow region: {area2}')
     if len(flatten) == 0:
         flatten = np.array([0])
-    result = [ref_value2, std2, area2, ref_value, std, area, ratio, flatten]
+    fig_size = img.shape[0] * img.shape[1]
+    result = [ref_value2, std2, area2, ref_value, std, area, ratio, fig_size,
+              flatten]
     if debug:
         imshow('mask', mask)
         imshow('masked', cv2.bitwise_and(img, img, mask=mask))
@@ -826,12 +828,6 @@ def calculate(original_image: np.array, target_mask: np.array,
     express_mask[revert_b <= neg_ref_value] = 0
     target_mask_no_yellow = np.bitwise_and(target_mask, 255-yellow_mask)
     express_mask_no_yellow = np.bitwise_and(express_mask, 255-yellow_mask)
-    imshow('original', original_image)
-    imshow('target', target_mask)
-    imshow('target no yellow', target_mask_no_yellow)
-    imshow('express', express_mask)
-    imshow('express no yellow', express_mask_no_yellow)
-    cv2.waitKey()
     # cv2.contourArea return different value with np.count_nonzero
     total_area = np.count_nonzero(target_mask)
     if total_area == 0:
@@ -846,11 +842,18 @@ def calculate(original_image: np.array, target_mask: np.array,
     express_value, express_std = express_value[0][0], express_std[0][0]
     express_flatten_ = revert_b[express_mask > 0]
     express_flatten = express_flatten_[express_flatten_ > 0]
+    fig_size = original_image.shape[0] * original_image.shape[1]
     result = (express_value, express_std, express_area, total_value, total_std,
-              total_area, express_ratio, express_flatten)
+              total_area, express_ratio, fig_size, express_flatten)
     log.debug('express_value, express_std, express_area, total_value, '
-              'total_std, total_area, express_ratio, express_flatten')
+              'total_std, total_area, express_ratio, fig_size, express_flatten')
     log.debug(result)
+    if debug:
+        imshow('original', original_image)
+        imshow('target', target_mask)
+        imshow('target no yellow', target_mask_no_yellow)
+        imshow('express', express_mask)
+        imshow('express no yellow', express_mask_no_yellow)
     return result
 
 
@@ -1010,8 +1013,8 @@ def write_csv(all_result: list, targets: list, out: Path) -> Path:
     """
     Output csv
     """
-    header = ('Name,Expression value, Expression std,Expression area,'
-              'Total value,Total std,Total area,Expression ratio,'
+    header = ('Name,Expression value,Expression std,Expression area,'
+              'Total value,Total std,Total area,Expression ratio,Figure size'
               'Z-score,Outlier')
     z_score_threshold = 3
     values = [i[0] for i in all_result[:-2]]
