@@ -737,7 +737,14 @@ def draw_images(filtered_result: list, level_cnt: dict, img: np.array,
     return img_dict
 
 
-def remove_yellow(b: np.array, g: np.array, r: np.array) -> np.array:
+def get_yellow_mask(b: np.array, g: np.array, r: np.array) -> np.array:
+    mask = np.zeros(b.shape[:2], dtype='uint8')
+    mask[np.bitwise_and(r > b, g > b)] = 255
+    return mask
+
+
+def old_get_yellow(b, g, r):
+    # deprecated
     yellow_part = np.minimum(g, r)
     b2 = b.astype('int')
     b2 -= yellow_part
@@ -747,16 +754,15 @@ def remove_yellow(b: np.array, g: np.array, r: np.array) -> np.array:
 
 
 def get_real_blue(original_image: np.array, neg_ref_value: float,
-                  pos_ref_value: float) -> (np.array, int):
+                  pos_ref_value: float) -> (np.array, np.array):
     if neg_ref_value > pos_ref_value or pos_ref_value <= 0.0:
         show_error('Bad negative and positive reference values.')
     b, g, r = cv2.split(original_image)
-    factor = 1
-    # b = remove_yellow(b, g, r)
+    yellow_mask = get_yellow_mask(b, g, r)
     revert_b = revert(b)
     # revert_b = revert(b)
-    amplified_neg_ref = int(factor * neg_ref_value)
-    return revert_b, amplified_neg_ref
+    # amplified_neg_ref = int(factor * neg_ref_value)
+    return revert_b, yellow_mask
 
 
 def get_real_blue2(original_image: np.array, neg_ref_value: float,
@@ -803,12 +809,20 @@ def calculate(original_image: np.array, target_mask: np.array,
     # blue express area
     neg_ref_value = int(neg_ref_value)
     pos_ref_value = int(pos_ref_value)
-    revert_b, amplified_neg_ref = get_real_blue(original_image, neg_ref_value,
-                                                pos_ref_value)
+    revert_b, yellow_mask = get_real_blue(original_image, neg_ref_value,
+                                          pos_ref_value)
     # cv2.imshow('revert blue', revert_b)
     # cv2.waitKey()
     express_mask = target_mask.copy()
-    express_mask[revert_b <= amplified_neg_ref] = 0
+    express_mask[revert_b <= neg_ref_value] = 0
+    target_mask_no_yellow = np.bitwise_and(target_mask, 255-yellow_mask)
+    express_mask_no_yellow = np.bitwise_and(express_mask, 255-yellow_mask)
+    imshow('original', original_image)
+    imshow('target', target_mask)
+    imshow('target no yellow', target_mask_no_yellow)
+    imshow('express', express_mask)
+    imshow('express no yellow', express_mask_no_yellow)
+    cv2.waitKey()
     # cv2.contourArea return different value with np.count_nonzero
     total_area = np.count_nonzero(target_mask)
     if total_area == 0:
