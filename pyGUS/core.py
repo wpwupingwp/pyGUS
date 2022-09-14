@@ -32,6 +32,7 @@ SHORT_TEXT = 'Click mouse to select target region'
 # todo: mode 4 test: select area by mouse
 # todo: manual
 # todo: manuscript
+# todo: change default args
 
 
 def parse_arg(arg_str):
@@ -820,7 +821,6 @@ def get_real_blue2(original_image: np.array, neg_ref_value: float,
     # revert_b = revert_b.astype('float')
     # log.info(f'Factor {factor}')
     # make sure express ratio <= 100%
-    # todo: is it ok?
     revert_b = revert_b.astype('float')
     factor = 255 // pos_ref_value
     revert_b = (revert_b - neg_ref_value) * factor
@@ -866,9 +866,9 @@ def calculate(original_image: np.array, target_mask: np.array,
     total_value, total_std = total_value[0][0], total_std[0][0]
     express_value, express_std = cv2.meanStdDev(revert_b,
                                                 mask=express_mask_no_yellow)
-    # mask=express_mask_no_yellow)
     express_value, express_std = express_value[0][0], express_std[0][0]
-    express_flatten_ = revert_b[express_mask > 0]
+    # violin plot also use yellow mask
+    express_flatten_ = revert_b[express_mask_no_yellow > 0]
     express_flatten = express_flatten_[express_flatten_ > 0]
     fig_size = original_image.shape[0] * original_image.shape[1]
     result = (express_value, express_std, express_area, total_value, total_std,
@@ -1036,13 +1036,13 @@ def get_zscore(values: list) -> list:
     return z_scores
 
 
-def write_csv(all_result: list, targets: list, out: Path) -> Path:
+def write_csv(all_result: list, targets: list, use_convex, out: Path) -> Path:
     """
     Output csv
     """
     header = ('Name,Expression value,Expression std,Expression area,'
               'Total value,Total std,Total area,Expression ratio,Figure size,'
-              'Z-score,Outlier')
+              'Z-score,Outlier,Use convex hull')
     z_score_threshold = 3
     values = [i[0] for i in all_result[:-2]]
     z_scores = get_zscore(values)
@@ -1054,7 +1054,8 @@ def write_csv(all_result: list, targets: list, out: Path) -> Path:
             is_outlier = (np.abs(z_score) > z_score_threshold)
             if is_outlier:
                 log.warning(f'{name} has abnormal expression value.')
-            writer.writerow([name, *result[:-1], z_score, is_outlier])
+            writer.writerow([name, *result[:-1], z_score, is_outlier,
+                             use_convex])
     log.info(f'Output table file {out}')
     return out
 
@@ -1090,7 +1091,8 @@ def cli_main(arg_str=None) -> (Path, Path):
         if f.exists():
             log.warning(f'{f} exists, overwrite.')
     write_image(target_results, targets, pdf_file)
-    write_csv(target_results, targets, csv_file)
+    use_convex = arg.auto_ref and arg.convex
+    write_csv(target_results, targets, use_convex, csv_file)
     # wait or poll
     cv2.pollKey()
     if debug:
