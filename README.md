@@ -13,7 +13,7 @@ Make sure you have [Python](https://www.python.org/) (3.8 or higher) installed.
 
 Open terminal, run
 
-   ```shell
+   ```
    # Install, using pip (recommended)
    pip install pyGUS --user
    # Or, use conda
@@ -88,7 +88,7 @@ unpack and run.
 
 2. Open the command line, run
 
-```shell
+```
 pip3 install novowrap --user
 ```
 
@@ -98,7 +98,7 @@ pip3 install novowrap --user
 
 If installed with pip,
 
-```shell
+```
 # Windows
 python -m pyGUS
 # Linux and MacOS
@@ -116,7 +116,7 @@ notice the difference and make sure you use `Python 3` instead of `Python 2`.
 
 * Show help information
 
- ```shell
+ ```
  # Windows
  python -m pyGUS -h 
  # Linux and MacOS
@@ -125,7 +125,7 @@ notice the difference and make sure you use `Python 3` instead of `Python 2`.
 
 * Run
 
- ```bash
+ ```
  # Windows
  #   mode 1
  python -m pyGUS -mode 1 -ref1 [file1] -ref2 [file2] -images [files3] [file4] ...
@@ -311,7 +311,7 @@ Please submit your questions in the
 
   A: If you want to run GUI on Linux or macOS, this error may happen because the
   Python you used did not include tkinter as default package (kind of weird). Run
-  ```bash
+  ```
   # Debian and Ubuntu
   sudo apt install python3-tk
   # CentOS
