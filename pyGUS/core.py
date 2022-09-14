@@ -46,10 +46,9 @@ def parse_arg(arg_str):
     arg.add_argument('-ref1', help='Negative expression reference image')
     arg.add_argument('-ref2', help='Positive expression reference image')
     arg.add_argument('-auto_ref', action='store_true',
-                     help='auto detect negative/positive expression region in '
-                          'reference')
+                     help='auto detect objects')
     arg.add_argument('-convex', action='store_true',
-                     help='use convex hull in region detection')
+                     help='use convex hull to detect low contrast image')
     arg.add_argument('-images', nargs='*', help='Input images', required=True)
     arg.add_argument('-mode', type=int, choices=(1, 2, 3, 4), required=True,
                      help=('1. single target in each image; '
