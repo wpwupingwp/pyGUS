@@ -1,8 +1,6 @@
 # pyGUS
 
-[![Build Status](https://travis-ci.org/wpwupingwp/novowrap.svg?branch=master)](https://travis-ci.org/wpwupingwp/novowrap)
-[![PyPI version](https://badge.fury.io/py/novowrap.svg)](https://badge.fury.io/py/novowrap)
-[![Anaconda version](https://anaconda.org/wpwupingwp/novowrap/badges/version.svg)](https://anaconda.org/wpwupingwp/novowrap)
+[![PyPI version](https://badge.fury.io/py/pyGUS.svg)](https://badge.fury.io/py/pyGUS)
 
 # Quick start
 
