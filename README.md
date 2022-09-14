@@ -58,7 +58,8 @@ Open terminal, run
 
 ## Hardware
 
-The could run in normal computers and have no extra requirements for memory, CPU, et al.
+The program could run in normal computers and have no extra requirements for 
+memory, CPU, et al.
 
 Currently, macOS, Linux and Microsoft Windows systems were supported.
 
@@ -109,9 +110,9 @@ button to choose which mode to run.
 
 ## Command line
 
-:exclamation: In Linux and macOS, Python2 is `python2` and Python3 is
+:exclamation: In Linux and macOS, Python2 is `python` and Python3 is
 `python3`. However, in Windows, Python3 is called `python`, too. Please
-notice the difference.
+notice the difference and make sure you use `Python 3` instead of `Python 2`.
 
 * Show help information
 
@@ -128,7 +129,7 @@ notice the difference.
  # Windows
  #   mode 1
  python -m pyGUS -mode 1 -ref1 [file1] -ref2 [file2] -images [files3] [file4] ...
- # mode 1 with automatically detect object
+ #   mode 1 with automatically detect object
  python -m pyGUS -mode 1 -auto_ref -ref1 [file1] -ref2 [file2] -images [files3] [file4] ...
  #   mode 2
  python -m pyGUS -mode 2 -ref1 [file1] -images [file2] [file3] ...
@@ -143,7 +144,7 @@ notice the difference.
  # Linux and macOS
  #   mode 1
  python3 -m pyGUS -mode 1 -ref1 [file1] -ref2 [file2] -images [files3] [file4] ...
- # mode 1 with automatically detect object
+ #   mode 1 with automatically detect object
  python3 -m pyGUS -mode 1 -auto_ref -ref1 [file1] -ref2 [file2] -images [files3] [file4] ...
  #   mode 2
  python3 -m pyGUS -mode 2 -ref1 [file1] -images [file2] [file3] ...
@@ -243,7 +244,7 @@ All images should use white background.
 
 ## Negative reference
 
-One plant (whole or partial) with low expression or non expression.
+One plant (whole or partial) with low expression or no expression.
 
 ## Positive reference
 
@@ -256,15 +257,15 @@ and target images (`-images`, one or more).
 
 ## Mode 2
 
-The `mode 2` requires one refernce image (`-ref1`) with negative reference on left
-and positive reference on right. In each target images (`-images`, one or more),
-target plants are on left, positive references are on right separately.
+The `mode 2` requires one reference image (`-ref1`) with _negative reference on 
+left and positive reference on right_. In each target images (`-images`, one or 
+more), target plants are on left, positive references are on right separately.
 
 ## Mode 3
 
-The `mode 3` requires _negative reference_ (`-ref1`),  _positive reference_ (`-ref2`)
-and target images (`-images`, one or more). In each image, the plant is on left
-and a Macbetch color checker is on right.
+The `mode 3` requires _negative reference_ (`-ref1`),  _positive reference_ 
+(`-ref2`) and target images (`-images`, one or more). In each image, the plant 
+is on left and a Macbetch color checker is on right.
 
 ## Mode 4
 
