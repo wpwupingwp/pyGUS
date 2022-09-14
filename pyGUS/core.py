@@ -297,8 +297,8 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool,
     return neg_result, pos_result, target_results
 
 
-def mode_4(_: str, __: str, targets: list, auto_ref: bool) -> (list, list,
-                                                               list):
+def mode_4(_: str, __: str, targets: list, auto_ref: bool,
+           convex: bool ) -> (list, list, list):
     """
     Select region manually
     """

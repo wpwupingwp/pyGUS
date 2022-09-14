@@ -176,8 +176,8 @@ class Root:
         self.Check2.configure(highlightcolor="black")
         self.Check2.configure(justify='left')
         self.Check2.configure(selectcolor="#edf0f3")
-        self.Check2.configure(text='''convex''')
-        self.Check2.configure(variable=self.auto_ref)
+        self.Check2.configure(text='convex')
+        self.Check2.configure(variable=self.convex)
         self.tooltip_font = "TkDefaultFont"
         self.Check2_tooltip = ToolTip(
             self.Check2, self.tooltip_font,
