@@ -125,7 +125,7 @@ notice the difference and make sure you use `Python 3` instead of `Python 2`.
 
 * Run
 
- ```shell
+ ```bash
  # Windows
  #   mode 1
  python -m pyGUS -mode 1 -ref1 [file1] -ref2 [file2] -images [files3] [file4] ...
@@ -311,7 +311,7 @@ Please submit your questions in the
 
   A: If you want to run GUI on Linux or macOS, this error may happen because the
   Python you used did not include tkinter as default package (kind of weird). Run
-  ```
+  ```bash
   # Debian and Ubuntu
   sudo apt install python3-tk
   # CentOS
@@ -408,10 +408,3 @@ flowchart LR
     end
 
 ```
-
-## build
-
-```
-python3 -m build --wheel
-```
-
