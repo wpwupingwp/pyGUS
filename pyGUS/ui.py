@@ -68,8 +68,9 @@ class Root:
         _tabbg2 = 'grey89'
         _bgmode = 'light'
 
-        top.geometry("280x300+843+223")
-        move_to_center(top, 280, 300, is_root=True)
+        top.geometry("280x400+843+223")
+        # todo
+        move_to_center(top, 280, 400, is_root=True)
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
@@ -142,8 +143,49 @@ class Root:
         self.Button4_tooltip = ToolTip(
             self.Button4, self.tooltip_font, 'Manually select')
 
+        self.auto_ref = tk.IntVar()
+        self.Check1 = tk.Checkbutton(self.top)
+        self.Check1.place(relx=0.107, rely=0.70, height=30, width=100)
+        self.Check1.configure(activebackground="beige")
+        self.Check1.configure(activeforeground="#000000")
+        self.Check1.configure(background="#edf0f3")
+        self.Check1.configure(compound='left')
+        self.Check1.configure(disabledforeground="#b2b4b6")
+        self.Check1.configure(foreground="#000000")
+        self.Check1.configure(highlightbackground="#edf0f3")
+        self.Check1.configure(highlightcolor="black")
+        self.Check1.configure(justify='left')
+        self.Check1.configure(selectcolor="#edf0f3")
+        self.Check1.configure(text='''auto_ref''')
+        self.Check1.configure(variable=self.auto_ref)
+        self.tooltip_font = "TkDefaultFont"
+        self.Check1_tooltip = ToolTip(self.Check1, self.tooltip_font,
+                                      'Automatic detect objects')
+        self.Check1.select()
+
+        self.convex = tk.IntVar()
+        self.Check2 = tk.Checkbutton(self.top)
+        self.Check2.place(relx=0.536, rely=0.70, height=30, width=100)
+        self.Check2.configure(activebackground="beige")
+        self.Check2.configure(activeforeground="#000000")
+        self.Check2.configure(background="#edf0f3")
+        self.Check2.configure(compound='left')
+        self.Check2.configure(disabledforeground="#b2b4b6")
+        self.Check2.configure(foreground="#000000")
+        self.Check2.configure(highlightbackground="#edf0f3")
+        self.Check2.configure(highlightcolor="black")
+        self.Check2.configure(justify='left')
+        self.Check2.configure(selectcolor="#edf0f3")
+        self.Check2.configure(text='''convex''')
+        self.Check2.configure(variable=self.auto_ref)
+        self.tooltip_font = "TkDefaultFont"
+        self.Check2_tooltip = ToolTip(
+            self.Check2, self.tooltip_font,
+            'Use convex hull to detect low contrast image')
+        #self.Check2.select()
+
         self.Button5 = tk.Button(self.top)
-        self.Button5.place(relx=0.107, rely=0.75, height=30, width=100)
+        self.Button5.place(relx=0.107, rely=0.85, height=30, width=100)
         self.Button5.configure(activebackground="beige")
         self.Button5.configure(activeforeground="#000000")
         self.Button5.configure(background="#edf0f3")
@@ -159,7 +201,7 @@ class Root:
             'Macbeth color checker for print')
 
         self.ButtonHelp = tk.Button(self.top)
-        self.ButtonHelp.place(relx=0.536, rely=0.75, height=30, width=100)
+        self.ButtonHelp.place(relx=0.536, rely=0.85, height=30, width=100)
         self.ButtonHelp.configure(activebackground="beige")
         self.ButtonHelp.configure(activeforeground="#000000")
         self.ButtonHelp.configure(background="#edf0f3")
@@ -982,6 +1024,7 @@ def run_mode4():
 
 def run(mode, ref1=None, ref2=None, images=None):
     # call core
+
     def call():
         s_list = ['', '', '']
         for index, entry in enumerate([ref1, ref2, images]):
@@ -992,8 +1035,17 @@ def run(mode, ref1=None, ref2=None, images=None):
                 else:
                     s_list[index] = entry.get()
 
+
+        global _w1
         cmd = (f'-mode {mode} -ref1 {s_list[0]} -ref2 {s_list[1]} '
                f'-images {s_list[2]}')
+        auto_ref = _w1.auto_ref.get()
+        convex = _w1.convex.get()
+        if auto_ref:
+            cmd += ' -auto_ref'
+        if convex:
+            cmd += ' -convex'
+        print(cmd)
         # messagebox.showinfo(message=cmd)
         # todo: opencv imshow could only run in main thread
         # r = threading.Thread(target=thread_wrap, args=(core.cli_main, cmd),
