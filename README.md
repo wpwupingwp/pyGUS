@@ -363,7 +363,7 @@ flowchart LR
         g1[Read image]
         g1.5[[Color calibration]]
         g2[Split to R, G, B channels]
-        g3[Revert g//2+r//2]
+        g3[Generate gray copy]
         g4[Get edge]
         g5[Filter contours]
         g6[Get target mask]
