@@ -297,13 +297,13 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool,
 
 
 def mode_4(_: str, __: str, targets: list, auto_ref: bool,
-           convex: bool ) -> (list, list, list):
+           convex: bool) -> (list, list, list):
     """
     Select region manually
     """
     name_dict = {'neg': ('Negative reference', hex2bgr('#FF6B6B')),
                  'pos': ('Positive reference', hex2bgr('#FFd93D')),
-                 'target': ('Target region', hex2bgr('#6BCB77'))}
+                 'target': ('Target region', hex2bgr('#3BEBEB'))}
     neg_result = []
     pos_result = []
     target_results = []
@@ -344,6 +344,11 @@ def mode_4(_: str, __: str, targets: list, auto_ref: bool,
         log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
         result = calculate(img, mask3, neg_ref_value, pos_ref_value)
         target_results.append(result)
+        out_p = Path(target)
+        out_filename = str(out_p.parent / out_p.with_name(
+            f'{out_p.stem}_select.png'))
+        cv2.imwrite(out_filename, img_copy)
+        log.debug(f'Write image {out_filename}')
     return neg_result, pos_result, target_results
 
 

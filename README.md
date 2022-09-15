@@ -277,8 +277,17 @@ image or to start running.
 
 `.csv` files: **csv** format table, with expression information of each image.
 
-`-fill.png` files: Images filled with different colors. Blue means target, red
-means background, green means darker regions inner target.
+`-fill.png` files: Images filled with different colors. 
+<span style="color:blue">Blue</span> means target, 
+<span style="color:red">red</span> means background, <span style="color:yellow">
+yellow</span> means regions inner target but have different expression,
+<span style="color:green">green</span> means darker regions 
+inner target.
+
+`-select.png` files: In mode 4, the selected regions were filled with different
+color. <span style="color:red">Red</span> represents negative reference, 
+<span style="color:yellow">yellow</span> is for positive reference,
+and <span style="color:cyan">cyan</span> is for the target region.
 
 `-calibrate.png` files: Images calibrated with color checker.
 
