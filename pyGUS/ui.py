@@ -976,8 +976,16 @@ def open_file(title, entry, single=True):
     def func():
         if single:
             a = filedialog.askopenfilename(title=title)
+            if ' ' in a:
+                messagebox.showwarning(
+                    message="File names should not have space character")
+
         else:
             a = filedialog.askopenfilenames(title=title)
+            for i in a:
+                if ' ' in a:
+                    messagebox.showwarning(
+                        message="File names should not have space character")
         entry.delete(0, 'end')
         entry.insert(0, a)
 
