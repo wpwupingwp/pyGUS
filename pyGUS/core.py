@@ -469,6 +469,24 @@ def make_clean(image: np.array) -> np.array:
     return erode_edge
 
 
+def get_sobel(img: np.array):
+    xsobel = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=5)
+    xsobel = cv2.convertScaleAbs(xsobel, alpha=1, beta=0)
+    ysobel = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=5)
+    ysobel = cv2.convertScaleAbs(ysobel, alpha=1, beta=0)
+    sobel_add = cv2.addWeighted(xsobel, 0.5, ysobel, 0.5, 0)
+    return sobel_add
+
+def hist(gray):
+    hist = cv2.calcHist([gray], [0], None, [256], [0, 256])
+    hist_max = np.max(hist)
+    hist_max_idx = np.max(np.where(hist==hist_max))
+    print(hist_max_idx)
+    hist_edge = cv2.Canny(gray, 0, int(hist_max_idx*0.9))
+    imshow('histedge', hist_edge)
+    pass
+
+
 def get_edge(image: np.array) -> np.array:
     """
     Args:
@@ -481,13 +499,35 @@ def get_edge(image: np.array) -> np.array:
     # combine = revert(g // 3 + r // 3 + b // 3)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     revert_gray = revert(gray)
+    sobel_add = get_sobel(revert_gray)
+    imshow('sobel', sobel_add)
     edge = auto_Canny(revert_gray)
     # blur edge, not original image
     erode_edge = make_clean(edge)
     if debug:
         imshow('revert_gray', revert_gray)
-        imshow('edge', erode_edge)
+        imshow('gray', gray)
+        imshow('erode_edge', erode_edge)
+        imshow('edge', edge)
+    # return get_edge_new(image)
     return erode_edge
+
+
+def get_edge_new(image: np.array) -> np.array:
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    threshold, binary = cv2.threshold(gray, 0, 255,
+                                      cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    bin_edge = cv2.Canny(binary, 0, 255)
+    bin_edge2 = make_clean(bin_edge)
+    if debug:
+        imshow('binary', binary)
+        imshow('bin_edge', bin_edge)
+        imshow('bin_edge2', bin_edge2)
+    contours, raw_hierarchy = cv2.findContours(bin_edge2, cv2.RETR_TREE,
+                                               cv2.CHAIN_APPROX_NONE)
+    cnt = cv2.drawContours(image.copy(), contours, -1, (255, 255, 255))
+    imshow('cnt', cnt)
+    return bin_edge2
 
 
 def get_edge2(image: np.array) -> np.array:

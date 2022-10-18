@@ -988,7 +988,6 @@ def open_file(title, entry, single=True):
                         message="File names should not have space character")
         entry.delete(0, 'end')
         entry.insert(0, a)
-
     return func
 
 
