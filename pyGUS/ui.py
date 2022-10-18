@@ -983,7 +983,7 @@ def open_file(title, entry, single=True):
         else:
             a = filedialog.askopenfilenames(title=title)
             for i in a:
-                if ' ' in a:
+                if ' ' in i:
                     messagebox.showwarning(
                         message="File names should not have space character")
         entry.delete(0, 'end')
