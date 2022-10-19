@@ -105,7 +105,7 @@ def manual_ref(img: np.array, text=None, method='box') -> (list, np.array):
     else:
         mask = select(img_copy)
     blue, yellow_mask = get_real_blue(img, 0, 255)
-    mask_no_yellow = np.bitwise_and(mask, 255-yellow_mask)
+    mask_no_yellow = np.bitwise_and(mask, 255 - yellow_mask)
     ref_value, std = cv2.meanStdDev(blue, mask=mask)
     ref_value, std = ref_value[0][0], std[0][0]
     area = np.count_nonzero(mask)
@@ -126,7 +126,7 @@ def manual_ref(img: np.array, text=None, method='box') -> (list, np.array):
     if debug:
         imshow('mask', mask)
         imshow('masked', cv2.bitwise_and(img, img, mask=mask))
-        imshow('b-y', cv2.bitwise_and(blue, blue, mask=255-yellow_mask))
+        imshow('b-y', cv2.bitwise_and(blue, blue, mask=255 - yellow_mask))
     return result, mask
 
 
@@ -481,9 +481,9 @@ def get_sobel(img: np.array):
 def hist(gray):
     hist = cv2.calcHist([gray], [0], None, [256], [0, 256])
     hist_max = np.max(hist)
-    hist_max_idx = np.max(np.where(hist==hist_max))
+    hist_max_idx = np.max(np.where(hist == hist_max))
     print(hist_max_idx)
-    hist_edge = cv2.Canny(gray, 0, int(hist_max_idx*0.9))
+    hist_edge = cv2.Canny(gray, 0, int(hist_max_idx * 0.9))
     imshow('histedge', hist_edge)
     pass
 
@@ -503,13 +503,61 @@ def get_edge(image: np.array) -> np.array:
     edge = auto_Canny(revert_gray)
     # blur edge, not original image
     erode_edge = make_clean(edge)
-    if debug:
+    if debug and 0:
         imshow('revert_gray', revert_gray)
         imshow('gray', gray)
         imshow('erode_edge', erode_edge)
         imshow('edge', edge)
     return get_edge_new(image)
+    # todo
     return erode_edge
+
+
+def fill_boundary(img):
+    img_copy = img.copy()
+    # is it ok?
+    ratio = 0.05
+    height, width = img.shape[:2]
+    _loc = int(height * ratio)
+    log.debug(f'fill boundary, use width {_loc}')
+    mask = np.zeros((height + 2, width + 2), dtype='uint8')
+    w_middle = width // 2
+    h_middle = height // 2
+    mask[int(h_middle - height * ratio):int(h_middle + height * ratio),
+         int(w_middle - width * ratio):int(w_middle + width * ratio)] = 1
+    cv2.floodFill(img_copy, mask, (_loc, _loc), 255, 0, 0,
+                  cv2.FLOODFILL_FIXED_RANGE)
+    cv2.floodFill(img_copy, mask, (width - _loc, height - _loc), 255,
+                  0, 0, cv2.FLOODFILL_FIXED_RANGE)
+    cv2.floodFill(img_copy, mask, (_loc, height - _loc), (255, 255, 255), 0, 0,
+                  cv2.FLOODFILL_FIXED_RANGE)
+    cv2.floodFill(img_copy, mask, (width - _loc, _loc), (255, 255, 255), 0, 0,
+                  cv2.FLOODFILL_FIXED_RANGE)
+    return img_copy
+
+
+def test(gray):
+    # todo
+    equal = cv2.equalizeHist(gray)
+    blur = cv2.GaussianBlur(equal, (25, 25), 0)
+    threshold3, blur_bin = cv2.threshold(blur, 0, 255,
+                                         cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    bin_edge = cv2.Canny(blur_bin, 0, 255)
+    bin_edge_ = make_clean(bin_edge)
+    fill = fill_boundary(blur_bin)
+
+    s_cnt, _ = cv2.findContours(bin_edge_, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    s_img = np.zeros(gray.shape[:2])
+    for i in s_cnt:
+        cv2.drawContours(s_img, [i], 0, (255, 255, 255), 2)
+    imshow('equal', equal)
+    imshow('blur', blur)
+    imshow('blurbin', blur_bin)
+    imshow('blurbin_edge4_', bin_edge_)
+    imshow('blur cnt', s_img)
+    imshow('fill', fill)
+    cv2.waitKey()
+    return
 
 
 def get_edge_new(image: np.array) -> np.array:
@@ -520,12 +568,8 @@ def get_edge_new(image: np.array) -> np.array:
     bin_edge2 = make_clean(bin_edge)
     if debug:
         imshow('binary', binary)
-        imshow('bin_edge', bin_edge)
         imshow('bin_edge2', bin_edge2)
-    contours, raw_hierarchy = cv2.findContours(bin_edge2, cv2.RETR_TREE,
-                                               cv2.CHAIN_APPROX_NONE)
-    cnt = cv2.drawContours(image.copy(), contours, -1, (255, 255, 255))
-    imshow('cnt', cnt)
+    test(gray)
     return bin_edge2
 
 
@@ -888,7 +932,7 @@ def calculate(original_image: np.array, target_mask: np.array,
     # cv2.waitKey()
     express_mask = target_mask.copy()
     express_mask[revert_b <= neg_ref_value] = 0
-    express_mask_no_yellow = np.bitwise_and(express_mask, 255-yellow_mask)
+    express_mask_no_yellow = np.bitwise_and(express_mask, 255 - yellow_mask)
     # cv2.contourArea return different value with np.count_nonzero
     total_area = np.count_nonzero(target_mask)
     if total_area == 0:
