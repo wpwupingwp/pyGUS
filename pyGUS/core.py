@@ -477,6 +477,7 @@ def get_sobel(img: np.array):
     sobel_add = cv2.addWeighted(xsobel, 0.5, ysobel, 0.5, 0)
     return sobel_add
 
+
 def hist(gray):
     hist = cv2.calcHist([gray], [0], None, [256], [0, 256])
     hist_max = np.max(hist)
@@ -499,8 +500,6 @@ def get_edge(image: np.array) -> np.array:
     # combine = revert(g // 3 + r // 3 + b // 3)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     revert_gray = revert(gray)
-    sobel_add = get_sobel(revert_gray)
-    imshow('sobel', sobel_add)
     edge = auto_Canny(revert_gray)
     # blur edge, not original image
     erode_edge = make_clean(edge)
@@ -509,7 +508,7 @@ def get_edge(image: np.array) -> np.array:
         imshow('gray', gray)
         imshow('erode_edge', erode_edge)
         imshow('edge', edge)
-    # return get_edge_new(image)
+    return get_edge_new(image)
     return erode_edge
 
 
@@ -533,18 +532,10 @@ def get_edge_new(image: np.array) -> np.array:
 def get_edge2(image: np.array) -> np.array:
     b, g, r = cv2.split(image)
     combine = revert(g // 2 + r // 2)
-    xsobel = cv2.Sobel(combine, cv2.CV_64F, 0, 1, ksize=5)
-    xsobel = cv2.convertScaleAbs(xsobel, alpha=1, beta=0)
-    ysobel = cv2.Sobel(combine, cv2.CV_64F, 1, 0, ksize=5)
-    ysobel = cv2.convertScaleAbs(ysobel, alpha=1, beta=0)
-    sobel_or = cv2.bitwise_or(xsobel, ysobel)
-    sobel_add = cv2.addWeighted(xsobel, 0.5, ysobel, 0.5, 0)
-    s_clean = cv2.medianBlur(sobel_or, 3)
+    sobel_add = get_sobel(image)
     s2_clean = make_clean(sobel_add)
     # s_equal = cv2.equalizeHist(s_erode)
-    imshow('sobel', sobel_or)
     imshow('sobel2', sobel_add)
-    imshow('s_clean', s_clean)
     imshow('s2_clean', s2_clean)
     scharr_x = cv2.Scharr(combine, cv2.CV_8U, 1, 0)
     scharr_y = cv2.Scharr(combine, cv2.CV_8U, 1, 0)
