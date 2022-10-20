@@ -146,7 +146,7 @@ def draw_dots(img: np.array) -> np.array:
             cv2.circle(img, points[-1], 2, color, width)
         cv2.imshow(name, img)
         # Esc
-        if cv2.waitKey(50) == 27:
+        if cv2.waitKey(5) == 27:
             points.clear()
             img = img_raw.copy()
     points_array = np.array([points])
@@ -198,7 +198,7 @@ def draw_box(img: np.array) -> np.array:
                           thickness=width)
         cv2.imshow(name, img)
         # Esc
-        if cv2.waitKey(50) == 27:
+        if cv2.waitKey(5) == 27:
             points.clear()
             img = img_raw.copy()
     imshow(name, img)
