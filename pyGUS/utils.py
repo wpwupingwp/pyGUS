@@ -40,8 +40,8 @@ def get_window_size() -> (int, int):
     return w, h
 
 
-def get_ok_size_window(name: str, img_width: int, img_height: int
-                       ) -> (str, cv2.namedWindow):
+def get_ok_size_window(name: str, img_width: int, img_height: int) -> (
+        str, bool):
     screen_width, screen_height = get_window_size()
     width, height = img_width, img_height
     resized = False
@@ -144,7 +144,7 @@ def draw_dots(img: np.array) -> np.array:
         if len(points) > 0:
             # cv2.polylines(img, np.array([points]), False, color, width)
             cv2.circle(img, points[-1], 2, color, width)
-        imshow(name, img)
+        cv2.imshow(name, img)
         # Esc
         if cv2.waitKey(50) == 27:
             points.clear()
@@ -196,7 +196,7 @@ def draw_box(img: np.array) -> np.array:
         elif len(points) == 2:
             cv2.rectangle(img, points[0], points[1], color=color,
                           thickness=width)
-        imshow(name, img)
+        cv2.imshow(name, img)
         # Esc
         if cv2.waitKey(50) == 27:
             points.clear()
