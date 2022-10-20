@@ -498,18 +498,19 @@ def get_edge(image: np.array) -> np.array:
     # edge->blur->dilate->erode->contours
     # b, g, r = cv2.split(image)
     # combine = revert(g // 3 + r // 3 + b // 3)
+    # return get_edge_new(image)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     revert_gray = revert(gray)
     edge = auto_Canny(revert_gray)
     # blur edge, not original image
     erode_edge = make_clean(edge)
-    if debug and 0:
+    if debug:
         imshow('revert_gray', revert_gray)
         imshow('gray', gray)
         imshow('erode_edge', erode_edge)
         imshow('edge', edge)
-    return get_edge_new(image)
     # todo
+    cv2.waitKey()
     return erode_edge
 
 
@@ -538,8 +539,11 @@ def fill_boundary(img):
 
 def test(gray):
     # todo
-    equal = cv2.equalizeHist(gray)
-    blur = cv2.GaussianBlur(equal, (25, 25), 0)
+    # equal = cv2.equalizeHist(gray)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    equal = clahe.apply(gray)
+    equal = cv2.equalizeHist(equal)
+    blur = cv2.GaussianBlur(equal, (15, 15), 0)
     threshold3, blur_bin = cv2.threshold(blur, 0, 255,
                                          cv2.THRESH_BINARY | cv2.THRESH_OTSU)
     bin_edge = cv2.Canny(blur_bin, 0, 255)
@@ -552,8 +556,8 @@ def test(gray):
         cv2.drawContours(s_img, [i], 0, (255, 255, 255), 2)
     imshow('equal', equal)
     imshow('blur', blur)
-    imshow('blurbin', blur_bin)
-    imshow('blurbin_edge4_', bin_edge_)
+    imshow('blur bin', blur_bin)
+    imshow('blur bin_edge', bin_edge_)
     imshow('blur cnt', s_img)
     imshow('fill', fill)
     cv2.waitKey()
@@ -567,9 +571,9 @@ def get_edge_new(image: np.array) -> np.array:
     bin_edge = cv2.Canny(binary, 0, 255)
     bin_edge2 = make_clean(bin_edge)
     if debug:
-        imshow('binary', binary)
-        imshow('bin_edge2', bin_edge2)
-    test(gray)
+        imshow('bin', binary)
+        imshow('bin_edge', bin_edge2)
+    # test(gray)
     return bin_edge2
 
 
