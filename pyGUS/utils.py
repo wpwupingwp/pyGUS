@@ -167,6 +167,54 @@ def select_polygon(img: np.array, title='', color=(255, 0, 255)) -> np.array:
     return mask
 
 
+def draw_lines(img: np.array, title='', type_='fore') -> np.array:
+    name = title
+    hint = 'Left click to add points, right click to finish, Esc to abort'
+    log.info(hint)
+    done = False
+    current = (0, 0)
+    points = list()
+    img_copy = img.copy()
+    cropped = None
+    box = None
+
+    def on_mouse(event, x, y, buttons, user_param):
+        nonlocal done, current, points
+        if done:
+            return
+        if event == cv2.EVENT_MOUSEMOVE:
+            current = (x, y)
+        elif event == cv2.EVENT_LBUTTONDOWN:
+            points.append((x, y))
+        elif event == cv2.EVENT_RBUTTONDOWN:
+            done = True
+
+    imshow(name, img)
+    cv2.pollKey()
+    cv2.setMouseCallback(name, on_mouse)
+    if type_ == 'fore':
+        color = (255, 255, 255)
+    elif type_ == 'back':
+        color = (0, 0, 0)
+    else:
+        Quit(-1)
+    width = 10
+    while not done:
+        if len(points) > 0:
+            cv2.polylines(img, np.array([points]), False, color, width)
+            cv2.circle(img, points[-1], 2, color, width)
+        imshow(name, img)
+        # Esc
+        if cv2.waitKey(50) == 27:
+            cv2.destroyWindow(name)
+            return None
+    points_array = np.array([points])
+    imshow(name, img)
+    cv2.pollKey()
+    cv2.destroyWindow(name)
+    return img
+
+
 def draw_colorchecker(out='card.jpg') -> str:
     # https://github.com/opencv/opencv_contrib/blob/4.x/modules/mcc/src/dictionary.hpp
     # default size : 2080x1400

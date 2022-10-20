@@ -1,13 +1,14 @@
 from numpy.lib.stride_tricks import as_strided
 from sys import argv
 import cv2
-import logging
 import numpy as np
 import scipy
 import scipy.sparse
 import scipy.sparse.linalg
 
-from pyGUS.utils import imshow, resize
+from pyGUS.utils import draw_lines, imshow, resize
+from pyGUS.global_vars import log, debug
+
 
 class SolveForeAndBack:
     # https://github.com/MarcoForte/closed-form-matting
@@ -35,7 +36,6 @@ class SolveForeAndBack:
         return conditions, right_hand
 
     def get_grad_operator(self, mask):
-        """Returns sparse matrix computing horizontal, vertical, and two diagonal gradients."""
         horizontal_left = np.ravel_multi_index(
             np.nonzero(mask[:, :-1] | mask[:, 1:]), mask.shape)
         horizontal_right = horizontal_left + 1
@@ -64,16 +64,16 @@ class SolveForeAndBack:
             shape=(len(indices), mask.size))
 
     def run(self):
-        """Compute foreground and background image given source image and transparency map."""
         consts = (self.alpha < self.CONST_ALPHA_MARGIN) | (
-                    self.alpha > 1.0 - self.CONST_ALPHA_MARGIN)
+                self.alpha > 1.0 - self.CONST_ALPHA_MARGIN)
         grad = self.get_grad_operator(~consts)
         grad_weights = np.power(np.abs(grad * self.alpha.flatten()), 0.5)
 
         grad_only_positive = grad.maximum(0)
         grad_weights_f = grad_weights + 0.003 * grad_only_positive * (
-                    1.0 - self.alpha.flatten())
-        grad_weights_b = grad_weights + 0.003 * grad_only_positive * self.alpha.flatten()
+                1.0 - self.alpha.flatten())
+        grad_weights_b = (grad_weights + 0.003 * grad_only_positive *
+                          self.alpha.flatten())
 
         grad_pad = scipy.sparse.coo_matrix(grad.shape)
 
@@ -89,9 +89,10 @@ class SolveForeAndBack:
             self.__spdiagonal(1.0 - self.alpha.flatten())
         ))
 
-        const_conditions_f, b_const_f = self.get_const_conditions(self.image,
-                                                                  1.0 - self.alpha)
-        const_conditions_b, b_const_b = self.get_const_conditions(self.image, self.alpha)
+        const_conditions_f, b_const_f = self.get_const_conditions(
+            self.image, 1.0 - self.alpha)
+        const_conditions_b, b_const_b = self.get_const_conditions(
+            self.image, self.alpha)
 
         non_zero_conditions = scipy.sparse.vstack((
             composite_conditions,
@@ -185,22 +186,22 @@ def cfm_with_prior(image, prior, prior_confidence, consts_map=None):
     assert (consts_map is None) or image.shape[:2] == consts_map.shape, (
         'consts_map must be 2D matrix with height and width equal to image.')
 
-    logging.debug('Computing Matting Laplacian.')
-    laplacian = compute_laplacian(image,
-                                  ~consts_map if consts_map is not None else None)
+    log.debug('Computing Matting Laplacian.')
+    laplacian = compute_laplacian(
+        image, ~consts_map if consts_map is not None else None)
 
     confidence = scipy.sparse.diags(prior_confidence.ravel())
-    logging.debug('Solving for alpha.')
+    log.debug('Solving for alpha.')
     solution = scipy.sparse.linalg.spsolve(
         laplacian + confidence,
-        prior.ravel() * prior_confidence.ravel()
-    )
+        prior.ravel() * prior_confidence.ravel())
     alpha = np.minimum(np.maximum(solution.reshape(prior.shape), 0), 1)
     return alpha
 
 
 def cfm_with_scribbles(image, scribbles, scribbles_confidence=100.0):
-    assert image.shape == scribbles.shape, 'scribbles must have exactly same shape as image.'
+    assert image.shape == scribbles.shape, 'scribbles must have exactly same ' \
+                                           'shape as image.'
     prior = np.sign(np.sum(scribbles - image, axis=2)) / 2 + 0.5
     consts_map = prior != 0.5
     return cfm_with_prior(image, prior, scribbles_confidence * consts_map,
@@ -213,90 +214,33 @@ def closed_form_matting(image_raw: np.ndarray, scribbles_raw: np.ndarray):
     img = image_raw / 255.0
     scribbles = scribbles_raw / 255.0
     alpha = cfm_with_scribbles(img, scribbles)
-    return alpha
     # foreground, background = SolveForeAndBack(img, alpha).run()
     # fore_out = np.concatenate((foreground, alpha[:, :, np.newaxis]), axis=2)
     # return alpha, fore_out
-
-
-def main():
-    image_file = argv[1]
-    img = cv2.imread(image_file, cv2.IMREAD_COLOR)
-    img = resize(img, 500, 500)
-    scribbles_raw  = get_scribbles(img)
-    alpha = closed_form_matting(img, scribbles_raw)
-    # alpha, fore_out = closed_form_matting(img, scribbles_raw)
-    cv2.imshow('raw', img)
-    cv2.imshow('alpha', alpha)
-    # cv2.imshow('foreground', fore_out)
-    cv2.waitKey()
-    cv2.destroyAllWindows()
-    return
+    return alpha
 
 
 def get_scribbles(img: np.array):
     drawed = img.copy()
-    draw_lines(drawed, 'draw lines on plants',  'fore')
-    draw_lines(drawed, 'draw lines on background',  'back')
+    draw_lines(drawed, 'draw lines on plants', 'fore')
+    draw_lines(drawed, 'draw lines on background', 'back')
     return drawed
 
 
-def draw_lines(img: np.array, title='', type_='fore') -> np.array:
-    name = title
-    hint = 'Left click to add points, right click to finish, Esc to abort'
-    logging.info(hint)
-    done = False
-    current = (0, 0)
-    points = list()
-    img_copy = img.copy()
-    cropped = None
-    box = None
-
-    def on_mouse(event, x, y, buttons, user_param):
-        nonlocal done, current, points
-        if done:
-            return
-        if event == cv2.EVENT_MOUSEMOVE:
-            current = (x, y)
-        elif event == cv2.EVENT_LBUTTONDOWN:
-            points.append((x, y))
-        elif event == cv2.EVENT_RBUTTONDOWN:
-            done = True
-
-    imshow(name, img)
-    cv2.pollKey()
-    cv2.setMouseCallback(name, on_mouse)
-    if type_ == 'fore':
-        color = (255, 255, 255)
-    elif type_ == 'back':
-        color = (0, 0, 0)
-    width = 10
-    while not done:
-        if len(points) > 0:
-            cv2.polylines(img, np.array([points]), False, color, width)
-            cv2.circle(img, points[-1], 2, color, width)
-        imshow(name, img)
-        # Esc
-        if cv2.waitKey(50) == 27:
-            cv2.destroyWindow(name)
-            return None
-    points_array = np.array([points])
-    imshow(name, img)
-    cv2.pollKey()
-    cv2.destroyWindow(name)
-    return img
-
-
-def resize(img: np.array, new_height: int, new_width: int) -> np.array:
-    # keep original w/h ratio
-    height, width = img.shape[:2]
-    if width / height >= new_width / new_height:
-        img_new = cv2.resize(img, (new_width, int(height * new_width / width)))
-    else:
-        img_new = cv2.resize(img,
-                             (int(width * new_height / height), new_height))
-    return img_new
+def main(img: np.array):
+    img = resize(img, 500, 500)
+    scribbles_raw = get_scribbles(img)
+    alpha = closed_form_matting(img, scribbles_raw)
+    # alpha, fore_out = closed_form_matting(img, scribbles_raw)
+    if debug:
+        cv2.imshow('raw', img)
+        cv2.imshow('alpha', alpha)
+        # cv2.imshow('foreground', fore_out)
+        cv2.waitKey()
+        cv2.destroyAllWindows()
+    return alpha
 
 
 if __name__ == '__main__':
-    main()
+    img = cv2.imread(argv[1], cv2.IMREAD_COLOR)
+    main(img)

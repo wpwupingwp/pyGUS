@@ -541,9 +541,6 @@ def draw_lines(img: np.array, title='', type_='fore') -> np.array:
 
 def grab(image: np.array):
     image = resize(image, 1000, 1000)
-    b, g, r = cv2.split(image)
-    b, g, r = [cv2.equalizeHist(i) for i in (b,g,r)]
-    image = cv2.merge([b,g,r])
     rect = cv2.selectROI('', image)
     fg = np.zeros((1, 65), dtype="float")
     bg = np.zeros((1, 65), dtype="float")
