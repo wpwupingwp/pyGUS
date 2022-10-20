@@ -6,7 +6,7 @@ import scipy
 import scipy.sparse
 import scipy.sparse.linalg
 
-from pyGUS.utils import draw_lines, imshow, resize
+from pyGUS.utils import draw_lines, draw_box, imshow, resize
 from pyGUS.global_vars import log, debug
 
 
@@ -223,7 +223,10 @@ def closed_form_matting(image_raw: np.ndarray, scribbles_raw: np.ndarray):
 def get_scribbles(img: np.array):
     drawed = img.copy()
     draw_lines(drawed, 'draw lines on plants', 'fore')
-    draw_lines(drawed, 'draw lines on background', 'back')
+    # draw_lines(drawed, 'draw lines on background', 'back')
+    drawed = draw_box(drawed)
+    imshow('draw', drawed)
+    cv2.waitKey()
     return drawed
 
 
@@ -238,7 +241,7 @@ def main(img: np.array):
         # cv2.imshow('foreground', fore_out)
         cv2.waitKey()
         cv2.destroyAllWindows()
-    alpha_256 = alpha * 256
+    alpha_256 = alpha * 255
     alpha_256 = alpha_256.astype('uint8')
     return alpha_256
 

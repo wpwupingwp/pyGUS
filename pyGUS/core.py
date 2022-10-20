@@ -16,6 +16,7 @@ from pyGUS.global_vars import log, debug
 from pyGUS.utils import select_polygon
 from pyGUS.utils import select_box
 from pyGUS.utils import color_calibrate, if_exist, imshow, show_error, resize
+from pyGUS import cfm
 
 MANUAL = 'manual'
 NEG_TEXT = 'Click mouse to select negative expression region as reference'
@@ -539,20 +540,6 @@ def draw_lines(img: np.array, title='', type_='fore') -> np.array:
     return img
 
 
-def grab(image: np.array):
-    image = resize(image, 1000, 1000)
-    rect = cv2.selectROI('', image)
-    fg = np.zeros((1, 65), dtype="float")
-    bg = np.zeros((1, 65), dtype="float")
-    mask = np.zeros(image.shape[:2], dtype='uint8')
-    mask, bg, fg = cv2.grabCut(image, mask, rect, bg, fg, iterCount=2,
-                               mode=cv2.GC_INIT_WITH_RECT)
-    mask2 = np.where((mask==2)|(mask==0),0,255).astype('uint8')
-    imshow('grab', mask2)
-    cv2.waitKey()
-    return mask
-
-
 def get_edge(image: np.array) -> np.array:
     """
     Args:
@@ -563,11 +550,13 @@ def get_edge(image: np.array) -> np.array:
     # edge->blur->dilate->erode->contours
     # b, g, r = cv2.split(image)
     # combine = revert(g // 3 + r // 3 + b // 3)
-    grab(image)
-    return get_edge_new(image)
+    # grab(image)
+    # return get_edge_new(image)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = cfm.main(image)
     revert_gray = revert(gray)
-    edge = auto_Canny(revert_gray)
+    # edge = auto_Canny(revert_gray)
+    edge = cv2.Canny(revert_gray, 0, 255)
     # blur edge, not original image
     erode_edge = make_clean(edge)
     if debug:
@@ -575,6 +564,7 @@ def get_edge(image: np.array) -> np.array:
         imshow('gray', gray)
         imshow('erode_edge', erode_edge)
         imshow('edge', edge)
+    cv2.waitKey()
     return erode_edge
 
 

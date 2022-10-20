@@ -115,6 +115,59 @@ def select_box(img: np.array, text='Drag to select, then press SPACE BAR',
     return mask
 
 
+def draw_box(img: np.array) -> np.array:
+    """
+    select background in cfm
+    """
+    # init
+    # assert global_vars.is_gui
+    img_raw = img.copy()
+    color = (0, 0, 0)
+    width = 7
+    hint = 'Left click to draw, right click to finish, Esc to reset'
+    name = hint
+    log.info(hint)
+    done = False
+    current = (0, 0)
+    points = list()
+
+    def on_mouse(event, x, y, buttons, user_param):
+        nonlocal done, current, points, img
+        if event == cv2.EVENT_MOUSEMOVE:
+            current = (x, y)
+        elif event == cv2.EVENT_LBUTTONDOWN:
+            points.append((x, y))
+        elif event == cv2.EVENT_LBUTTONUP:
+            if points:
+                points.append((x, y))
+        elif event == cv2.EVENT_RBUTTONDOWN:
+            done = True
+        if done:
+            return
+
+    imshow(name, img)
+    cv2.pollKey()
+    cv2.setMouseCallback(name, on_mouse)
+    while not done:
+        if len(points) == 1:
+            img = img_raw.copy()
+            cv2.rectangle(img, points[0], current, color=color, thickness=width)
+        elif len(points) == 2:
+            cv2.rectangle(img, points[0], points[1], color=color,
+                          thickness=width)
+        imshow(name, img)
+        # Esc
+        if cv2.waitKey(50) == 27:
+            points.clear()
+            img = img_raw.copy()
+            # cv2.destroyWindow(name)
+            # return None
+    imshow(name, img)
+    cv2.pollKey()
+    cv2.destroyWindow(name)
+    return img
+
+
 def select_polygon(img: np.array, title='', color=(255, 0, 255)) -> np.array:
     """
     Select polygon region.
@@ -198,7 +251,7 @@ def draw_lines(img: np.array, title='', type_='fore') -> np.array:
         color = (0, 0, 0)
     else:
         Quit(-1)
-    width = 10
+    width = 7
     while not done:
         if len(points) > 0:
             cv2.polylines(img, np.array([points]), False, color, width)
@@ -327,6 +380,20 @@ def color_calibrate(img_file: str, draw_detected=False) -> str:
     # cv2.imshow('original', img)
     # cv2.imshow('calibrated', out_img)
     return str(out_img_file)
+
+
+def grab(image: np.array, mask: np.array):
+    image = resize(image, 1000, 1000)
+    rect = cv2.selectROI('', image)
+    fg = np.zeros((1, 65), dtype="float")
+    bg = np.zeros((1, 65), dtype="float")
+    mask, bg, fg = cv2.grabCut(image, mask, rect, bg, fg, iterCount=2,
+                               mode=cv2.GC_INIT_WITH_RECT)
+    mask2 = np.where((mask==2)|(mask==0),0,255).astype('uint8')
+    if global_vars.debug:
+        imshow('grab', mask2)
+        cv2.waitKey()
+    return mask
 
 
 if __name__ == '__main__':
