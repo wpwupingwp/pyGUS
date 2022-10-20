@@ -2,3 +2,4 @@ coloredlogs==15.0.1
 matplotlib==3.5.2
 numpy==1.23.1
 opencv-contrib-python==4.6.0.66
+scipy==1.9.2

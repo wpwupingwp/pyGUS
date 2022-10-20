@@ -15,7 +15,7 @@ matplotlib.use('Agg')
 from pyGUS.global_vars import log, debug
 from pyGUS.utils import select_polygon
 from pyGUS.utils import select_box
-from pyGUS.utils import color_calibrate, if_exist, imshow, show_error
+from pyGUS.utils import color_calibrate, if_exist, imshow, show_error, resize
 
 MANUAL = 'manual'
 NEG_TEXT = 'Click mouse to select negative expression region as reference'
@@ -482,10 +482,78 @@ def hist(gray):
     hist = cv2.calcHist([gray], [0], None, [256], [0, 256])
     hist_max = np.max(hist)
     hist_max_idx = np.max(np.where(hist == hist_max))
-    print(hist_max_idx)
     hist_edge = cv2.Canny(gray, 0, int(hist_max_idx * 0.9))
     imshow('histedge', hist_edge)
-    pass
+    return
+
+def get_scribbles(img: np.array):
+    drawed = img.copy()
+    draw_lines(drawed, 'draw lines on plants',  'fore')
+    draw_lines(drawed, 'draw lines on background',  'back')
+    return drawed
+
+
+def draw_lines(img: np.array, title='', type_='fore') -> np.array:
+    mask = np.zeros(img.shape[:2], dtype='uint8')
+    name = title
+    hint = 'Left click to add points, right click to finish, Esc to abort'
+    log.info(hint)
+    done = False
+    current = (0, 0)
+    points = list()
+    img_copy = img.copy()
+    cropped = None
+    box = None
+
+    def on_mouse(event, x, y, buttons, user_param):
+        nonlocal done, current, points
+        if done:
+            return
+        if event == cv2.EVENT_MOUSEMOVE:
+            current = (x, y)
+        elif event == cv2.EVENT_LBUTTONDOWN:
+            points.append((x, y))
+        elif event == cv2.EVENT_RBUTTONDOWN:
+            done = True
+
+    imshow(name, img)
+    cv2.pollKey()
+    cv2.setMouseCallback(name, on_mouse)
+    if type_ == 'fore':
+        color = (255, 255, 255)
+    elif type_ == 'back':
+        color = (0, 0, 0)
+    width = 10
+    while not done:
+        if len(points) > 0:
+            cv2.polylines(img, np.array([points]), False, color, width)
+            cv2.circle(img, points[-1], 2, color, width)
+        imshow(name, img)
+        # Esc
+        if cv2.waitKey(50) == 27:
+            cv2.destroyWindow(name)
+            return None
+    imshow(name, img)
+    cv2.pollKey()
+    cv2.destroyWindow(name)
+    return img
+
+
+def grab(image: np.array):
+    image = resize(image, 1000, 1000)
+    b, g, r = cv2.split(image)
+    b, g, r = [cv2.equalizeHist(i) for i in (b,g,r)]
+    image = cv2.merge([b,g,r])
+    rect = cv2.selectROI('', image)
+    fg = np.zeros((1, 65), dtype="float")
+    bg = np.zeros((1, 65), dtype="float")
+    mask = np.zeros(image.shape[:2], dtype='uint8')
+    mask, bg, fg = cv2.grabCut(image, mask, rect, bg, fg, iterCount=2,
+                               mode=cv2.GC_INIT_WITH_RECT)
+    mask2 = np.where((mask==2)|(mask==0),0,255).astype('uint8')
+    imshow('grab', mask2)
+    cv2.waitKey()
+    return mask
 
 
 def get_edge(image: np.array) -> np.array:
@@ -498,7 +566,8 @@ def get_edge(image: np.array) -> np.array:
     # edge->blur->dilate->erode->contours
     # b, g, r = cv2.split(image)
     # combine = revert(g // 3 + r // 3 + b // 3)
-    # return get_edge_new(image)
+    grab(image)
+    return get_edge_new(image)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     revert_gray = revert(gray)
     edge = auto_Canny(revert_gray)
@@ -509,8 +578,6 @@ def get_edge(image: np.array) -> np.array:
         imshow('gray', gray)
         imshow('erode_edge', erode_edge)
         imshow('edge', edge)
-    # todo
-    cv2.waitKey()
     return erode_edge
 
 
@@ -539,10 +606,7 @@ def fill_boundary(img):
 
 def test(gray):
     # todo
-    # equal = cv2.equalizeHist(gray)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    equal = clahe.apply(gray)
-    equal = cv2.equalizeHist(equal)
+    equal = cv2.equalizeHist(gray)
     blur = cv2.GaussianBlur(equal, (15, 15), 0)
     threshold3, blur_bin = cv2.threshold(blur, 0, 255,
                                          cv2.THRESH_BINARY | cv2.THRESH_OTSU)
@@ -573,7 +637,7 @@ def get_edge_new(image: np.array) -> np.array:
     if debug:
         imshow('bin', binary)
         imshow('bin_edge', bin_edge2)
-    # test(gray)
+    test(gray)
     return bin_edge2
 
 
