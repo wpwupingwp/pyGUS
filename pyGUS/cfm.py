@@ -214,9 +214,6 @@ def closed_form_matting(image_raw: np.ndarray, scribbles_raw: np.ndarray):
     img = image_raw / 255.0
     scribbles = scribbles_raw / 255.0
     alpha = cfm_with_scribbles(img, scribbles)
-    # foreground, background = SolveForeAndBack(img, alpha).run()
-    # fore_out = np.concatenate((foreground, alpha[:, :, np.newaxis]), axis=2)
-    # return alpha, fore_out
     return alpha
 
 
@@ -230,19 +227,14 @@ def get_scribbles(img: np.array):
 
 
 def main(img: np.array):
+    log.info('Start CFM...')
     img = resize(img, 500, 500)
     scribbles_raw = get_scribbles(img)
     alpha = closed_form_matting(img, scribbles_raw)
     alpha_256 = alpha * 255
     alpha_256 = alpha_256.astype('uint8')
-    if debug:
-        cv2.imshow('cfm raw', img)
-        cv2.imshow('cfm alpha', alpha_256)
-        masked = cv2.bitwise_and(img, img, mask=alpha_256)
-        cv2.imshow('cfm masked', masked)
-        cv2.waitKey()
-        cv2.destroyAllWindows()
-    return alpha_256
+    log.info('CFM done.')
+    return alpha_256, img
 
 
 if __name__ == '__main__':
