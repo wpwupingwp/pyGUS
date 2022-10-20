@@ -85,7 +85,6 @@ def show_error(msg: str) -> None:
 
 def get_crop(img: np.array, r: list) -> np.array:
     # deprecated
-    print('box', r)
     x, y, w, h = r
     cropped = img[int(y):int(y + h), int(x):int(x + w)]
     return cropped

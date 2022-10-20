@@ -619,8 +619,6 @@ def get_edge_new(image: np.array) -> np.array:
     gray = cv2.resize(gray, (width, height), interpolation=cv2.INTER_LANCZOS4)
     threshold, binary = cv2.threshold(gray, 0, 255,
                                       cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-    # binary = resize(image, *image.shape[:2])
-    print(image.shape, binary.shape, binary.dtype, image.dtype)
     bin_edge = cv2.Canny(binary, 0, 255)
     bin_edge2 = make_clean(bin_edge)
     if debug:
