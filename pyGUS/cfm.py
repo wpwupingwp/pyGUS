@@ -238,7 +238,9 @@ def main(img: np.array):
         # cv2.imshow('foreground', fore_out)
         cv2.waitKey()
         cv2.destroyAllWindows()
-    return alpha
+    alpha_256 = alpha * 256
+    alpha_256 = alpha_256.astype('uint8')
+    return alpha_256
 
 
 if __name__ == '__main__':
