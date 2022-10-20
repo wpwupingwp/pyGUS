@@ -120,7 +120,7 @@ def draw_dots(img: np.array) -> np.array:
     name = hint
     log.info(hint)
     color = (255, 255, 255)
-    width = 7
+    width = int(img.shape[0] * 0.02)
     current = (0, 0)
     done = False
     img_raw = img.copy()
@@ -164,7 +164,7 @@ def draw_box(img: np.array) -> np.array:
     # assert global_vars.is_gui
     img_raw = img.copy()
     color = (0, 0, 0)
-    width = 7
+    width = int(img.shape[0] * 0.02)
     hint = 'Left click to draw, right click to finish, Esc to reset'
     name = hint
     log.info(hint)
