@@ -551,12 +551,10 @@ def get_edge(image: np.array) -> np.array:
     # b, g, r = cv2.split(image)
     # combine = revert(g // 3 + r // 3 + b // 3)
     # grab(image)
-    # return get_edge_new(image)
-    gray = cfm.main(image)
-    # gray = cv2.cvtColor(gray, cv2.COLOR_BGR2GRAY)
+    return get_edge_new(image)
+    gray = cv2.cvtColor(gray, cv2.COLOR_BGR2GRAY)
     revert_gray = revert(gray)
-    # edge = auto_Canny(revert_gray)
-    edge = cv2.Canny(revert_gray, 0, 255)
+    edge = auto_Canny(revert_gray)
     # blur edge, not original image
     erode_edge = make_clean(edge)
     if debug:
@@ -616,7 +614,7 @@ def test(gray):
 
 
 def get_edge_new(image: np.array) -> np.array:
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = cfm.main(image)
     threshold, binary = cv2.threshold(gray, 0, 255,
                                       cv2.THRESH_BINARY | cv2.THRESH_OTSU)
     bin_edge = cv2.Canny(binary, 0, 255)
@@ -624,7 +622,6 @@ def get_edge_new(image: np.array) -> np.array:
     if debug:
         imshow('bin', binary)
         imshow('bin_edge', bin_edge2)
-    test(gray)
     return bin_edge2
 
 

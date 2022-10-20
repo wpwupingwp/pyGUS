@@ -233,15 +233,15 @@ def main(img: np.array):
     img = resize(img, 500, 500)
     scribbles_raw = get_scribbles(img)
     alpha = closed_form_matting(img, scribbles_raw)
-    # alpha, fore_out = closed_form_matting(img, scribbles_raw)
-    if debug:
-        cv2.imshow('raw', img)
-        cv2.imshow('alpha', alpha)
-        # cv2.imshow('foreground', fore_out)
-        cv2.waitKey()
-        cv2.destroyAllWindows()
     alpha_256 = alpha * 255
     alpha_256 = alpha_256.astype('uint8')
+    if debug:
+        cv2.imshow('cfm raw', img)
+        cv2.imshow('cfm alpha', alpha_256)
+        masked = cv2.bitwise_and(img, img, mask=alpha_256)
+        cv2.imshow('cfm masked', masked)
+        cv2.waitKey()
+        cv2.destroyAllWindows()
     return alpha_256
 
 
