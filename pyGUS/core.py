@@ -614,15 +614,19 @@ def test(gray):
 
 
 def get_edge_new(image: np.array) -> np.array:
+    height, width = image.shape[:2]
     gray, resized = cfm.main(image)
+    gray = cv2.resize(gray, (width, height), interpolation=cv2.INTER_LANCZOS4)
     threshold, binary = cv2.threshold(gray, 0, 255,
                                       cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    # binary = resize(image, *image.shape[:2])
+    print(image.shape, binary.shape, binary.dtype, image.dtype)
     bin_edge = cv2.Canny(binary, 0, 255)
     bin_edge2 = make_clean(bin_edge)
     if debug:
         imshow('bin', binary)
         imshow('bin_edge', bin_edge2)
-        masked = cv2.bitwise_and(resized, resized, mask=binary)
+        masked = cv2.bitwise_and(image, image, mask=binary)
         imshow('masked', masked)
         cv2.waitKey()
     return bin_edge2

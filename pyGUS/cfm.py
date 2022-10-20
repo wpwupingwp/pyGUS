@@ -228,7 +228,8 @@ def get_scribbles(img: np.array):
 
 def main(img: np.array):
     log.info('Start CFM...')
-    img = resize(img, 500, 500)
+    # at least 1366x768 screen
+    img = resize(img, 600, 600)
     scribbles_raw = get_scribbles(img)
     alpha = closed_form_matting(img, scribbles_raw)
     alpha_256 = alpha * 255
