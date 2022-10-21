@@ -1,5 +1,4 @@
 #!/usr/bin/python3)
-
 from pathlib import Path
 import io
 import os
@@ -9,6 +8,7 @@ import cv2
 import numpy as np
 
 from pyGUS import global_vars
+
 log = global_vars.log
 
 
@@ -52,7 +52,7 @@ def get_ok_size_window(name: str, img_width: int, img_height: int) -> (
         if height > screen_height:
             width = width * (screen_height / height)
             height = screen_height
-        width, height = int(width*0.9), int(height*0.9)
+        width, height = int(width * 0.9), int(height * 0.9)
     cv2.namedWindow(name, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(name, width=width, height=height)
     x = (screen_width - width) // 2
@@ -62,10 +62,12 @@ def get_ok_size_window(name: str, img_width: int, img_height: int) -> (
 
 
 def imshow(name: str, img: np.array) -> bool:
+    # show image with suitable window size
     # w,h vs h, w
     img_height, img_width = img.shape[:2]
     window, resized = get_ok_size_window(name, img_width, img_height)
     if resized:
+        # width x height
         log.debug(f'Image is too big({img_width}*{img_height}), resize.')
     cv2.imshow(name, img)
     return resized
@@ -109,7 +111,7 @@ def select_box(img: np.array, text='Drag to select, then press SPACE BAR',
     # stop hide
     sys.stdout = io.TextIOWrapper(os.fdopen(saved_sys_stdout, 'wb'))
     mask = np.zeros(img.shape[:2], dtype='uint8')
-    cv2.rectangle(mask, (x, y), (x+w, y+h), 255, -1)
+    cv2.rectangle(mask, (x, y), (x + w, y + h), 255, -1)
     cv2.destroyWindow(text)
     return mask
 
@@ -258,8 +260,6 @@ def select_polygon(img: np.array, title='', color=(255, 0, 255)) -> np.array:
     return mask
 
 
-
-
 def draw_colorchecker(out='card.jpg') -> str:
     # https://github.com/opencv/opencv_contrib/blob/4.x/modules/mcc/src/dictionary.hpp
     # default size : 2080x1400
@@ -298,7 +298,7 @@ def draw_colorchecker(out='card.jpg') -> str:
         for j in range(6):
             x = i * 6 + j
             image[(gap + i * w_gap):(gap + i * w_gap + w),
-                  (gap + j * w_gap):(gap + j * w_gap + w), :] = rgb[x, :]
+            (gap + j * w_gap):(gap + j * w_gap + w), :] = rgb[x, :]
     image = image.astype(np.uint8)
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     cv2.imwrite(out, image)
@@ -374,14 +374,14 @@ def color_calibrate(img_file: str, draw_detected=False) -> str:
     return str(out_img_file)
 
 
-def grab(image: np.array, mask: np.array):
+def grab(image: np.array, mask: np.array) -> np.array:
     image = resize(image, 1000, 1000)
     rect = cv2.selectROI('', image)
     fg = np.zeros((1, 65), dtype="float")
     bg = np.zeros((1, 65), dtype="float")
     mask, bg, fg = cv2.grabCut(image, mask, rect, bg, fg, iterCount=2,
                                mode=cv2.GC_INIT_WITH_RECT)
-    mask2 = np.where((mask==2)|(mask==0),0,255).astype('uint8')
+    mask2 = np.where((mask == 2) | (mask == 0), 0, 255).astype('uint8')
     if global_vars.debug:
         imshow('grab', mask2)
         cv2.waitKey()
