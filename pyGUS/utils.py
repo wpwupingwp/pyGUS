@@ -145,9 +145,7 @@ def draw_dots(img: np.array) -> np.array:
         nonlocal done, current, points
         if done:
             return
-        if event == cv2.EVENT_MOUSEMOVE:
-            current = (x, y)
-        elif event == cv2.EVENT_LBUTTONDOWN:
+        if event == cv2.EVENT_LBUTTONDOWN:
             points.append((x, y))
         elif event == cv2.EVENT_RBUTTONDOWN:
             done = True
