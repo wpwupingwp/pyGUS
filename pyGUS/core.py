@@ -24,13 +24,15 @@ GENERAL_TEXT = ('Failed to detect target with extremely low contrast. '
                 'Please manually select target region.')
 SHORT_TEXT = 'Click mouse to select target region'
 
-
+# todo, no edge
+# todo, change output figure, area ratio and size and xticks with filename stem
+# todo, default output express without yellow and total
+# todo: update manual
 # todo mode 1 test: single object for each image, manually select positive,
 #  negative, targets
 # todo mode 2 test: two object for each image, left target, right positive
 # todo mode 3 test: two object for each image, left target, right color card
 # todo: mode 4 test: select area by mouse
-# todo: manual
 # todo: manuscript
 # todo: change default args
 
