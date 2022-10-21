@@ -13,9 +13,8 @@ import numpy as np
 matplotlib.use('Agg')
 
 from pyGUS.global_vars import log, debug
-from pyGUS.utils import select_polygon
-from pyGUS.utils import select_box
-from pyGUS.utils import color_calibrate, if_exist, imshow, show_error
+from pyGUS.utils import select_box, select_polygon
+from pyGUS.utils import color_calibrate, if_exist, imshow, show_error, hex2bgr
 from pyGUS import cfm
 
 MANUAL = 'manual'
@@ -420,44 +419,6 @@ def auto_Canny(image: np.array, sigma=0.33) -> np.array:
     return edge
 
 
-def threshold(img: np.array, show=False) -> np.array:
-    """
-    Try to find suitable edge to split target and edge
-    Paused.
-    """
-    r, g, b = cv2.split(img)
-    r_g = r // 2 + g // 2
-    r_g_reverse = 255 - r_g
-    blur = cv2.GaussianBlur(r_g_reverse, (5, 5), 0)
-    h, w = img.shape[:2]
-    # mask = np.zeros([h + 2, w + 2], np.uint8)
-    # ret1, th1 = cv2.threshold(img, 16, 255, cv2.THRESH_BINARY)
-    equalize = cv2.equalizeHist(blur)
-    r, t = cv2.threshold(equalize, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    ret2, th2 = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    edge = auto_Canny(255 - t)
-    # cv2.floodFill(th2, mask=mask, seedPoint=(1,1), newVal=0, loDiff=3,
-    # upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
-    log.debug(f'h * w: {h} {w}')
-    # cv2.floodFill(th2, mask=mask, seedPoint=(1,h-1), newVal=0, loDiff=3,
-    # upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
-    # cv2.floodFill(th2, mask=mask, seedPoint=(w-1,1), newVal=0, loDiff=3,
-    # upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
-    # cv2.floodFill(th2, mask=mask, seedPoint=(w-1,h-1), newVal=0, loDiff=3,
-    # upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
-    # th3 = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
-    # cv2.THRESH_BINARY, 11, 4)
-    # th3 = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-    # cv2.THRESH_BINARY, 11, 2)
-    th3 = auto_Canny(t)
-    if show:
-        imshow('th2', th2)
-        imshow('threshold', t)
-        imshow('edge', edge)
-    log.debug(f'ret2 {ret2}')
-    return th3
-
-
 def make_clean(image: np.array) -> np.array:
     # blur->dilate->erode
     # ensure CV_8U
@@ -467,24 +428,6 @@ def make_clean(image: np.array) -> np.array:
     dilate = cv2.dilate(blur, None)
     erode_edge = cv2.erode(dilate, None)
     return erode_edge
-
-
-def get_sobel(img: np.array):
-    xsobel = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=5)
-    xsobel = cv2.convertScaleAbs(xsobel, alpha=1, beta=0)
-    ysobel = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=5)
-    ysobel = cv2.convertScaleAbs(ysobel, alpha=1, beta=0)
-    sobel_add = cv2.addWeighted(xsobel, 0.5, ysobel, 0.5, 0)
-    return sobel_add
-
-
-def hist(gray):
-    hist = cv2.calcHist([gray], [0], None, [256], [0, 256])
-    hist_max = np.max(hist)
-    hist_max_idx = np.max(np.where(hist == hist_max))
-    hist_edge = cv2.Canny(gray, 0, int(hist_max_idx * 0.9))
-    imshow('histedge', hist_edge)
-    return
 
 
 def get_scribbles(img: np.array):
@@ -791,20 +734,6 @@ def show_channel(img: np.array) -> None:
     for title, value in zip(['b', 'g', 'r'], [b, g, r]):
         imshow(title + 'revert', 255 - value)
         imshow(title, value)
-
-
-def hex2bgr(hex_str: str) -> (int, int, int):
-    """
-    Args:
-        hex_str: #FFFFFF
-    Returns:
-        255, 255, 255
-    """
-    hex2 = hex_str.removeprefix('#')
-    r = int('0x' + hex2[0:2].lower(), base=16)
-    g = int('0x' + hex2[2:4].lower(), base=16)
-    b = int('0x' + hex2[4:6].lower(), base=16)
-    return b, g, r
 
 
 def draw_images(filtered_result: list, level_cnt: dict, img: np.array,

@@ -85,6 +85,20 @@ def show_error(msg: str) -> None:
     raise Quit(-10)
 
 
+def hex2bgr(hex_str: str) -> (int, int, int):
+    """
+    Args:
+        hex_str: #FFFFFF
+    Returns:
+        255, 255, 255
+    """
+    hex2 = hex_str.removeprefix('#')
+    r = int('0x' + hex2[0:2].lower(), base=16)
+    g = int('0x' + hex2[2:4].lower(), base=16)
+    b = int('0x' + hex2[4:6].lower(), base=16)
+    return b, g, r
+
+
 def get_crop(img: np.array, r: list) -> np.array:
     # deprecated
     x, y, w, h = r

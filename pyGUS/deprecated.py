@@ -3,7 +3,8 @@ import numpy as np
 
 
 from pyGUS.core import make_clean, fill_boundary, imshow, show_error, revert
-from pyGUS.global_vars import debug
+from pyGUS.core import auto_Canny
+from pyGUS.global_vars import debug, log
 
 
 def test(gray):
@@ -88,5 +89,61 @@ def get_real_blue2(original_image: np.array, neg_ref_value: float,
     revert_b = revert_b.astype('uint8')
     amplified_neg_ref = int(factor * neg_ref_value)
     return revert_b, amplified_neg_ref
+
+
+def threshold(img: np.array, show=False) -> np.array:
+    """
+    Try to find suitable edge to split target and edge
+    Paused.
+    """
+    r, g, b = cv2.split(img)
+    r_g = r // 2 + g // 2
+    r_g_reverse = 255 - r_g
+    blur = cv2.GaussianBlur(r_g_reverse, (5, 5), 0)
+    h, w = img.shape[:2]
+    # mask = np.zeros([h + 2, w + 2], np.uint8)
+    # ret1, th1 = cv2.threshold(img, 16, 255, cv2.THRESH_BINARY)
+    equalize = cv2.equalizeHist(blur)
+    r, t = cv2.threshold(equalize, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    ret2, th2 = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    edge = auto_Canny(255 - t)
+    # cv2.floodFill(th2, mask=mask, seedPoint=(1,1), newVal=0, loDiff=3,
+    # upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
+    log.debug(f'h * w: {h} {w}')
+    # cv2.floodFill(th2, mask=mask, seedPoint=(1,h-1), newVal=0, loDiff=3,
+    # upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
+    # cv2.floodFill(th2, mask=mask, seedPoint=(w-1,1), newVal=0, loDiff=3,
+    # upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
+    # cv2.floodFill(th2, mask=mask, seedPoint=(w-1,h-1), newVal=0, loDiff=3,
+    # upDiff=3, flags=cv2.FLOODFILL_FIXED_RANGE)
+    # th3 = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
+    # cv2.THRESH_BINARY, 11, 4)
+    # th3 = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+    # cv2.THRESH_BINARY, 11, 2)
+    th3 = auto_Canny(t)
+    if show:
+        imshow('th2', th2)
+        imshow('threshold', t)
+        imshow('edge', edge)
+    log.debug(f'ret2 {ret2}')
+    return th3
+
+
+def get_sobel(img: np.array):
+    xsobel = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=5)
+    xsobel = cv2.convertScaleAbs(xsobel, alpha=1, beta=0)
+    ysobel = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=5)
+    ysobel = cv2.convertScaleAbs(ysobel, alpha=1, beta=0)
+    sobel_add = cv2.addWeighted(xsobel, 0.5, ysobel, 0.5, 0)
+    return sobel_add
+
+
+def hist(gray):
+    hist = cv2.calcHist([gray], [0], None, [256], [0, 256])
+    hist_max = np.max(hist)
+    hist_max_idx = np.max(np.where(hist == hist_max))
+    hist_edge = cv2.Canny(gray, 0, int(hist_max_idx * 0.9))
+    imshow('histedge', hist_edge)
+    return
 
 
