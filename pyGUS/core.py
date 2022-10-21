@@ -494,8 +494,7 @@ def get_edge(image: np.array) -> np.array:
     # b, g, r = cv2.split(image)
     # combine = revert(g // 3 + r // 3 + b // 3)
     # grab(image)
-    return get_edge_new(image)
-    gray = cv2.cvtColor(gray, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     revert_gray = revert(gray)
     edge = auto_Canny(revert_gray)
     # blur edge, not original image
@@ -914,7 +913,7 @@ def get_contour(img_file: str) -> (dict, np.array):
     if debug:
         pass
         # threshold(img, show=True)
-    edge = get_edge(img)
+    edge = get_edge_new(img)
     # edge2 = get_edge2(img)
     # cv2.waitKey()
     # APPROX_NONE to avoid omitting dots
