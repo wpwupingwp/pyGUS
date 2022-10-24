@@ -923,6 +923,7 @@ def get_contour(img_file: str) -> (dict, np.array):
                                                cv2.CHAIN_APPROX_NONE)
     # at least two objects
     if len(contours) < 3:
+        # todo
         show_error('Cannot find objects in given image.')
     hierarchy = []
     # raw hierarchy is [[[1,1,1,1]]]
