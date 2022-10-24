@@ -987,7 +987,7 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
     ax2 = plt.subplot(212)
     express_area = [i[2] for i in results]
     # modify negative reference area
-    express_area[-1] = 0
+    # express_area[-1] = 0
     all_area = [i[-2] for i in results]
     total_area = [i[5] for i in results]
     no_express_area = [t - e for t, e in zip(total_area, express_area)]
