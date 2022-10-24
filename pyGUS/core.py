@@ -1006,7 +1006,7 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
     # ax2.bar_label(rects2, label_type='center')
     ax2.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
     ax2.legend()
-    ax2.set_ylabel('Region area (pixels)')
+    ax2.set_ylabel('Area percent')
     ax2.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
     plt.tight_layout()
     plt.savefig(out)
