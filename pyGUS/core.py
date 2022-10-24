@@ -960,13 +960,19 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
     _ = results[0][-1]
     x = np.arange(1, len(labels) + 1)
     width = 0.3
-    violin_data = np.array([i[-1] for i in results], dtype='object')
+    violin_data_raw = []
+    for i in results:
+        data = i[-1]
+        if len(data) == 0:
+            data = [0]
+        violin_data_raw.append(data)
+    violin_data = np.array(violin_data_raw, dtype='object')
+    # violin_data = np.array([i[-1] for i in results], dtype='object')
     try:
         violin_parts = ax1.violinplot(violin_data, showmeans=True,
                                       showmedians=False, showextrema=False,
                                       widths=0.4)
     except ValueError:
-        print(violin_data)
         show_error('Failed to plot results due to bad values.')
         return Path()
     for pc in violin_parts['bodies']:
