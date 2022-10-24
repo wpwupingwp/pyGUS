@@ -1001,8 +1001,9 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
     rects2 = ax2.bar(x, no_express_area_percent, width=width,
                      bottom=express_area_percent, alpha=0.4,
                      color='orange', label='No expression region')
-    ax2.bar_label(rects1, label_type='center')
-    ax2.bar_label(rects2, label_type='center')
+    # rects1 = [i * 100 for i in rects1]
+    # ax2.bar_label(rects1, label_type='center')
+    # ax2.bar_label(rects2, label_type='center')
     ax2.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
     ax2.legend()
     ax2.set_ylabel('Region area (pixels)')
@@ -1039,7 +1040,7 @@ def write_csv(all_result: list, targets: list, use_convex, out: Path) -> Path:
               'Total value,Total std,Total area,Expression ratio,Figure size,'
               'Z-score,Outlier,Use convex hull')
     z_score_threshold = 3
-    values = [i[0] for i in all_result[:-2]]
+    values = [i[0] for i in all_result]
     z_scores = get_zscore(values)
     with open(out, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f, delimiter=',', quotechar='"',
