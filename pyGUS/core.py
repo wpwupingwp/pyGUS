@@ -8,6 +8,7 @@ from matplotlib.backends import backend_pdf
 import cv2
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 
 matplotlib.use('Agg')
@@ -825,7 +826,6 @@ def calculate(original_image: np.array, target_mask: np.array,
         result = (express_value, express_std, express_area, total_value,
             total_std, total_area, express_ratio, express_flatten)
     """
-    # todo: remove green
     # blue express area
     neg_ref_value = int(neg_ref_value)
     pos_ref_value = int(pos_ref_value)
@@ -988,19 +988,25 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
     express_area = [i[2] for i in results]
     # modify negative reference area
     express_area[-1] = 0
+    all_area = [i[-2] for i in results]
     total_area = [i[5] for i in results]
     no_express_area = [t - e for t, e in zip(total_area, express_area)]
-    rects1 = ax2.bar(x, express_area, width=width,
+    express_area_percent = [round(i/j, 4) for i, j in zip(express_area,
+                                                          all_area)]
+    no_express_area_percent = [round(i/j, 4) for i, j in zip(no_express_area,
+                                                             all_area)]
+    rects1 = ax2.bar(x, express_area_percent, width=width,
                      alpha=0.4,
                      color='green', label='Expression region')
-    rects2 = ax2.bar(x, no_express_area, width=width,
-                     bottom=express_area, alpha=0.4,
+    rects2 = ax2.bar(x, no_express_area_percent, width=width,
+                     bottom=express_area_percent, alpha=0.4,
                      color='orange', label='No expression region')
     ax2.bar_label(rects1, label_type='center')
     ax2.bar_label(rects2, label_type='center')
     ax2.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
     ax2.legend()
     ax2.set_ylabel('Region area (pixels)')
+    ax2.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
     plt.tight_layout()
     plt.savefig(out)
     log.info(f'Output figure file {out}')
