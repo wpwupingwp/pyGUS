@@ -82,7 +82,7 @@ class Root:
         self.top = top
 
         self.Button1 = tk.Button(self.top)
-        self.Button1.place(relx=0.321, rely=0.1, height=40, width=100)
+        self.Button1.place(relx=0.232, rely=0.1, height=40, width=150)
         self.Button1.configure(activebackground="beige")
         self.Button1.configure(activeforeground="#000000")
         self.Button1.configure(background="#edf0f3")
@@ -91,13 +91,13 @@ class Root:
         self.Button1.configure(foreground="#000000")
         self.Button1.configure(highlightbackground="#edf0f3")
         self.Button1.configure(highlightcolor="black")
-        self.Button1.configure(text='''Mode 1''')
+        self.Button1.configure(text='''Normal''')
         self.tooltip_font = "TkDefaultFont"
         self.Button1_tooltip = ToolTip(self.Button1, self.tooltip_font,
                                        'Single target in each image')
 
         self.Button2 = tk.Button(self.top)
-        self.Button2.place(relx=0.321, rely=0.25, height=40, width=100)
+        self.Button2.place(relx=0.232, rely=0.25, height=40, width=150)
         self.Button2.configure(activebackground="beige")
         self.Button2.configure(activeforeground="#000000")
         self.Button2.configure(background="#edf0f3")
@@ -106,14 +106,14 @@ class Root:
         self.Button2.configure(foreground="#000000")
         self.Button2.configure(highlightbackground="#edf0f3")
         self.Button2.configure(highlightcolor="black")
-        self.Button2.configure(text='''Mode 2''')
+        self.Button2.configure(text='''With reference''')
         self.tooltip_font = "TkDefaultFont"
         self.Button2_tooltip = ToolTip(
             self.Button2, self.tooltip_font,
             'Target and positive reference in each image')
 
         self.Button3 = tk.Button(self.top)
-        self.Button3.place(relx=0.321, rely=0.4, height=40, width=100)
+        self.Button3.place(relx=0.232, rely=0.4, height=40, width=150)
         self.Button3.configure(activebackground="beige")
         self.Button3.configure(activeforeground="#000000")
         self.Button3.configure(background="#edf0f3")
@@ -122,14 +122,14 @@ class Root:
         self.Button3.configure(foreground="#000000")
         self.Button3.configure(highlightbackground="#edf0f3")
         self.Button3.configure(highlightcolor="black")
-        self.Button3.configure(text='''Mode 3''')
+        self.Button3.configure(text='''With colorchecker''')
         self.tooltip_font = "TkDefaultFont"
         self.Button3_tooltip = ToolTip(
             self.Button3, self.tooltip_font,
             'Target and color checker in each image')
 
         self.Button4 = tk.Button(self.top)
-        self.Button4.place(relx=0.321, rely=0.55, height=40, width=100)
+        self.Button4.place(relx=0.232, rely=0.55, height=40, width=150)
         self.Button4.configure(activebackground="beige")
         self.Button4.configure(activeforeground="#000000")
         self.Button4.configure(background="#edf0f3")
@@ -138,51 +138,10 @@ class Root:
         self.Button4.configure(foreground="#000000")
         self.Button4.configure(highlightbackground="#edf0f3")
         self.Button4.configure(highlightcolor="black")
-        self.Button4.configure(text='''Mode 4''')
+        self.Button4.configure(text='''Manually''')
         self.tooltip_font = "TkDefaultFont"
         self.Button4_tooltip = ToolTip(
             self.Button4, self.tooltip_font, 'Manually select')
-
-        self.auto_ref = tk.IntVar()
-        self.Check1 = tk.Checkbutton(self.top)
-        self.Check1.place(relx=0.107, rely=0.70, height=30, width=100)
-        self.Check1.configure(activebackground="beige")
-        self.Check1.configure(activeforeground="#000000")
-        self.Check1.configure(background="#edf0f3")
-        self.Check1.configure(compound='left')
-        self.Check1.configure(disabledforeground="#b2b4b6")
-        self.Check1.configure(foreground="#000000")
-        self.Check1.configure(highlightbackground="#edf0f3")
-        self.Check1.configure(highlightcolor="black")
-        self.Check1.configure(justify='left')
-        self.Check1.configure(selectcolor="#edf0f3")
-        self.Check1.configure(text='''auto_ref''')
-        self.Check1.configure(variable=self.auto_ref)
-        self.tooltip_font = "TkDefaultFont"
-        self.Check1_tooltip = ToolTip(self.Check1, self.tooltip_font,
-                                      'Automatic detect objects')
-        self.Check1.select()
-
-        self.convex = tk.IntVar()
-        self.Check2 = tk.Checkbutton(self.top)
-        self.Check2.place(relx=0.536, rely=0.70, height=30, width=100)
-        self.Check2.configure(activebackground="beige")
-        self.Check2.configure(activeforeground="#000000")
-        self.Check2.configure(background="#edf0f3")
-        self.Check2.configure(compound='left')
-        self.Check2.configure(disabledforeground="#b2b4b6")
-        self.Check2.configure(foreground="#000000")
-        self.Check2.configure(highlightbackground="#edf0f3")
-        self.Check2.configure(highlightcolor="black")
-        self.Check2.configure(justify='left')
-        self.Check2.configure(selectcolor="#edf0f3")
-        self.Check2.configure(text='convex')
-        self.Check2.configure(variable=self.convex)
-        self.tooltip_font = "TkDefaultFont"
-        self.Check2_tooltip = ToolTip(
-            self.Check2, self.tooltip_font,
-            'Use convex hull to detect low contrast image')
-        #self.Check2.select()
 
         self.Button5 = tk.Button(self.top)
         self.Button5.place(relx=0.107, rely=0.85, height=30, width=100)
