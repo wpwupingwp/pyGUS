@@ -147,3 +147,18 @@ def hist(gray):
     return
 
 
+def use_convex(convex, big_external_contours, level_cnt, external_area_dict,
+               external_contours, big):
+    if convex:
+        # biggest contour is still biggest before and after process
+        for old in big_external_contours:
+            convexhull = cv2.convexHull(level_cnt[old], returnPoints=True)
+            old_area = external_area_dict[old]
+            new_area = cv2.contourArea(convexhull)
+            log.info(f'Area before use convex hull: {old_area}')
+            log.info(f'Area after use convex hull: {new_area}')
+            level_cnt[old] = convexhull
+            external_area_dict[old] = new_area
+        external_contours.sort(key=lambda x: external_area_dict[x],
+                               reverse=True)
+        big_external_contours = external_contours[:big]
