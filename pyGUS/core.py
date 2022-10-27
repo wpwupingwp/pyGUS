@@ -49,7 +49,7 @@ def parse_arg(arg_str):
     arg.add_argument('-ref1', help='Negative expression reference image')
     arg.add_argument('-ref2', help='Positive expression reference image')
     arg.add_argument('-auto_ref', action='store_true',
-                     help='auto detect objects')
+                     help='auto detect objects (deprecated)')
     arg.add_argument('-images', nargs='*', help='Input images', required=True)
     arg.add_argument('-mode', type=int, choices=(1, 2, 3, 4), required=True,
                      help=('1. Normal: single target in each image; '
@@ -86,48 +86,6 @@ def get_input(arg) -> (str, str, list[str], bool, str):
         positive = if_exist(positive)
     auto_ref = bool(arg.auto_ref)
     return negative, positive, targets, auto_ref, message
-
-
-def manual_ref(img: np.array, text=None, method='box') -> (list, np.array):
-    """
-    Select reference region manually
-    """
-    log.info(text)
-    img_copy = img.copy()
-    if method == 'box':
-        select = select_box
-        select = select_polygon
-    else:
-        select = select_polygon
-    if text is not None:
-        # log.info(text)
-        mask = select(img_copy, text)
-    else:
-        mask = select(img_copy)
-    blue, yellow_mask = get_real_blue(img, 0, 255)
-    mask_no_yellow = np.bitwise_and(mask, 255 - yellow_mask)
-    ref_value, std = cv2.meanStdDev(blue, mask=mask)
-    ref_value, std = ref_value[0][0], std[0][0]
-    area = np.count_nonzero(mask)
-    ref_value2, std2 = cv2.meanStdDev(blue, mask=mask_no_yellow)
-    ref_value2, std2 = ref_value2[0][0], std2[0][0]
-    area2 = np.count_nonzero(mask_no_yellow)
-    ratio = area2 / area
-    masked = cv2.bitwise_and(blue, blue, mask=mask_no_yellow)
-    flatten = masked[masked > 0]
-    if area > area2:
-        log.info(f'Original expression area: {area}')
-        log.info(f'After removing yellow region: {area2}')
-    if len(flatten) == 0:
-        flatten = np.array([0])
-    fig_size = img.shape[0] * img.shape[1]
-    result = [ref_value2, std2, area2, ref_value, std, area, ratio, fig_size,
-              flatten]
-    if debug:
-        imshow('mask', mask)
-        imshow('masked', cv2.bitwise_and(img, img, mask=mask))
-        imshow('b-y', cv2.bitwise_and(blue, blue, mask=255 - yellow_mask))
-    return result, mask
 
 
 def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
@@ -505,29 +463,6 @@ def get_edge(image: np.array) -> np.array:
     return erode_edge
 
 
-def fill_boundary(img) -> np.array:
-    img_copy = img.copy()
-    # is it ok?
-    ratio = 0.05
-    height, width = img.shape[:2]
-    _loc = int(height * ratio)
-    log.debug(f'fill boundary, use width {_loc}')
-    mask = np.zeros((height + 2, width + 2), dtype='uint8')
-    w_middle = width // 2
-    h_middle = height // 2
-    mask[int(h_middle - height * ratio):int(h_middle + height * ratio),
-         int(w_middle - width * ratio):int(w_middle + width * ratio)] = 1
-    cv2.floodFill(img_copy, mask, (_loc, _loc), 255, 0, 0,
-                  cv2.FLOODFILL_FIXED_RANGE)
-    cv2.floodFill(img_copy, mask, (width - _loc, height - _loc), 255,
-                  0, 0, cv2.FLOODFILL_FIXED_RANGE)
-    cv2.floodFill(img_copy, mask, (_loc, height - _loc), (255, 255, 255), 0, 0,
-                  cv2.FLOODFILL_FIXED_RANGE)
-    cv2.floodFill(img_copy, mask, (width - _loc, _loc), (255, 255, 255), 0, 0,
-                  cv2.FLOODFILL_FIXED_RANGE)
-    return img_copy
-
-
 def get_edge_new(image: np.array) -> np.array:
     height, width = image.shape[:2]
     gray, resized = cfm.main(image)
@@ -869,6 +804,48 @@ def split_image(left_cnt: np.array, right_cnt: np.array,
     return target, ref
 
 
+def manual_ref(img: np.array, text=None, method='box') -> (list, np.array):
+    """
+    Select reference region manually
+    """
+    log.info(text)
+    img_copy = img.copy()
+    if method == 'box':
+        select = select_box
+        select = select_polygon
+    else:
+        select = select_polygon
+    if text is not None:
+        # log.info(text)
+        mask = select(img_copy, text)
+    else:
+        mask = select(img_copy)
+    blue, yellow_mask = get_real_blue(img, 0, 255)
+    mask_no_yellow = np.bitwise_and(mask, 255 - yellow_mask)
+    ref_value, std = cv2.meanStdDev(blue, mask=mask)
+    ref_value, std = ref_value[0][0], std[0][0]
+    area = np.count_nonzero(mask)
+    ref_value2, std2 = cv2.meanStdDev(blue, mask=mask_no_yellow)
+    ref_value2, std2 = ref_value2[0][0], std2[0][0]
+    area2 = np.count_nonzero(mask_no_yellow)
+    ratio = area2 / area
+    masked = cv2.bitwise_and(blue, blue, mask=mask_no_yellow)
+    flatten = masked[masked > 0]
+    if area > area2:
+        log.info(f'Original expression area: {area}')
+        log.info(f'After removing yellow region: {area2}')
+    if len(flatten) == 0:
+        flatten = np.array([0])
+    fig_size = img.shape[0] * img.shape[1]
+    result = [ref_value2, std2, area2, ref_value, std, area, ratio, fig_size,
+              flatten]
+    if debug:
+        imshow('mask', mask)
+        imshow('masked', cv2.bitwise_and(img, img, mask=mask))
+        imshow('b-y', cv2.bitwise_and(blue, blue, mask=255 - yellow_mask))
+    return result, mask
+
+
 def get_contour_wrapper(
         img_file: str, neg_ref_value: float, pos_ref_value: float, big: int,
         text=GENERAL_TEXT) -> (tuple, np.array, list, dict, np.array):
@@ -895,7 +872,7 @@ def get_contour(img_file: str) -> (dict, np.array):
     if debug:
         pass
         # threshold(img, show=True)
-    edge = get_edge_new(img)
+    edge = get_edge(img)
     # edge2 = get_edge2(img)
     # cv2.waitKey()
     # APPROX_NONE to avoid omitting dots

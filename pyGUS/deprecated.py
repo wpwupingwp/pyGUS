@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-from pyGUS.core import make_clean, fill_boundary, imshow, show_error, revert
+from pyGUS.core import make_clean, imshow, show_error, revert
 from pyGUS.core import auto_Canny
 from pyGUS.global_vars import debug, log
 
@@ -29,6 +29,29 @@ def test(gray):
     imshow('fill', fill)
     cv2.waitKey()
     return
+
+
+def fill_boundary(img) -> np.array:
+    img_copy = img.copy()
+    # is it ok?
+    ratio = 0.05
+    height, width = img.shape[:2]
+    _loc = int(height * ratio)
+    log.debug(f'fill boundary, use width {_loc}')
+    mask = np.zeros((height + 2, width + 2), dtype='uint8')
+    w_middle = width // 2
+    h_middle = height // 2
+    mask[int(h_middle - height * ratio):int(h_middle + height * ratio),
+    int(w_middle - width * ratio):int(w_middle + width * ratio)] = 1
+    cv2.floodFill(img_copy, mask, (_loc, _loc), 255, 0, 0,
+                  cv2.FLOODFILL_FIXED_RANGE)
+    cv2.floodFill(img_copy, mask, (width - _loc, height - _loc), 255,
+                  0, 0, cv2.FLOODFILL_FIXED_RANGE)
+    cv2.floodFill(img_copy, mask, (_loc, height - _loc), (255, 255, 255), 0, 0,
+                  cv2.FLOODFILL_FIXED_RANGE)
+    cv2.floodFill(img_copy, mask, (width - _loc, _loc), (255, 255, 255), 0, 0,
+                  cv2.FLOODFILL_FIXED_RANGE)
+    return img_copy
 
 
 def get_edge2(image: np.array) -> np.array:
@@ -162,3 +185,5 @@ def use_convex(convex, big_external_contours, level_cnt, external_area_dict,
         external_contours.sort(key=lambda x: external_area_dict[x],
                                reverse=True)
         big_external_contours = external_contours[:big]
+
+
