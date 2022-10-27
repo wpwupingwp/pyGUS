@@ -54,10 +54,10 @@ def parse_arg(arg_str):
                      help='use convex hull to detect low contrast image')
     arg.add_argument('-images', nargs='*', help='Input images', required=True)
     arg.add_argument('-mode', type=int, choices=(1, 2, 3, 4), required=True,
-                     help=('1. single target in each image; '
-                           '2. target and positive reference in each image; '
-                           '3. target and color checker in each image; '
-                           '4. manually select target regions with mouse'))
+                     help=('1. Normal: single target in each image; '
+                           '2. With reference: target and positive reference; '
+                           '3. With color checker: target and color checker; '
+                           '4. Manually: manually select targets with mouse'))
     if arg_str is None:
         return arg.parse_args()
     else:

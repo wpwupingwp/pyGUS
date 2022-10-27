@@ -122,7 +122,7 @@ class Root:
         self.Button3.configure(foreground="#000000")
         self.Button3.configure(highlightbackground="#edf0f3")
         self.Button3.configure(highlightcolor="black")
-        self.Button3.configure(text='''With colorchecker''')
+        self.Button3.configure(text='''With color checker''')
         self.tooltip_font = "TkDefaultFont"
         self.Button3_tooltip = ToolTip(
             self.Button3, self.tooltip_font,
@@ -144,7 +144,7 @@ class Root:
             self.Button4, self.tooltip_font, 'Manually select')
 
         self.Button5 = tk.Button(self.top)
-        self.Button5.place(relx=0.107, rely=0.85, height=30, width=100)
+        self.Button5.place(relx=0.107, rely=0.75, height=30, width=100)
         self.Button5.configure(activebackground="beige")
         self.Button5.configure(activeforeground="#000000")
         self.Button5.configure(background="#edf0f3")
@@ -160,7 +160,7 @@ class Root:
             'Macbeth color checker for print')
 
         self.ButtonHelp = tk.Button(self.top)
-        self.ButtonHelp.place(relx=0.536, rely=0.85, height=30, width=100)
+        self.ButtonHelp.place(relx=0.536, rely=0.75, height=30, width=100)
         self.ButtonHelp.configure(activebackground="beige")
         self.ButtonHelp.configure(activeforeground="#000000")
         self.ButtonHelp.configure(background="#edf0f3")
