@@ -15,7 +15,7 @@ matplotlib.use('Agg')
 plt.set_loglevel('error')
 
 from pyGUS.global_vars import log, debug
-from pyGUS.utils import select_box, select_polygon
+from pyGUS.utils import select_box, select_polygon, draw_lines
 from pyGUS.utils import color_calibrate, if_exist, imshow, show_error, hex2bgr
 from pyGUS.cfm import get_cfm_masks
 
@@ -137,9 +137,9 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
         pos_img = cv2.imread(positive)
         neg_mask = get_cfm_masks(neg_img)
         pos_mask = get_cfm_masks(pos_img)
-        neg_result, _ = calculate(neg_img, neg_mask)
+        neg_result, neg_no_yellow_mask = calculate(neg_img, neg_mask)
         neg_ref_value = neg_result[0]
-        pos_result, _ = calculate(pos_img, pos_mask,
+        pos_result, pos_no_yellow_mask = calculate(pos_img, pos_mask,
                                   neg_ref_value=neg_ref_value)
         pos_ref_value = pos_result[0]
         for target in targets:
@@ -149,6 +149,12 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
                                                       neg_ref_value,
                                                       pos_ref_value)
             target_results.append(target_result)
+            target_png = get_out_filename(target)
+            draw_masks(target_img, target_mask, no_yellow_mask, target_png)
+        neg_png = get_out_filename(negative)
+        pos_png = get_out_filename(positive)
+        draw_masks(neg_img, neg_mask, neg_no_yellow_mask, neg_png)
+        draw_masks(pos_img, pos_mask, pos_no_yellow_mask, pos_png)
     return neg_result, pos_result, target_results
 
 
@@ -407,52 +413,6 @@ def get_scribbles(img: np.array):
     return drawed
 
 
-def draw_lines(img: np.array, title='', type_='fore') -> np.array:
-    mask = np.zeros(img.shape[:2], dtype='uint8')
-    name = title
-    hint = 'Left click to add points, right click to finish, Esc to abort'
-    log.info(hint)
-    done = False
-    current = (0, 0)
-    points = list()
-    img_copy = img.copy()
-    cropped = None
-    box = None
-
-    def on_mouse(event, x, y, buttons, user_param):
-        nonlocal done, current, points
-        if done:
-            return
-        if event == cv2.EVENT_MOUSEMOVE:
-            current = (x, y)
-        elif event == cv2.EVENT_LBUTTONDOWN:
-            points.append((x, y))
-        elif event == cv2.EVENT_RBUTTONDOWN:
-            done = True
-
-    imshow(name, img)
-    cv2.pollKey()
-    cv2.setMouseCallback(name, on_mouse)
-    if type_ == 'fore':
-        color = (255, 255, 255)
-    elif type_ == 'back':
-        color = (0, 0, 0)
-    width = 10
-    while not done:
-        if len(points) > 0:
-            cv2.polylines(img, np.array([points]), False, color, width)
-            cv2.circle(img, points[-1], 2, color, width)
-        imshow(name, img)
-        # Esc
-        if cv2.waitKey(50) == 27:
-            cv2.destroyWindow(name)
-            return None
-    imshow(name, img)
-    cv2.pollKey()
-    cv2.destroyWindow(name)
-    return img
-
-
 def get_edge(image: np.array) -> np.array:
     """
     Args:
@@ -706,6 +666,23 @@ def draw_images(filtered_result: list, level_cnt: dict, img: np.array,
             cv2.imwrite(out_filename, image)
             log.debug(f'Write image {out_filename}')
     return img_dict
+
+
+def get_out_filename(image: str) -> Path:
+    png = Path(image)
+    png = png.with_name(png.stem+'-masked'+'.png')
+    return png
+
+
+def draw_masks(img_raw: np.array, target_mask: np.array, express_mask: np.array,
+               output: Path) -> Path:
+    alpha = np.zeros(img_raw.shape[:2], dtype='uint8')
+    alpha[target_mask>0] = 128
+    alpha[express_mask>0] = 255
+    b, g, r = cv2.split(img_raw)
+    merged = cv2.merge([b, g, r, alpha])
+    cv2.imwrite(str(output), merged)
+    return output
 
 
 def get_yellow_mask(b: np.array, g: np.array, r: np.array) -> np.array:
