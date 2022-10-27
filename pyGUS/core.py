@@ -139,15 +139,12 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
         pos_mask = get_cfm_masks(pos_img)
         neg_result, neg_no_yellow_mask = calculate(neg_img, neg_mask)
         neg_ref_value = neg_result[0]
-        pos_result, pos_no_yellow_mask = calculate(pos_img, pos_mask,
-                                  neg_ref_value=neg_ref_value)
+        pos_result, pos_no_yellow_mask = calculate(pos_img, pos_mask)
         pos_ref_value = pos_result[0]
         for target in targets:
             target_img = cv2.imread(target)
             target_mask = get_cfm_masks(target_img)
-            target_result, no_yellow_mask = calculate(target_img, target_mask,
-                                                      neg_ref_value,
-                                                      pos_ref_value)
+            target_result, no_yellow_mask = calculate(target_img, target_mask)
             target_results.append(target_result)
             target_png = get_out_filename(target)
             draw_masks(target_img, target_mask, no_yellow_mask, target_png)
