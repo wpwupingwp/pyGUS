@@ -12,11 +12,12 @@ import matplotlib.ticker as ticker
 import numpy as np
 
 matplotlib.use('Agg')
+plt.set_loglevel('error')
 
 from pyGUS.global_vars import log, debug
 from pyGUS.utils import select_box, select_polygon
 from pyGUS.utils import color_calibrate, if_exist, imshow, show_error, hex2bgr
-from pyGUS import cfm
+from pyGUS.cfm import get_cfm_masks
 
 MANUAL = 'manual'
 NEG_TEXT = 'Click mouse to select negative expression region as reference'
@@ -104,36 +105,46 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
     deprecated parameters:
         convex: use convex hull for region detection or not
     """
+    target_results = []
+    neg_result = []
+    pos_result = []
     if auto_ref:
+        # old methods
         (neg_result, neg_mask, neg_filtered_result, neg_level_cnt,
          neg_img) = get_contour_wrapper(negative, 0, 255, 1, NEG_TEXT)
+        neg_ref_value = neg_result[0]
+        pos_level_cnt, pos_img = get_contour(positive)
+        pos_filtered_result = filter_contours(pos_img, pos_level_cnt, big=1)
+        pos_mask = get_single_mask(pos_filtered_result, pos_level_cnt, pos_img)
+        pos_result = calculate(pos_img, pos_mask, neg_ref_value=neg_ref_value)
+        pos_ref_value = pos_result[0]
+        for target in targets:
+            (target_result, target_mask, filtered_result, level_cnt,
+             img) = get_contour_wrapper(target, neg_ref_value, pos_ref_value, 1)
+            target_results.append(target_result)
+            img_dict = draw_images(filtered_result, level_cnt, img, simple=True,
+                                   show=False, filename=target)
+            if debug:
+                imshow('mask', target_mask)
+                imshow('masked', cv2.bitwise_and(img, img, mask=target_mask))
+        log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
+        draw_images(pos_filtered_result, pos_level_cnt, pos_img, show=False,
+                    simple=True, filename=positive)
     else:
         neg_img = cv2.imread(negative)
-        neg_result, neg_mask = manual_ref(neg_img, NEG_TEXT)
-        neg_filtered_result = []
-        neg_level_cnt = []
-    neg_ref_value = neg_result[0]
-    pos_level_cnt, pos_img = get_contour(positive)
-    pos_filtered_result = filter_contours(pos_img, pos_level_cnt, big=1)
-    pos_mask = get_single_mask(pos_filtered_result, pos_level_cnt, pos_img)
-    pos_result = calculate(pos_img, pos_mask, neg_ref_value=neg_ref_value)
-    pos_ref_value = pos_result[0]
-    log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
-    target_results = []
-    for target in targets:
-        (target_result, target_mask, filtered_result, level_cnt,
-         img) = get_contour_wrapper(target, neg_ref_value, pos_ref_value, 1)
-        target_results.append(target_result)
-        img_dict = draw_images(filtered_result, level_cnt, img, simple=True,
-                               show=False, filename=target)
-        if debug:
-            imshow('mask', target_mask)
-            imshow('masked', cv2.bitwise_and(img, img, mask=target_mask))
-    draw_images(pos_filtered_result, pos_level_cnt, pos_img, show=False,
-                simple=True, filename=positive)
-    # if auto_ref:
-    #     draw_images(neg_filtered_result, neg_level_cnt, neg_img, show=False,
-    #                 simple=True, filename=negative)
+        pos_img = cv2.imread(positive)
+        neg_mask = get_cfm_masks(neg_img)
+        pos_mask = get_cfm_masks(pos_img)
+        neg_results = calculate(neg_img, neg_mask)
+        neg_ref_value = neg_results[0]
+        pos_results = calculate(pos_img, pos_mask, neg_ref_value=neg_ref_value)
+        pos_ref_value = pos_results[0]
+        for target in targets:
+            target_img = cv2.imread(target)
+            target_mask = get_cfm_masks(target_img)
+            target_result = calculate(target_img, target_mask, neg_ref_value,
+                                      pos_ref_value)
+            target_results.append(target_result)
     return neg_result, pos_result, target_results
 
 
@@ -903,6 +914,7 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
     width = 0.3
     violin_data_raw = []
     for i in results:
+        print(i)
         data = i[-1]
         if len(data) == 0:
             data = [0]
