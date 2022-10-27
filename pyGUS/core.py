@@ -135,10 +135,10 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
         pos_img = cv2.imread(positive)
         neg_mask = get_cfm_masks(neg_img)
         pos_mask = get_cfm_masks(pos_img)
-        neg_results = calculate(neg_img, neg_mask)
-        neg_ref_value = neg_results[0]
-        pos_results = calculate(pos_img, pos_mask, neg_ref_value=neg_ref_value)
-        pos_ref_value = pos_results[0]
+        neg_result = calculate(neg_img, neg_mask)
+        neg_ref_value = neg_result[0]
+        pos_result = calculate(pos_img, pos_mask, neg_ref_value=neg_ref_value)
+        pos_ref_value = pos_result[0]
         for target in targets:
             target_img = cv2.imread(target)
             target_mask = get_cfm_masks(target_img)
