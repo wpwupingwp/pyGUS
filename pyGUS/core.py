@@ -26,6 +26,7 @@ GENERAL_TEXT = ('Failed to detect target with extremely low contrast. '
                 'Please manually select target region.')
 SHORT_TEXT = 'Click mouse to select target region'
 
+
 # todo, no edge
 # todo, change output figure, area ratio and size and xticks with filename stem
 # todo, default output express without yellow and total
@@ -116,7 +117,8 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
         pos_level_cnt, pos_img = get_contour(positive)
         pos_filtered_result = filter_contours(pos_img, pos_level_cnt, big=1)
         pos_mask = get_single_mask(pos_filtered_result, pos_level_cnt, pos_img)
-        pos_result = calculate(pos_img, pos_mask, neg_ref_value=neg_ref_value)
+        pos_result, _ = calculate(pos_img, pos_mask,
+                                  neg_ref_value=neg_ref_value)
         pos_ref_value = pos_result[0]
         for target in targets:
             (target_result, target_mask, filtered_result, level_cnt,
@@ -135,15 +137,17 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
         pos_img = cv2.imread(positive)
         neg_mask = get_cfm_masks(neg_img)
         pos_mask = get_cfm_masks(pos_img)
-        neg_result = calculate(neg_img, neg_mask)
+        neg_result, _ = calculate(neg_img, neg_mask)
         neg_ref_value = neg_result[0]
-        pos_result = calculate(pos_img, pos_mask, neg_ref_value=neg_ref_value)
+        pos_result, _ = calculate(pos_img, pos_mask,
+                                  neg_ref_value=neg_ref_value)
         pos_ref_value = pos_result[0]
         for target in targets:
             target_img = cv2.imread(target)
             target_mask = get_cfm_masks(target_img)
-            target_result = calculate(target_img, target_mask, neg_ref_value,
-                                      pos_ref_value)
+            target_result, no_yellow_mask = calculate(target_img, target_mask,
+                                                      neg_ref_value,
+                                                      pos_ref_value)
             target_results.append(target_result)
     return neg_result, pos_result, target_results
 
@@ -162,10 +166,10 @@ def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
         if ref_filtered_result is not None:
             neg_mask, pos_mask = get_left_right_mask(ref_filtered_result,
                                                      ref_level_cnt, ref_img)
-            neg_result = calculate(ref_img, neg_mask)
+            neg_result, _ = calculate(ref_img, neg_mask)
             neg_ref_value = neg_result[0]
-            pos_result = calculate(ref_img, pos_mask,
-                                   neg_ref_value=neg_ref_value)
+            pos_result, _ = calculate(ref_img, pos_mask,
+                                      neg_ref_value=neg_ref_value)
         else:
             neg_result, neg_mask = manual_ref(ref_img, NEG_TEXT)
             pos_result, pos_mask = manual_ref(ref_img, POS_TEXT)
@@ -186,9 +190,9 @@ def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
             target_mask, pos_mask_ = get_left_right_mask(filtered_result,
                                                          level_cnt,
                                                          img)
-            target_result = calculate(img, target_mask,
-                                      neg_ref_value=neg_ref_value,
-                                      pos_ref_value=pos_ref_value)
+            target_result, _ = calculate(img, target_mask,
+                                         neg_ref_value=neg_ref_value,
+                                         pos_ref_value=pos_ref_value)
         else:
             log.info(GENERAL_TEXT)
             target_result, target_mask = manual_ref(
@@ -223,7 +227,7 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
         if neg_filtered_result is not None:
             neg_left_mask, neg_right_mask = get_left_right_mask(
                 neg_filtered_result, neg_level_cnt, neg_img)
-            neg_result = calculate(neg_img, neg_left_mask)
+            neg_result, _ = calculate(neg_img, neg_left_mask)
         else:
             neg_result, neg_mask = manual_ref(neg_img, NEG_TEXT)
     else:
@@ -234,7 +238,7 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
     pos_filtered_result = filter_contours(pos_img, pos_level_cnt, big=2)
     pos_left_mask, pos_right_mask = get_left_right_mask(
         pos_filtered_result, pos_level_cnt, pos_img)
-    pos_result = calculate(pos_img, pos_left_mask)
+    pos_result, _ = calculate(pos_img, pos_left_mask)
     neg_ref_value = neg_result[0]
     pos_ref_value = pos_result[0]
     log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
@@ -246,8 +250,8 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
             left_mask, right_mask = get_left_right_mask(filtered_result,
                                                         level_cnt,
                                                         img)
-            target_result = calculate(img, left_mask, neg_ref_value,
-                                      pos_ref_value)
+            target_result, _ = calculate(img, left_mask, neg_ref_value,
+                                         pos_ref_value)
         else:
             log.info(GENERAL_TEXT)
             target_result, target_mask = manual_ref(img, text=SHORT_TEXT,
@@ -299,15 +303,15 @@ def mode_4(_: str, __: str, targets: list, ___: bool) -> (list, list, list):
             show_error(error_msg)
             return neg_result, pos_result, target_results
         # todo: is it ok to directly use calculate to get ref value?
-        neg_result = calculate(img, mask1, neg_ref_value=0)
+        neg_result, _ = calculate(img, mask1, neg_ref_value=0)
         neg_ref_value, neg_std, *_ = neg_result
-        pos_result = calculate(img, mask2, pos_ref_value=255)
+        pos_result, _ = calculate(img, mask2, pos_ref_value=255)
         pos_ref_value, pos_std, *_ = pos_result
         # neg_ref_value += neg_std * 3
         neg_ref_value += neg_std
         pos_ref_value += pos_std
         log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
-        result = calculate(img, mask3, neg_ref_value, pos_ref_value)
+        result, _ = calculate(img, mask3, neg_ref_value, pos_ref_value)
         target_results.append(result)
         out_p = Path(target)
         out_filename = str(out_p.parent / out_p.with_name(
@@ -723,7 +727,7 @@ def get_real_blue(original_image: np.array, neg_ref_value: float,
 
 
 def calculate(original_image: np.array, target_mask: np.array,
-              neg_ref_value=0.0, pos_ref_value=255.0) -> tuple:
+              neg_ref_value=0.0, pos_ref_value=255.0) -> (tuple, np.array):
     """
     Calculate given region's value.
     Args:
@@ -734,6 +738,7 @@ def calculate(original_image: np.array, target_mask: np.array,
     Returns:
         result = (express_value, express_std, express_area, total_value,
             total_std, total_area, express_ratio, express_flatten)
+        express_mask_no_yellow
     """
     # blue express area
     neg_ref_value = int(neg_ref_value)
@@ -772,7 +777,7 @@ def calculate(original_image: np.array, target_mask: np.array,
         imshow('target', target_mask)
         imshow('express', express_mask)
         imshow('express no yellow', express_mask_no_yellow)
-    return result
+    return result, express_mask_no_yellow
 
 
 def split_image(left_cnt: np.array, right_cnt: np.array,
@@ -847,8 +852,8 @@ def get_contour_wrapper(
     filtered_result = filter_contours(img, level_cnt, big=big)
     if filtered_result is not None:
         mask = get_single_mask(filtered_result, level_cnt, img)
-        result = calculate(img, mask, neg_ref_value=neg_ref_value,
-                           pos_ref_value=pos_ref_value)
+        result, _ = calculate(img, mask, neg_ref_value=neg_ref_value,
+                              pos_ref_value=pos_ref_value)
     else:
         # log.info(text)
         result, mask = manual_ref(img, text=SHORT_TEXT, method='polygon')
@@ -943,10 +948,10 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
     all_area = [i[-2] for i in results]
     total_area = [i[5] for i in results]
     no_express_area = [t - e for t, e in zip(total_area, express_area)]
-    express_area_percent = [round(i/j, 4) for i, j in zip(express_area,
-                                                          all_area)]
-    no_express_area_percent = [round(i/j, 4) for i, j in zip(no_express_area,
-                                                             all_area)]
+    express_area_percent = [round(i / j, 4) for i, j in zip(express_area,
+                                                            all_area)]
+    no_express_area_percent = [round(i / j, 4) for i, j in zip(no_express_area,
+                                                               all_area)]
     rects1 = ax2.bar(x, express_area_percent, width=width,
                      alpha=0.4,
                      color='green', label='Expression region')
