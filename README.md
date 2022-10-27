@@ -277,6 +277,9 @@ image or to start running.
 
 `.csv` files: **csv** format table, with expression information of each image.
 
+`-masked.png` files: Original image with alpha channel. Background is set to
+fully transparent, expressed regions are set to fully opaque.
+
 `-fill.png` files: Images filled with different colors. 
 <span style="color:blue">Blue</span> means target, 
 <span style="color:red">red</span> means background, <span style="color:yellow">
