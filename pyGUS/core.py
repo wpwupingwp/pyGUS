@@ -690,6 +690,15 @@ def get_yellow_mask(b: np.array, g: np.array, r: np.array) -> np.array:
     return mask
 
 
+def adjust_by_pos_ref(revert_b: np.array, pos_ref_value) -> np.array:
+    new = revert_b.copy()
+    if pos_ref_value == 255:
+        return revert_b
+    factor = pos_ref_value / 256
+    new = cv2.convertScaleAbs(new, alpha=factor)
+    return new
+
+
 def get_real_blue(original_image: np.array, neg_ref_value: float,
                   pos_ref_value: float) -> (np.array, np.array):
     if neg_ref_value > pos_ref_value or pos_ref_value <= 0.0:
@@ -697,8 +706,7 @@ def get_real_blue(original_image: np.array, neg_ref_value: float,
     b, g, r = cv2.split(original_image)
     yellow_mask = get_yellow_mask(b, g, r)
     revert_b = revert(b)
-    # revert_b = revert(b)
-    # amplified_neg_ref = int(factor * neg_ref_value)
+    # revert_b_adjusted = adjust_by_pos_ref(revert_b, pos_ref_value)
     return revert_b, yellow_mask
 
 
@@ -716,13 +724,10 @@ def calculate(original_image: np.array, target_mask: np.array,
             total_std, total_area, express_ratio, express_flatten)
         express_mask_no_yellow
     """
-    # blue express area
     neg_ref_value = int(neg_ref_value)
     pos_ref_value = int(pos_ref_value)
     revert_b, yellow_mask = get_real_blue(original_image, neg_ref_value,
                                           pos_ref_value)
-    # cv2.imshow('revert blue', revert_b)
-    # cv2.waitKey()
     express_mask = target_mask.copy()
     express_mask[revert_b <= neg_ref_value] = 0
     express_mask_no_yellow = np.bitwise_and(express_mask, 255 - yellow_mask)
