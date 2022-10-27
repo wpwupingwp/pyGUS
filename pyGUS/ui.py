@@ -1005,13 +1005,7 @@ def run(mode, ref1=None, ref2=None, images=None):
         global _w1
         cmd = (f'-mode {mode} -ref1 {s_list[0]} -ref2 {s_list[1]} '
                f'-images {s_list[2]}')
-        auto_ref = _w1.auto_ref.get()
-        convex = _w1.convex.get()
-        if auto_ref:
-            cmd += ' -auto_ref'
-        if convex:
-            cmd += ' -convex'
-        print(cmd)
+        log.info(cmd)
         # messagebox.showinfo(message=cmd)
         # todo: opencv imshow could only run in main thread
         # r = threading.Thread(target=thread_wrap, args=(core.cli_main, cmd),
