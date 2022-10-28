@@ -208,7 +208,7 @@ def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
         for target in targets:
             target_img = cv2.imread(target)
             mask = get_cfm_masks(target_img)
-            target_mask, pos_mask = split_left_right_mask(mask)
+            target_mask, pos_mask_ = split_left_right_mask(mask)
             target_result, no_yellow_mask = calculate(
                 target_img, target_mask, neg_ref_value, pos_ref_value)
             target_results.append(target_result)
