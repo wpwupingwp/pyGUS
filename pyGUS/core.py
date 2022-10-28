@@ -107,8 +107,6 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
         convex: use convex hull for region detection or not
     """
     target_results = []
-    neg_result = []
-    pos_result = []
     if auto_ref:
         # old methods
         (neg_result, neg_mask, neg_filtered_result, neg_level_cnt,
@@ -148,10 +146,10 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
             target_result, no_yellow_mask = calculate(
                 target_img, target_mask, neg_ref_value, pos_ref_value)
             target_results.append(target_result)
-            target_png = get_out_filename(target)
+            target_png = get_out_filename(target, '-masked')
             draw_masks(target_img, target_mask, no_yellow_mask, target_png)
-        neg_png = get_out_filename(negative)
-        pos_png = get_out_filename(positive)
+        neg_png = get_out_filename(negative, '-masked')
+        pos_png = get_out_filename(positive, '-masked')
         draw_masks(neg_img, neg_mask, neg_no_yellow_mask, neg_png)
         draw_masks(pos_img, pos_mask, pos_no_yellow_mask, pos_png)
     return neg_result, pos_result, target_results
@@ -165,6 +163,7 @@ def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
     ignore small_external, inner_contours
     """
     negative_positive_ref = ref1
+    target_results = []
     if auto_ref:
         ref_level_cnt, ref_img = get_contour(negative_positive_ref)
         ref_filtered_result = filter_contours(ref_img, ref_level_cnt, big=2)
@@ -178,39 +177,47 @@ def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
         else:
             neg_result, neg_mask = manual_ref(ref_img, NEG_TEXT)
             pos_result, pos_mask = manual_ref(ref_img, POS_TEXT)
+        neg_ref_value = neg_result[0]
+        pos_ref_value = pos_result[0]
+        log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
+        for target in targets:
+            level_cnt, img = get_contour(target)
+            filtered_result = filter_contours(img, level_cnt)
+            if filtered_result is not None:
+                target_mask, pos_mask_ = get_left_right_mask(filtered_result,
+                                                             level_cnt,
+                                                             img)
+                target_result, _ = calculate(img, target_mask, neg_ref_value,
+                                             pos_ref_value)
+            else:
+                log.info(GENERAL_TEXT)
+                target_result, target_mask = manual_ref(
+                    img, text=SHORT_TEXT, method='polygon')
+            target_results.append(target_result)
+            img_dict = draw_images(filtered_result, level_cnt, img, show=False,
+                                   simple=True, filename=target)
     else:
         ref_img = cv2.imread(negative_positive_ref)
-        neg_result, neg_mask = manual_ref(ref_img, NEG_TEXT)
-        pos_result, pos_mask = manual_ref(ref_img, POS_TEXT)
-        ref_filtered_result = None
-        ref_level_cnt = None
-    neg_ref_value = neg_result[0]
-    pos_ref_value = pos_result[0]
-    log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
-    target_results = []
-    for target in targets:
-        level_cnt, img = get_contour(target)
-        filtered_result = filter_contours(img, level_cnt)
-        if filtered_result is not None:
-            target_mask, pos_mask_ = get_left_right_mask(filtered_result,
-                                                         level_cnt,
-                                                         img)
-            target_result, _ = calculate(img, target_mask,
-                                         neg_ref_value=neg_ref_value,
-                                         pos_ref_value=pos_ref_value)
-        else:
-            log.info(GENERAL_TEXT)
-            target_result, target_mask = manual_ref(
-                img, text=SHORT_TEXT, method='polygon')
-        target_results.append(target_result)
-        img_dict = draw_images(filtered_result, level_cnt, img, show=False,
-                               simple=True, filename=target)
-    if debug:
-        pass
-        # masked_neg = cv2.bitwise_and(ref_img, ref_img, mask=neg_mask)
-        # cv2.imshow('masked negative reference', 255 - masked_neg)
-        # masked_pos = cv2.bitwise_and(ref_img, ref_img, mask=pos_mask)
-        # cv2.imshow('masked positive reference', 255 - masked_pos)
+        ref_mask = get_cfm_masks(ref_img)
+        neg_mask, pos_mask = split_left_right_mask(ref_mask)
+        neg_result, neg_no_yellow_mask = calculate(ref_img, neg_mask)
+        neg_ref_value = neg_result[0]
+        pos_result, pos_no_yellow_mask = calculate(ref_img, pos_mask,
+                                                   neg_ref_value=neg_ref_value)
+        pos_ref_value = pos_result[0]
+        for target in targets:
+            target_img = cv2.imread(target)
+            mask = get_cfm_masks(target_img)
+            target_mask, pos_mask = split_left_right_mask(mask)
+            target_result, no_yellow_mask = calculate(
+                target_img, target_mask, neg_ref_value, pos_ref_value)
+            target_results.append(target_result)
+            target_png = get_out_filename(target, '-masked')
+            draw_masks(target_img, target_mask, no_yellow_mask, target_png)
+        neg_png = get_out_filename(negative_positive_ref, '-negative-masked')
+        pos_png = get_out_filename(negative_positive_ref, '-positive-masked')
+        draw_masks(ref_img, neg_mask, neg_no_yellow_mask, neg_png)
+        draw_masks(ref_img, pos_mask, pos_no_yellow_mask, pos_png)
     return neg_result, pos_result, target_results
 
 
@@ -357,6 +364,7 @@ def get_single_mask(filtered_result: list, level_cnt: dict,
 
 def get_left_right_mask(filtered_result: list, level_cnt: dict,
                         img: np.array) -> (np.array, np.array):
+    # by contour
     (big_external_contours, small_external_contours, inner_contours,
      fake_inner, inner_background) = filtered_result
     # target, ref
@@ -568,6 +576,25 @@ def filter_contours(img: np.array, level_cnt: dict, big=2) -> (list, list, list,
             fake_inner, inner_background)
 
 
+def split_left_right_mask(mask: np.array) -> (np.array, np.array):
+    left = mask.copy()
+    right = mask.copy()
+    c, big = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    contours = sorted(c, key=lambda x: cv2.contourArea(x), reverse=True)
+    big_c = contours[:2]
+    box = [cv2.boundingRect(i) for i in big_c]
+    cnt_box = list(zip(big_c, box))
+    # by box's x
+    cnt_box.sort(key=lambda x: x[1][0])
+    start = cnt_box[0][1][0] + cnt_box[0][1][1]
+    end = cnt_box[1][1][0]
+    middle = (start+end) // 2
+    # cv2.line(img2, (middle, 0), (middle, img.shape[0]), 255, 10)
+    left[:, middle:] = 0
+    right[:, :middle] = 0
+    return left, right
+
+
 def get_left_right(big_external_contours: list,
                    level_cnt: dict) -> (np.array, np.array):
     """
@@ -667,9 +694,9 @@ def draw_images(filtered_result: list, level_cnt: dict, img: np.array,
     return img_dict
 
 
-def get_out_filename(image: str) -> Path:
+def get_out_filename(image: str, stem2: str) -> Path:
     png = Path(image)
-    png = png.with_name(png.stem+'-masked'+'.png')
+    png = png.with_name(png.stem+stem2+'.png')
     return png
 
 
@@ -842,19 +869,10 @@ def get_contour_wrapper(
 
 
 def get_contour(img_file: str) -> (dict, np.array):
-    # .png .jpg .tiff
+    # .png .jpg .tiff .bmp
     log.info(f'Analyzing {img_file}')
     img = cv2.imread(img_file)
-    # show_channel(img)
-    # reverse to get better edge
-    # use green channel
-    # todo: g or b
-    if debug:
-        pass
-        # threshold(img, show=True)
     edge = get_edge(img)
-    # edge2 = get_edge2(img)
-    # cv2.waitKey()
     # APPROX_NONE to avoid omitting dots
     contours, raw_hierarchy = cv2.findContours(edge, cv2.RETR_TREE,
                                                cv2.CHAIN_APPROX_NONE)
