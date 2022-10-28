@@ -147,11 +147,11 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
                 target_img, target_mask, neg_ref_value, pos_ref_value)
             target_results.append(target_result)
             target_png = get_out_filename(target, '-masked')
-            draw_masks(target_img, target_mask, no_yellow_mask, target_png)
+            write_masks(target_img, target_mask, no_yellow_mask, target_png)
         neg_png = get_out_filename(negative, '-masked')
         pos_png = get_out_filename(positive, '-masked')
-        draw_masks(neg_img, neg_mask, neg_no_yellow_mask, neg_png)
-        draw_masks(pos_img, pos_mask, pos_no_yellow_mask, pos_png)
+        write_masks(neg_img, neg_mask, neg_no_yellow_mask, neg_png)
+        write_masks(pos_img, pos_mask, pos_no_yellow_mask, pos_png)
     return neg_result, pos_result, target_results
 
 
@@ -213,11 +213,11 @@ def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
                 target_img, target_mask, neg_ref_value, pos_ref_value)
             target_results.append(target_result)
             target_png = get_out_filename(target, '-masked')
-            draw_masks(target_img, target_mask, no_yellow_mask, target_png)
+            write_masks(target_img, target_mask, no_yellow_mask, target_png)
         neg_png = get_out_filename(negative_positive_ref, '-negative-masked')
         pos_png = get_out_filename(negative_positive_ref, '-positive-masked')
-        draw_masks(ref_img, neg_mask, neg_no_yellow_mask, neg_png)
-        draw_masks(ref_img, pos_mask, pos_no_yellow_mask, pos_png)
+        write_masks(ref_img, neg_mask, neg_no_yellow_mask, neg_png)
+        write_masks(ref_img, pos_mask, pos_no_yellow_mask, pos_png)
     return neg_result, pos_result, target_results
 
 
@@ -362,6 +362,39 @@ def get_single_mask(filtered_result: list, level_cnt: dict,
     return mask
 
 
+def get_left_right(big_external_contours: list,
+                   level_cnt: dict) -> (np.array, np.array):
+    """
+    Left is target, right is ref
+    Split images to left and right according to bounding rectangle of
+    external contours.
+    Return None for errors.
+    """
+    left = None
+    right = None
+    if len(big_external_contours) == 0:
+        show_error('Cannot find targets in the image.')
+    elif len(big_external_contours) == 1:
+        left = big_external_contours[0]
+        log.info('Only detected one target in the image.')
+    else:
+        left, right = big_external_contours
+        x1, y1, w1, h1 = cv2.boundingRect(level_cnt[left])
+        x2, y2, w2, h2 = cv2.boundingRect(level_cnt[right])
+        # opencv axis: 0->x, 0|vy
+        if x1 > x2:
+            left, right = right, left
+            log.debug('Exchange left and right.')
+            x1, y1, w1, h1, x2, y2, w2, h2 = x2, y2, w2, h2, x1, y1, w1, h1
+        if x1 + w1 > x2:
+            if y1 > y2:
+                y1, h1, y2, h2 = y2, h2, y1, h1
+            if y1 + h1 > y2:
+                show_error('Target and reference are overlapped!')
+                # left = right = None
+    return left, right
+
+
 def get_left_right_mask(filtered_result: list, level_cnt: dict,
                         img: np.array) -> (np.array, np.array):
     # by contour
@@ -388,6 +421,26 @@ def get_left_right_mask(filtered_result: list, level_cnt: dict,
         left_right_mask.append(mask)
     left_mask, right_mask = left_right_mask
     return left_mask, right_mask
+
+
+def split_left_right_mask(mask: np.array) -> (np.array, np.array):
+    # split mask with two big objects
+    left = mask.copy()
+    right = mask.copy()
+    c, big = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    contours = sorted(c, key=lambda x: cv2.contourArea(x), reverse=True)
+    big_c = contours[:2]
+    box = [cv2.boundingRect(i) for i in big_c]
+    cnt_box = list(zip(big_c, box))
+    # by box's x
+    cnt_box.sort(key=lambda x: x[1][0])
+    start = cnt_box[0][1][0] + cnt_box[0][1][1]
+    end = cnt_box[1][1][0]
+    middle = (start+end) // 2
+    # cv2.line(img2, (middle, 0), (middle, img.shape[0]), 255, 10)
+    left[:, middle:] = 0
+    right[:, :middle] = 0
+    return left, right
 
 
 def auto_Canny(image: np.array, sigma=0.33) -> np.array:
@@ -576,58 +629,6 @@ def filter_contours(img: np.array, level_cnt: dict, big=2) -> (list, list, list,
             fake_inner, inner_background)
 
 
-def split_left_right_mask(mask: np.array) -> (np.array, np.array):
-    left = mask.copy()
-    right = mask.copy()
-    c, big = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    contours = sorted(c, key=lambda x: cv2.contourArea(x), reverse=True)
-    big_c = contours[:2]
-    box = [cv2.boundingRect(i) for i in big_c]
-    cnt_box = list(zip(big_c, box))
-    # by box's x
-    cnt_box.sort(key=lambda x: x[1][0])
-    start = cnt_box[0][1][0] + cnt_box[0][1][1]
-    end = cnt_box[1][1][0]
-    middle = (start+end) // 2
-    # cv2.line(img2, (middle, 0), (middle, img.shape[0]), 255, 10)
-    left[:, middle:] = 0
-    right[:, :middle] = 0
-    return left, right
-
-
-def get_left_right(big_external_contours: list,
-                   level_cnt: dict) -> (np.array, np.array):
-    """
-    Left is target, right is ref
-    Split images to left and right according to bounding rectangle of
-    external contours.
-    Return None for errors.
-    """
-    left = None
-    right = None
-    if len(big_external_contours) == 0:
-        show_error('Cannot find targets in the image.')
-    elif len(big_external_contours) == 1:
-        left = big_external_contours[0]
-        log.info('Only detected one target in the image.')
-    else:
-        left, right = big_external_contours
-        x1, y1, w1, h1 = cv2.boundingRect(level_cnt[left])
-        x2, y2, w2, h2 = cv2.boundingRect(level_cnt[right])
-        # opencv axis: 0->x, 0|vy
-        if x1 > x2:
-            left, right = right, left
-            log.debug('Exchange left and right.')
-            x1, y1, w1, h1, x2, y2, w2, h2 = x2, y2, w2, h2, x1, y1, w1, h1
-        if x1 + w1 > x2:
-            if y1 > y2:
-                y1, h1, y2, h2 = y2, h2, y1, h1
-            if y1 + h1 > y2:
-                show_error('Target and reference are overlapped!')
-                # left = right = None
-    return left, right
-
-
 def show_channel(img: np.array) -> None:
     # show rgb channel
     # opencv use BGR
@@ -694,23 +695,6 @@ def draw_images(filtered_result: list, level_cnt: dict, img: np.array,
     return img_dict
 
 
-def get_out_filename(image: str, stem2: str) -> Path:
-    png = Path(image)
-    png = png.with_name(png.stem+stem2+'.png')
-    return png
-
-
-def draw_masks(img_raw: np.array, target_mask: np.array, express_mask: np.array,
-               output: Path) -> Path:
-    alpha = np.zeros(img_raw.shape[:2], dtype='uint8')
-    alpha[target_mask>0] = 128
-    alpha[express_mask>0] = 255
-    b, g, r = cv2.split(img_raw)
-    merged = cv2.merge([b, g, r, alpha])
-    cv2.imwrite(str(output), merged)
-    return output
-
-
 def get_yellow_mask(b: np.array, g: np.array, r: np.array) -> np.array:
     mask = np.zeros(b.shape[:2], dtype='uint8')
     mask[np.bitwise_and(r > b, g > b)] = 255
@@ -735,57 +719,6 @@ def get_real_blue(original_image: np.array, neg_ref_value: float,
     revert_b = revert(b)
     # revert_b_adjusted = adjust_by_pos_ref(revert_b, pos_ref_value)
     return revert_b, yellow_mask
-
-
-def calculate(original_image: np.array, target_mask: np.array,
-              neg_ref_value=0, pos_ref_value=255) -> (tuple, np.array):
-    """
-    Calculate given region's value.
-    Args:
-        original_image: original BGR image
-        target_mask: mask of target region
-        pos_ref_value: positive reference value for up threshold
-        neg_ref_value: negative reference value for down threshold
-    Returns:
-        result = (express_value, express_std, express_area, total_value,
-            total_std, total_area, express_ratio, express_flatten)
-        express_mask_no_yellow
-    """
-    neg_ref_value = int(neg_ref_value)
-    pos_ref_value = int(pos_ref_value)
-    revert_b, yellow_mask = get_real_blue(original_image, neg_ref_value,
-                                          pos_ref_value)
-    express_mask = target_mask.copy()
-    express_mask[revert_b <= neg_ref_value] = 0
-    express_mask_no_yellow = np.bitwise_and(express_mask, 255 - yellow_mask)
-    # cv2.contourArea return different value with np.count_nonzero
-    total_area = np.count_nonzero(target_mask)
-    if total_area == 0:
-        show_error('Cannot detect expression region.')
-    express_area = np.count_nonzero(express_mask_no_yellow)
-    # todo: how to get correct ratio
-    express_ratio = express_area / total_area
-    # total_sum = np.sum(revert_b[target_mask>0])
-    total_value, total_std = cv2.meanStdDev(revert_b, mask=target_mask)
-    total_value, total_std = total_value[0][0], total_std[0][0]
-    express_value, express_std = cv2.meanStdDev(revert_b,
-                                                mask=express_mask_no_yellow)
-    express_value, express_std = express_value[0][0], express_std[0][0]
-    # violin plot also use yellow mask
-    express_flatten_ = revert_b[express_mask_no_yellow > 0]
-    express_flatten = express_flatten_[express_flatten_ > 0]
-    fig_size = original_image.shape[0] * original_image.shape[1]
-    result = (express_value, express_std, express_area, total_value, total_std,
-              total_area, express_ratio, fig_size, express_flatten)
-    log.debug('express_value, express_std, express_area, total_value, '
-              'total_std, total_area, express_ratio, fig_size, express_flatten')
-    log.debug(result)
-    if debug:
-        imshow('original', original_image)
-        imshow('target', target_mask)
-        imshow('express', express_mask)
-        imshow('express no yellow', express_mask_no_yellow)
-    return result, express_mask_no_yellow
 
 
 def split_image(left_cnt: np.array, right_cnt: np.array,
@@ -892,6 +825,92 @@ def get_contour(img_file: str) -> (dict, np.array):
     return level_cnt, img
 
 
+def calculate(original_image: np.array, target_mask: np.array,
+              neg_ref_value=0, pos_ref_value=255) -> (tuple, np.array):
+    """
+    Calculate given region's value.
+    Args:
+        original_image: original BGR image
+        target_mask: mask of target region
+        pos_ref_value: positive reference value for up threshold
+        neg_ref_value: negative reference value for down threshold
+    Returns:
+        result = (express_value, express_std, express_area, total_value,
+            total_std, total_area, express_ratio, express_flatten)
+        express_mask_no_yellow
+    """
+    neg_ref_value = int(neg_ref_value)
+    pos_ref_value = int(pos_ref_value)
+    revert_b, yellow_mask = get_real_blue(original_image, neg_ref_value,
+                                          pos_ref_value)
+    express_mask = target_mask.copy()
+    express_mask[revert_b <= neg_ref_value] = 0
+    express_mask_no_yellow = np.bitwise_and(express_mask, 255 - yellow_mask)
+    # cv2.contourArea return different value with np.count_nonzero
+    total_area = np.count_nonzero(target_mask)
+    if total_area == 0:
+        show_error('Cannot detect expression region.')
+    express_area = np.count_nonzero(express_mask_no_yellow)
+    # todo: how to get correct ratio
+    express_ratio = express_area / total_area
+    # total_sum = np.sum(revert_b[target_mask>0])
+    total_value, total_std = cv2.meanStdDev(revert_b, mask=target_mask)
+    total_value, total_std = total_value[0][0], total_std[0][0]
+    express_value, express_std = cv2.meanStdDev(revert_b,
+                                                mask=express_mask_no_yellow)
+    express_value, express_std = express_value[0][0], express_std[0][0]
+    # violin plot also use yellow mask
+    express_flatten_ = revert_b[express_mask_no_yellow > 0]
+    express_flatten = express_flatten_[express_flatten_ > 0]
+    fig_size = original_image.shape[0] * original_image.shape[1]
+    result = (express_value, express_std, express_area, total_value, total_std,
+              total_area, express_ratio, fig_size, express_flatten)
+    log.debug('express_value, express_std, express_area, total_value, '
+              'total_std, total_area, express_ratio, fig_size, express_flatten')
+    log.debug(result)
+    if debug:
+        imshow('original', original_image)
+        imshow('target', target_mask)
+        imshow('express', express_mask)
+        imshow('express no yellow', express_mask_no_yellow)
+    return result, express_mask_no_yellow
+
+
+def get_zscore(values: list) -> list:
+    """
+    Args:
+        values: value list
+    Returns:
+        z_scores: list
+    """
+    z_scores = []
+    mean = np.mean(values)
+    std = np.std(values)
+    if std == 0:
+        return [1, ] * len(values)
+    for i in values:
+        z_score = (i - mean) / std
+        z_scores.append(z_score)
+    return z_scores
+
+
+def get_out_filename(image: str, stem2: str) -> Path:
+    png = Path(image)
+    png = png.with_name(png.stem+stem2+'.png')
+    return png
+
+
+def write_masks(img_raw: np.array, target_mask: np.array, express_mask: np.array,
+               output: Path) -> Path:
+    alpha = np.zeros(img_raw.shape[:2], dtype='uint8')
+    alpha[target_mask>0] = 128
+    alpha[express_mask>0] = 255
+    b, g, r = cv2.split(img_raw)
+    merged = cv2.merge([b, g, r, alpha])
+    cv2.imwrite(str(output), merged)
+    return output
+
+
 def write_image(results: tuple, labels: list, out: Path) -> Path:
     """
     violin outer and inner
@@ -968,24 +987,6 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
     plt.savefig(out)
     log.info(f'Output figure file {out}')
     return out
-
-
-def get_zscore(values: list) -> list:
-    """
-    Args:
-        values: value list
-    Returns:
-        z_scores: list
-    """
-    z_scores = []
-    mean = np.mean(values)
-    std = np.std(values)
-    if std == 0:
-        return [1, ] * len(values)
-    for i in values:
-        z_score = (i - mean) / std
-        z_scores.append(z_score)
-    return z_scores
 
 
 def write_csv(all_result: list, targets: list, out: Path) -> Path:
