@@ -69,7 +69,6 @@ class Root:
         _bgmode = 'light'
 
         top.geometry("280x400+843+223")
-        # todo
         move_to_center(top, 280, 400, is_root=True)
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
@@ -1006,11 +1005,7 @@ def run(mode, ref1=None, ref2=None, images=None):
         cmd = (f'-mode {mode} -ref1 {s_list[0]} -ref2 {s_list[1]} '
                f'-images {s_list[2]}')
         log.info(cmd)
-        # messagebox.showinfo(message=cmd)
-        # todo: opencv imshow could only run in main thread
-        # r = threading.Thread(target=thread_wrap, args=(core.cli_main, cmd),
-        # daemon=True)
-        # r.start()
+        # opencv imshow could only run in main thread
         from pyGUS.utils import Quit
         if mode != 4:
             pass

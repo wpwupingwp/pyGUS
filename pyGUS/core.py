@@ -11,14 +11,14 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
 
-matplotlib.use('Agg')
-plt.set_loglevel('error')
 
 from pyGUS.global_vars import log, debug
 from pyGUS.utils import select_box, select_polygon, draw_lines
 from pyGUS.utils import color_calibrate, if_exist, imshow, show_error, hex2bgr
 from pyGUS.cfm import get_cfm_masks
 
+matplotlib.use('Agg')
+plt.set_loglevel('error')
 MANUAL = 'manual'
 NEG_TEXT = 'Click mouse to select negative expression region as reference'
 POS_TEXT = 'Click mouse to select positive expression region as reference'
@@ -27,9 +27,6 @@ GENERAL_TEXT = ('Failed to detect target with extremely low contrast. '
 SHORT_TEXT = 'Click mouse to select target region'
 
 
-# todo, no edge
-# todo, change output figure, area ratio and size and xticks with filename stem
-# todo, default output express without yellow and total
 # todo: update manual
 # todo mode 1 test: single object for each image, manually select positive,
 #  negative, targets
@@ -37,7 +34,6 @@ SHORT_TEXT = 'Click mouse to select target region'
 # todo mode 3 test: two object for each image, left target, right color card
 # todo: mode 4 test: select area by mouse
 # todo: manuscript
-# todo: change default args
 
 
 def parse_arg(arg_str):
@@ -447,13 +443,15 @@ def split_left_right_mask(mask: np.array) -> (np.array, np.array):
     c, big = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     contours = sorted(c, key=lambda x: cv2.contourArea(x), reverse=True)
     big_c = contours[:2]
+    if len(big_c) != 2:
+        show_error('Cannot find two targets in given images.')
     box = [cv2.boundingRect(i) for i in big_c]
     cnt_box = list(zip(big_c, box))
     # by box's x
     cnt_box.sort(key=lambda x: x[1][0])
     start = cnt_box[0][1][0] + cnt_box[0][1][1]
     end = cnt_box[1][1][0]
-    middle = (start+end) // 2
+    middle = (start + end) // 2
     # cv2.line(img2, (middle, 0), (middle, img.shape[0]), 255, 10)
     left[:, middle:] = 0
     right[:, :middle] = 0
@@ -484,10 +482,10 @@ def make_clean(image: np.array) -> np.array:
 
 
 def get_scribbles(img: np.array):
-    drawed = img.copy()
-    draw_lines(drawed, 'draw lines on plants', 'fore')
-    draw_lines(drawed, 'draw lines on background', 'back')
-    return drawed
+    img_new = img.copy()
+    draw_lines(img_new, 'draw lines on plants', 'fore')
+    draw_lines(img_new, 'draw lines on background', 'back')
+    return img_new
 
 
 def get_edge(image: np.array) -> np.array:
@@ -828,7 +826,6 @@ def get_contour(img_file: str) -> (dict, np.array):
                                                cv2.CHAIN_APPROX_NONE)
     # at least two objects
     if len(contours) < 3:
-        # todo
         show_error('Cannot find objects in given image.')
     hierarchy = []
     # raw hierarchy is [[[1,1,1,1]]]
@@ -843,7 +840,7 @@ def get_contour(img_file: str) -> (dict, np.array):
 
 
 def calculate(original_image: np.array, target_mask: np.array,
-              neg_ref_value=0, pos_ref_value=255) -> (tuple, np.array):
+              neg_ref_value=0.0, pos_ref_value=255.0) -> (tuple, np.array):
     """
     Calculate given region's value.
     Args:
@@ -868,7 +865,6 @@ def calculate(original_image: np.array, target_mask: np.array,
     if total_area == 0:
         show_error('Cannot detect expression region.')
     express_area = np.count_nonzero(express_mask_no_yellow)
-    # todo: how to get correct ratio
     express_ratio = express_area / total_area
     # total_sum = np.sum(revert_b[target_mask>0])
     total_value, total_std = cv2.meanStdDev(revert_b, mask=target_mask)
@@ -913,15 +909,16 @@ def get_zscore(values: list) -> list:
 
 def get_out_filename(image: str, stem2: str) -> Path:
     png = Path(image)
-    png = png.with_name(png.stem+stem2+'.png')
+    png = png.with_name(png.stem + stem2 + '.png')
     return png
 
 
-def write_masks(img_raw: np.array, target_mask: np.array, express_mask: np.array,
-               output: Path) -> Path:
+def write_masks(img_raw: np.array, target_mask: np.array,
+                express_mask: np.array,
+                output: Path) -> Path:
     alpha = np.zeros(img_raw.shape[:2], dtype='uint8')
-    alpha[target_mask>0] = 128
-    alpha[express_mask>0] = 255
+    alpha[target_mask > 0] = 128
+    alpha[express_mask > 0] = 255
     b, g, r = cv2.split(img_raw)
     merged = cv2.merge([b, g, r, alpha])
     cv2.imwrite(str(output), merged)
