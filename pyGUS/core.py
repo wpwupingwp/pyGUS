@@ -284,8 +284,8 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
             target_results.append(target_result)
             target_png = get_out_filename(target, '-masked')
             write_masks(target_img, target_mask, no_yellow_mask, target_png)
-        neg_png = get_out_filename(negative, '-masked')
-        pos_png = get_out_filename(positive, '-masked')
+        neg_png = get_out_filename(ok_neg, '-masked')
+        pos_png = get_out_filename(ok_pos, '-masked')
         write_masks(neg_img, neg_mask, neg_no_yellow_mask, neg_png)
         write_masks(pos_img, pos_mask, pos_no_yellow_mask, pos_png)
     return neg_result, pos_result, target_results
