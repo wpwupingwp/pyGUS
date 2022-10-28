@@ -232,7 +232,7 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
     ok_neg = color_calibrate(negative)
     ok_pos = color_calibrate(positive)
     ok_targets = [color_calibrate(i) for i in targets]
-    ###
+    target_results = []
     if auto_ref:
         neg_level_cnt, neg_img = get_contour(ok_neg)
         neg_filtered_result = filter_contours(neg_img, neg_level_cnt, big=2)
@@ -242,39 +242,56 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
             neg_result, _ = calculate(neg_img, neg_left_mask)
         else:
             neg_result, neg_mask = manual_ref(neg_img, NEG_TEXT)
+        pos_level_cnt, pos_img = get_contour(ok_pos)
+        pos_filtered_result = filter_contours(pos_img, pos_level_cnt, big=2)
+        pos_left_mask, pos_right_mask = get_left_right_mask(
+            pos_filtered_result, pos_level_cnt, pos_img)
+        pos_result, _ = calculate(pos_img, pos_left_mask)
+        neg_ref_value = neg_result[0]
+        pos_ref_value = pos_result[0]
+        log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
+        for target in ok_targets:
+            level_cnt, img = get_contour(target)
+            filtered_result = filter_contours(img, level_cnt, big=2)
+            if filtered_result is not None:
+                left_mask, right_mask = get_left_right_mask(filtered_result,
+                                                            level_cnt,
+                                                            img)
+                target_result, _ = calculate(img, left_mask, neg_ref_value,
+                                             pos_ref_value)
+            else:
+                log.info(GENERAL_TEXT)
+                target_result, target_mask = manual_ref(img, text=SHORT_TEXT,
+                                                        method='polygon')
+            target_results.append(target_result)
+            img_dict = draw_images(filtered_result, level_cnt, img, show=False,
+                                   simple=True, filename=target)
     else:
-        neg_img = cv2.imread(ok_neg)
-        neg_result, neg_mask = manual_ref(neg_img, NEG_TEXT)
-        neg_filtered_result, neg_level_cnt = None, None
-    pos_level_cnt, pos_img = get_contour(ok_pos)
-    pos_filtered_result = filter_contours(pos_img, pos_level_cnt, big=2)
-    pos_left_mask, pos_right_mask = get_left_right_mask(
-        pos_filtered_result, pos_level_cnt, pos_img)
-    pos_result, _ = calculate(pos_img, pos_left_mask)
-    neg_ref_value = neg_result[0]
-    pos_ref_value = pos_result[0]
-    log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
-    target_results = []
-    for target in ok_targets:
-        level_cnt, img = get_contour(target)
-        filtered_result = filter_contours(img, level_cnt, big=2)
-        if filtered_result is not None:
-            left_mask, right_mask = get_left_right_mask(filtered_result,
-                                                        level_cnt,
-                                                        img)
-            target_result, _ = calculate(img, left_mask, neg_ref_value,
-                                         pos_ref_value)
-        else:
-            log.info(GENERAL_TEXT)
-            target_result, target_mask = manual_ref(img, text=SHORT_TEXT,
-                                                    method='polygon')
-        target_results.append(target_result)
-        img_dict = draw_images(filtered_result, level_cnt, img, show=False,
-                               simple=True, filename=target)
-    # neg_img_dict = draw_images(neg_filtered_result, neg_level_cnt, neg_img,
-    #                            show=False, simple=True, filename=negative)
-    # pos_img_dict = draw_images(pos_filtered_result, pos_level_cnt, pos_img,
-    #                            show=False, simple=True, filename=positive)
+        # draw dots in color checker too when use cfm method
+        neg_img = cv2.imread(negative)
+        pos_img = cv2.imread(positive)
+        neg_mask_raw = get_cfm_masks(neg_img)
+        pos_mask_raw = get_cfm_masks(pos_img)
+        neg_mask, _ = split_left_right_mask(neg_mask_raw)
+        pos_mask, _ = split_left_right_mask(pos_mask_raw)
+        neg_result, neg_no_yellow_mask = calculate(neg_img, neg_mask)
+        neg_ref_value = neg_result[0]
+        pos_result, pos_no_yellow_mask = calculate(pos_img, pos_mask,
+                                                   neg_ref_value=neg_ref_value)
+        pos_ref_value = pos_result[0]
+        for target in targets:
+            target_img = cv2.imread(target)
+            target_mask_raw = get_cfm_masks(target_img)
+            target_mask, _ = split_left_right_mask(target_mask_raw)
+            target_result, no_yellow_mask = calculate(
+                target_img, target_mask, neg_ref_value, pos_ref_value)
+            target_results.append(target_result)
+            target_png = get_out_filename(target, '-masked')
+            write_masks(target_img, target_mask, no_yellow_mask, target_png)
+        neg_png = get_out_filename(negative, '-masked')
+        pos_png = get_out_filename(positive, '-masked')
+        write_masks(neg_img, neg_mask, neg_no_yellow_mask, neg_png)
+        write_masks(pos_img, pos_mask, pos_no_yellow_mask, pos_png)
     return neg_result, pos_result, target_results
 
 
@@ -937,7 +954,6 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
     width = 0.3
     violin_data_raw = []
     for i in results:
-        print(i)
         data = i[-1]
         if len(data) == 0:
             data = [0]
