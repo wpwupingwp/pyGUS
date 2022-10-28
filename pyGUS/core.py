@@ -268,8 +268,8 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
                                    simple=True, filename=target)
     else:
         # draw dots in color checker too when use cfm method
-        neg_img = cv2.imread(negative)
-        pos_img = cv2.imread(positive)
+        neg_img = cv2.imread(ok_neg)
+        pos_img = cv2.imread(ok_pos)
         neg_mask_raw = get_cfm_masks(neg_img)
         pos_mask_raw = get_cfm_masks(pos_img)
         neg_mask, _ = split_left_right_mask(neg_mask_raw)
@@ -279,7 +279,7 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
         pos_result, pos_no_yellow_mask = calculate(pos_img, pos_mask,
                                                    neg_ref_value=neg_ref_value)
         pos_ref_value = pos_result[0]
-        for target in targets:
+        for target in ok_targets:
             target_img = cv2.imread(target)
             target_mask_raw = get_cfm_masks(target_img)
             target_mask, _ = split_left_right_mask(target_mask_raw)
