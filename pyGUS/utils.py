@@ -135,7 +135,7 @@ def draw_dots(img: np.array) -> np.array:
     name = hint
     log.info(hint)
     color = (255, 255, 255)
-    width = int(img.shape[0] * 0.02)
+    width = int(img.shape[0] * 0.01)
     current = (0, 0)
     done = False
     img_raw = img.copy()
