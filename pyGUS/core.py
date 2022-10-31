@@ -509,7 +509,7 @@ def get_edge(image: np.array) -> np.array:
         imshow('gray', gray)
         imshow('erode_edge', erode_edge)
         imshow('edge', edge)
-    cv2.waitKey()
+        cv2.waitKey()
     return erode_edge
 
 
