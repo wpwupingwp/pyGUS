@@ -341,10 +341,10 @@ characters in the folder name or filename may cause this error.
 ```mermaid
 flowchart TB
     subgraph Input
-        m1((Mode1))
-        m2((Mode2))
-        m3((Mode3))
-        m4((Mode4))
+        m1((Normal mode))
+        m2((With reference mode))
+        m3((With color checker mode))
+        m4((Manually mode))
         targets[Target images]
         c[Macbeth Color checker]
         ref1[Positive reference]
@@ -376,7 +376,6 @@ flowchart LR
         g8[Output table and figure]
         g1 --> g1.5 --> g2 --> g3 --> g4 --> g7 --> g8 
         style g1.5 fill:#59f
-        style g6 fill:#59f
         style g7 fill:#557788
         style g8 fill:#59f
     end
