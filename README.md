@@ -372,11 +372,9 @@ flowchart LR
         g2[Split to R, G, B channels]
         g3[Generate gray copy]
         g4[Get edge]
-        g5[Filter contours]
-        g6[Get target mask]
         g7[Calculate]
         g8[Output table and figure]
-        g1 --> g1.5 --> g2 --> g3 --> g4 --> g5 --> g6 --> g7 --> g8 
+        g1 --> g1.5 --> g2 --> g3 --> g4 --> g7 --> g8 
         style g1.5 fill:#59f
         style g6 fill:#59f
         style g7 fill:#557788
@@ -390,24 +388,9 @@ flowchart LR
         c4[Generate calibrated image]
         c1 --> c2 --> c3 --> c4
     end
-    subgraph g4[Get contour]
+    subgraph g4[Get mask]
         direction LR
-        g41[Canny] --> g42[Gaussian Blur] --> g43[Dilate] --> g44[Erode]
-        g44 --> g45[Find contours]
-    end
-    subgraph g5[Filter contours]
-        direction LR
-        g51[External] --> Big & Small 
-        g52[Inner]
-        g53[Fake inner]
-        g54[Inner background]
-        g53 & g54 --- g52
-    end
-    subgraph g6[Get target mask]
-        direction LR
-        one
-        two --> s([Split by binding box]) --> Left & Right
-        one & Left & Right --> f[Fill mask]
+        g41[cfm] --> g42[binary] --> g43[split]
     end
     subgraph g7[Calculate]
         direction LR
