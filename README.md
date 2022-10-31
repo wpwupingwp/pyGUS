@@ -38,7 +38,6 @@ Open terminal, run
 * [Usage](#usage)
     * [Desktop](#desktop)
     * [Command line](#command-line)
-    * [Options](#options)
     * [Photo tips](#photo-tips)
     * [Input](#input)
     * [Output](#output)
@@ -158,25 +157,7 @@ notice the difference and make sure you use `Python 3` instead of `Python 2`.
  python3 -m pyGUS -mode 4 -images [file1] [file2] ...
  ```
 
-## Options
-
-### `auto_ref`
-
-If without `-auto_ref` option, the program require the user to manually select
-target region with mouse. Left click to add dots and draw lines.
-Right click to link the first dot and last dot to draw a close region.
-
-If the image has extremely low contrast or the edge of the object is blur, such
-selection is also required even with `-auto_ref` option opened.
-
-### `convex`
-
-Use convex hull to fix break edges of the object in low contrast image. If set,
-the total area of the object may be overestimated. However, it has no effect for
-counting the expression region area.
-
 ## Photo tips
-
 ### Equipment
 
 Cameras and stereo microscopes are recommended. Smartphones with camera

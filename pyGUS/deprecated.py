@@ -187,3 +187,17 @@ def use_convex(convex, big_external_contours, level_cnt, external_area_dict,
         big_external_contours = external_contours[:big]
 
 
+"""
+## Options
+
+### `auto_ref`
+
+**This is a deprecated option.**
+
+If use `-auto_ref`, the program will automatically detect the target regions
+by finding the edge of the target. Such method may be inaccurate especially
+when the image has extremely low contrast or the edge of the object is blur.
+
+By default this option is closed and the program requires few mouse clicks
+to get concise result.
+"""
