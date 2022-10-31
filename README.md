@@ -47,9 +47,12 @@ Open terminal, run
 
 # Feature
 
-:heavy_check_mark: Quantify GUS stain images automatically.
+:heavy_check_mark: Quantify GUS expression in stain images for multiple species.
 
-:heavy_check_mark: Use negative and positive reference to calibrate expression value.
+:heavy_check_mark: Identify expressed regions and no expressed regions.
+
+:heavy_check_mark: Use negative and positive references to calibrate expression 
+value.
 
 :heavy_check_mark: Support Macbeth color checker to calibrate color bias.
 
