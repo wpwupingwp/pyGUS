@@ -653,63 +653,6 @@ def show_channel(img: np.array) -> None:
         imshow(title, value)
 
 
-def draw_images(filtered_result: list, level_cnt: dict, img: np.array,
-                simple=False, show=False, filename=None) -> dict:
-    """
-    Return None for empty
-    """
-    if filtered_result is None:
-        return {}
-
-    def drawing(levels, color):
-        line_width = 2
-        for level in levels:
-            cnt = level_cnt[level]
-            min_rect = cv2.minAreaRect(cnt)
-            min_rect_points = np.int0(cv2.boxPoints(min_rect))
-            x, y, w, h = cv2.boundingRect(cnt)
-            approx = cv2.approxPolyDP(cnt, arc_epsilon, True)
-            # b,g,r
-            cv2.fillPoly(img_dict['fill'], [approx], color)
-            if not simple:
-                cv2.rectangle(img_dict['rectangle'], (x, y), (x + w, y + h),
-                              color, line_width)
-                cv2.drawContours(img_dict['min_area_rectangle'],
-                                 [min_rect_points], 0, color, line_width)
-                cv2.polylines(img_dict['polyline'], [approx], True, color,
-                              line_width)
-
-    (big_external_contours, small_external_contours, inner_contours,
-     fake_inner, real_background) = filtered_result
-    arc_epsilon = get_arc_epsilon(level_cnt[big_external_contours[0]])
-    img_dict = dict()
-    img_dict['fill'] = img.copy()
-    if not simple:
-        img_dict['raw'] = img
-        img_dict['rectangle'] = img.copy()
-        img_dict['min_area_rectangle'] = img.copy()
-        img_dict['polyline'] = img.copy()
-    color_blue = hex2bgr('#4d96ff')
-    color_green = hex2bgr('#6bcb77')
-    color_red = hex2bgr('#ff6b6b')
-    color_yellow = hex2bgr('#ffd93d')
-    drawing(big_external_contours, color_blue)
-    drawing(small_external_contours, color_red)
-    drawing(inner_contours, color_yellow)
-    drawing(fake_inner, color_green)
-    drawing(real_background, color_red)
-    for title, image in img_dict.items():
-        if show:
-            imshow(title, image)
-        if filename is not None:
-            out_p = Path(filename)
-            out_filename = str(out_p.parent / out_p.with_name(
-                f'{out_p.stem}_{title}.png'))
-            cv2.imwrite(out_filename, image)
-            log.debug(f'Write image {out_filename}')
-    return img_dict
-
-
 def get_yellow_mask(b: np.array, g: np.array, r: np.array) -> np.array:
     mask = np.zeros(b.shape[:2], dtype='uint8')
     mask[np.bitwise_and(r > b, g > b)] = 255
@@ -907,6 +850,63 @@ def get_zscore(values: list) -> list:
     return z_scores
 
 
+def draw_images(filtered_result: list, level_cnt: dict, img: np.array,
+                simple=False, show=False, filename=None) -> dict:
+    """
+    Return None for empty
+    """
+    if filtered_result is None:
+        return {}
+
+    def drawing(levels, color):
+        line_width = 2
+        for level in levels:
+            cnt = level_cnt[level]
+            min_rect = cv2.minAreaRect(cnt)
+            min_rect_points = np.int0(cv2.boxPoints(min_rect))
+            x, y, w, h = cv2.boundingRect(cnt)
+            approx = cv2.approxPolyDP(cnt, arc_epsilon, True)
+            # b,g,r
+            cv2.fillPoly(img_dict['fill'], [approx], color)
+            if not simple:
+                cv2.rectangle(img_dict['rectangle'], (x, y), (x + w, y + h),
+                              color, line_width)
+                cv2.drawContours(img_dict['min_area_rectangle'],
+                                 [min_rect_points], 0, color, line_width)
+                cv2.polylines(img_dict['polyline'], [approx], True, color,
+                              line_width)
+
+    (big_external_contours, small_external_contours, inner_contours,
+     fake_inner, real_background) = filtered_result
+    arc_epsilon = get_arc_epsilon(level_cnt[big_external_contours[0]])
+    img_dict = dict()
+    img_dict['fill'] = img.copy()
+    if not simple:
+        img_dict['raw'] = img
+        img_dict['rectangle'] = img.copy()
+        img_dict['min_area_rectangle'] = img.copy()
+        img_dict['polyline'] = img.copy()
+    color_blue = hex2bgr('#4d96ff')
+    color_green = hex2bgr('#6bcb77')
+    color_red = hex2bgr('#ff6b6b')
+    color_yellow = hex2bgr('#ffd93d')
+    drawing(big_external_contours, color_blue)
+    drawing(small_external_contours, color_red)
+    drawing(inner_contours, color_yellow)
+    drawing(fake_inner, color_green)
+    drawing(real_background, color_red)
+    for title, image in img_dict.items():
+        if show:
+            imshow(title, image)
+        if filename is not None:
+            out_p = Path(filename)
+            out_filename = str(out_p.parent / out_p.with_name(
+                f'{out_p.stem}_{title}.png'))
+            cv2.imwrite(out_filename, image)
+            log.debug(f'Write image {out_filename}')
+    return img_dict
+
+
 def get_out_filename(image: str, stem2: str) -> Path:
     png = Path(image)
     png = png.with_name(png.stem + stem2 + '.png')
@@ -946,7 +946,6 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
         figsize = (10 * len(labels) / 5, 6)
     fig = plt.figure(figsize=figsize)
     ax1 = plt.subplot(211)
-    _ = results[0][-1]
     x = np.arange(1, len(labels) + 1)
     width = 0.3
     violin_data_raw = []
@@ -1043,6 +1042,8 @@ def cli_main(arg_str=None) -> (Path, Path):
     run = run_dict[arg.mode]
     neg_result, pos_result, target_results = run(negative, positive, targets,
                                                  auto_ref)
+    neg_result = list(neg_result[:-1])
+    neg_result.append([0])
     for i in neg_result, pos_result, target_results:
         if i is None:
             return pdf_file, csv_file
