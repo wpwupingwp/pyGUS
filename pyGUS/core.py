@@ -121,8 +121,9 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
             img_dict = draw_images(filtered_result, level_cnt, img, simple=True,
                                    show=False, filename=target)
             if debug:
-                imshow('mask', target_mask)
-                imshow('masked', cv2.bitwise_and(img, img, mask=target_mask))
+                pass
+                # imshow('mask', target_mask)
+                # imshow('masked', cv2.bitwise_and(img, img, mask=target_mask))
         log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
         draw_images(pos_filtered_result, pos_level_cnt, pos_img, show=False,
                     simple=True, filename=positive)
@@ -834,10 +835,11 @@ def calculate(original_image: np.array, target_mask: np.array,
               'total_std, total_area, express_ratio, fig_size, express_flatten')
     log.debug(result)
     if debug:
-        imshow('original', original_image)
-        imshow('target', target_mask)
-        imshow('express', express_mask)
-        imshow('express no yellow', express_mask_no_yellow)
+        pass
+        # imshow('original', original_image)
+        # imshow('target', target_mask)
+        # imshow('express', express_mask)
+        # imshow('express no yellow', express_mask_no_yellow)
     return result, express_mask_no_yellow
 
 

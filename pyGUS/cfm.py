@@ -243,19 +243,24 @@ def run_cfm(img: np.array):
 
 def get_cfm_masks(image: np.array) -> np.array:
     height, width = image.shape[:2]
-    gray, resized = run_cfm(image)
-    gray = cv2.resize(gray, (width, height), interpolation=cv2.INTER_LANCZOS4)
-    th, binary = cv2.threshold(
-        gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-    # bin_edge = cv2.Canny(binary, 0, 255)
-    # bin_edge2 = make_clean(bin_edge)
+
+    def try_to_get():
+        gray, resized = run_cfm(image)
+        gray = cv2.resize(gray, (width, height), interpolation=cv2.INTER_LANCZOS4)
+        th, binary = cv2.threshold(
+            gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        return binary
+    binary = try_to_get()
     if debug:
-        imshow('bin', binary)
+        # imshow('bin', binary)
         # imshow('bin_edge', bin_edge2)
         masked = cv2.bitwise_and(image, image, mask=binary)
         imshow('masked', masked)
-        cv2.waitKey()
-    # return bin_edge2
+        # Esc
+        while cv2.waitKey() == 27:
+            binary = try_to_get()
+            masked = cv2.bitwise_and(image, image, mask=binary)
+            imshow('masked', masked)
     return binary
 
 
