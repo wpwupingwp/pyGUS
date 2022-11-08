@@ -13,7 +13,7 @@ import numpy as np
 
 
 from pyGUS.global_vars import log, debug
-from pyGUS.utils import select_box, select_polygon, draw_lines
+from pyGUS.utils import select_box, select_polygon, draw_lines, resize
 from pyGUS.utils import color_calibrate, if_exist, imshow, show_error, hex2bgr
 from pyGUS.cfm import get_cfm_masks
 
@@ -301,38 +301,45 @@ def mode_4(_: str, __: str, targets: list, ___: bool) -> (list, list, list):
     neg_result = []
     pos_result = []
     target_results = []
+    size = (1500, 1500)
     for target in targets:
         log.info(f'Analyzing {target}')
         img = cv2.imread(target)
+        height, width = img.shape[:2]
         if img is None:
             show_error(f'Bad image file {target}')
         img_copy = img.copy()
+        img_copy_small = resize(img_copy, *size)
         mask1, mask2, mask3 = None, None, None
-        mask1 = select_polygon(img_copy, name_dict['neg'][0],
+        mask1 = select_polygon(img_copy_small, name_dict['neg'][0],
                                name_dict['neg'][1])
         if mask1 is not None:
-            mask2 = select_polygon(img_copy, name_dict['pos'][0],
+            mask2 = select_polygon(img_copy_small, name_dict['pos'][0],
                                    name_dict['pos'][1])
             if mask2 is not None:
-                mask3 = select_polygon(img_copy, name_dict['target'][0],
+                mask3 = select_polygon(img_copy_small, name_dict['target'][0],
                                        name_dict['target'][1])
         for i in mask1, mask2, mask3:
             if i is None:
                 return None, None, None
+        mask1 = cv2.resize(mask1, (width, height),
+                           interpolation=cv2.INTER_LANCZOS4)
+        mask2 = cv2.resize(mask2, (width, height),
+                           interpolation=cv2.INTER_LANCZOS4)
+        mask3 = cv2.resize(mask3, (width, height),
+                           interpolation=cv2.INTER_LANCZOS4)
         try:
-            imshow('Press any key to continue', img_copy)
+            imshow('Press any key to continue', img_copy_small)
             cv2.waitKey()
             cv2.destroyAllWindows()
         except cv2.error:
             error_msg = 'Bad selection.'
             show_error(error_msg)
             return neg_result, pos_result, target_results
-        # todo: is it ok to directly use calculate to get ref value?
         neg_result, _ = calculate(img, mask1, neg_ref_value=0)
         neg_ref_value, neg_std, *_ = neg_result
         pos_result, _ = calculate(img, mask2, pos_ref_value=255)
         pos_ref_value, pos_std, *_ = pos_result
-        # neg_ref_value += neg_std * 3
         neg_ref_value += neg_std
         pos_ref_value += pos_std
         log.debug(f'neg {neg_ref_value} pos {pos_ref_value}')
@@ -341,7 +348,9 @@ def mode_4(_: str, __: str, targets: list, ___: bool) -> (list, list, list):
         out_p = Path(target)
         out_filename = str(out_p.parent / out_p.with_name(
             f'{out_p.stem}_select.png'))
-        cv2.imwrite(out_filename, img_copy)
+        img_copy2 = cv2.resize(img_copy_small, (width, height),
+                               interpolation=cv2.INTER_LANCZOS4)
+        cv2.imwrite(out_filename, img_copy2)
         log.debug(f'Write image {out_filename}')
     return neg_result, pos_result, target_results
 
