@@ -5,6 +5,7 @@ import numpy as np
 import scipy
 import scipy.sparse
 import scipy.sparse.linalg
+import scipy.sparse.linalg.interface
 
 from pyGUS.utils import draw_dots, draw_box, imshow, resize
 from pyGUS.global_vars import log, debug

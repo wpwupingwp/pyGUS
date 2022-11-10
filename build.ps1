@@ -1,3 +1,4 @@
+# currently powershell should use 7.2
 venv/Scripts/activate.ps1
 pip install Nuitka==1.0.7
 pip install imageio
