@@ -1,5 +1,8 @@
-from numpy.lib.stride_tricks import as_strided
 from sys import argv
+from time import sleep
+
+from numpy.lib.stride_tricks import as_strided
+from tqdm import tqdm
 import cv2
 import numpy as np
 import scipy
@@ -231,11 +234,27 @@ def run_cfm(img: np.array):
     log.info('Start CFM...')
     # at least 1366x768 screen
     scribbles_raw = get_scribbles(img)
+    log.info('Calculating...')
     # reduce time
     size = (512, 512)
     img = resize(img, *size)
     scribbles_raw = resize(scribbles_raw, *size)
-    alpha = closed_form_matting(img, scribbles_raw)
+    from concurrent.futures import ProcessPoolExecutor
+    pool = ProcessPoolExecutor()
+    a = pool.submit(closed_form_matting, img, scribbles_raw)
+    total = img.size
+    with tqdm(total=total, desc='Calculating', unit='pixels',
+              dynamic_ncols=True) as t:
+        for i in range(total):
+            if a.done():
+                t.update(total-t.n)
+                t.close()
+            else:
+                sleep(0.1)
+                t.update(n=total//1000)
+    alpha = a.result()
+    # alpha = closed_form_matting(img, scribbles_raw)
+    # alpha = closed_form_matting(img, scribbles_raw)
     alpha_256 = alpha * 255
     alpha_256 = alpha_256.astype('uint8')
     log.info('CFM done.')
