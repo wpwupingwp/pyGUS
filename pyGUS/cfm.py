@@ -212,12 +212,13 @@ def cfm_with_scribbles(image, scribbles, scribbles_confidence=100.0):
                           consts_map)
 
 
-def closed_form_matting(image_raw: np.ndarray, scribbles_raw: np.ndarray):
+def closed_form_matting(image_raw: np.ndarray, scribbles_raw: np.ndarray, results):
     # https://github.com/MarcoForte/closed-form-matting
     # bgr
     img = image_raw / 255.0
     scribbles = scribbles_raw / 255.0
     alpha = cfm_with_scribbles(img, scribbles)
+    results.put(alpha)
     return alpha
 
 
@@ -239,20 +240,21 @@ def run_cfm(img: np.array):
     size = (512, 512)
     img = resize(img, *size)
     scribbles_raw = resize(scribbles_raw, *size)
-    from concurrent.futures import ProcessPoolExecutor
-    pool = ProcessPoolExecutor()
-    a = pool.submit(closed_form_matting, img, scribbles_raw)
+    from multiprocessing import Process, Queue
+    results = Queue()
+    a = Process(target=closed_form_matting, args=(img, scribbles_raw, results))
+    a.start()
     total = img.size
     with tqdm(total=total, desc='Calculating', unit='pixels',
               dynamic_ncols=True) as t:
         for i in range(total):
-            if a.done():
+            if not results.empty():
                 t.update(total-t.n)
                 t.close()
             else:
                 sleep(0.1)
                 t.update(n=total//1000)
-    alpha = a.result()
+    alpha = results.get()
     # alpha = closed_form_matting(img, scribbles_raw)
     # alpha = closed_form_matting(img, scribbles_raw)
     alpha_256 = alpha * 255

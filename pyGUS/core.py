@@ -1038,7 +1038,8 @@ def write_csv(all_result: list, targets: list, out: Path) -> Path:
 
 
 def cli_main(arg_str=None) -> (Path, Path):
-    log.info('Welcome to pyGUS.')
+    if __name__ == '__main__':
+        log.info('Welcome to pyGUS.')
     arg = parse_arg(arg_str)
     negative, positive, targets, auto_ref, message = get_input(arg)
     pdf_file = None
