@@ -360,9 +360,8 @@ class Mode1:
         self.Button4.configure(activebackground="beige")
         self.Button4.configure(activeforeground="#000000")
         self.Button4.configure(background="#edf0f3")
-        self.Button4.configure(command=run(
-            mode=1, ref1=self.ref1, ref2=self.ref2,
-            images=self.images))
+        self.Button4.configure(command=run(mode=1, ref1=self.ref1,
+                                           ref2=self.ref2, images=self.images))
         self.Button4.configure(compound='left')
         self.Button4.configure(foreground="#000000")
         self.Button4.configure(highlightbackground="#edf0f3")
@@ -693,8 +692,8 @@ class Mode3:
         self.Button4.configure(activebackground="beige")
         self.Button4.configure(activeforeground="#000000")
         self.Button4.configure(background="#edf0f3")
-        self.Button4.configure(command=run(
-            mode=3, ref1=self.ref1, ref2=self.ref2, images=self.images))
+        self.Button4.configure(command=run(mode=3, ref1=self.ref1,
+                                           ref2=self.ref2, images=self.images))
         self.Button4.configure(compound='left')
         self.Button4.configure(foreground="#000000")
         self.Button4.configure(highlightbackground="#edf0f3")
@@ -1010,8 +1009,6 @@ def run(mode, ref1=None, ref2=None, images=None):
         if mode != 4:
             pass
             # messagebox.showinfo(message='Running...')
-        current_window = mode_window[mode]
-        current_window.deiconify()
         root.iconify()
         try:
             svg_file, csv_file = core.cli_main(cmd)
