@@ -951,6 +951,8 @@ def checker():
     url = ('https://github.com/wpwupingwp/pyGUS/blob/main/'
            'Color_checker_1200dpi.png')
     # open in new tab
+    messagebox.showinfo(message='Click "Download" in the page '
+                                'to get color checker file')
     webbrowser.open(url, new=2)
     return
 
