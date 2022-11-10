@@ -1010,10 +1010,13 @@ def run(mode, ref1=None, ref2=None, images=None):
         if mode != 4:
             pass
             # messagebox.showinfo(message='Running...')
+        root.iconify()
         try:
             svg_file, csv_file = core.cli_main(cmd)
         except Quit:
             return
+        finally:
+            root.deiconify()
         if svg_file is not None and csv_file is not None:
             messagebox.showinfo(message=f'Output file {svg_file} {csv_file}')
         else:
