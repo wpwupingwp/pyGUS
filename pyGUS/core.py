@@ -1030,7 +1030,9 @@ def write_csv(all_result: list, targets: list, out: Path) -> Path:
             is_outlier = (np.abs(z_score) > z_score_threshold)
             if is_outlier:
                 log.warning(f'{name} has abnormal expression value.')
-            writer.writerow([name, *result[:-1], z_score, is_outlier])
+            numbers = [round(i, 4) for i in result[:-1]]
+            z_score = round(z_score, 4)
+            writer.writerow([name, *numbers, z_score, is_outlier])
     log.info(f'Output table file {out}')
     return out
 
