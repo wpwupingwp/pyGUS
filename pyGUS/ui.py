@@ -189,7 +189,7 @@ class Mode1:
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
-        top.title("Mode 1")
+        top.title("Normal mode")
         top.configure(background="#edf0f3")
         top.configure(highlightbackground="#d9d9d9")
         top.configure(highlightcolor="black")
@@ -390,7 +390,7 @@ class Mode2:
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
-        top.title("Mode 2")
+        top.title("With reference mode")
         top.configure(background="#edf0f3")
         top.configure(highlightbackground="#d9d9d9")
         top.configure(highlightcolor="black")
@@ -528,7 +528,7 @@ class Mode3:
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
-        top.title("Mode 3")
+        top.title("With colorchecker mode")
         top.configure(background="#edf0f3")
         top.configure(highlightbackground="#d9d9d9")
         top.configure(highlightcolor="black")
@@ -720,7 +720,7 @@ class Mode4:
         top.minsize(72, 15)
         top.maxsize(3648, 1089)
         top.resizable(1, 1)
-        top.title("Mode 4")
+        top.title("Manual mode")
         top.configure(background="#edf0f3")
         top.configure(highlightbackground="#d9d9d9")
         top.configure(highlightcolor="black")
@@ -1010,6 +1010,8 @@ def run(mode, ref1=None, ref2=None, images=None):
         if mode != 4:
             pass
             # messagebox.showinfo(message='Running...')
+        current_window = mode_window[mode]
+        current_window.deiconify()
         root.iconify()
         try:
             svg_file, csv_file = core.cli_main(cmd)
