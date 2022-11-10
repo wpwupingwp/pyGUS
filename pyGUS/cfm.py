@@ -1,3 +1,4 @@
+from multiprocessing import Process, Queue
 from sys import argv
 from time import sleep
 
@@ -240,7 +241,6 @@ def run_cfm(img: np.array):
     size = (512, 512)
     img = resize(img, *size)
     scribbles_raw = resize(scribbles_raw, *size)
-    from multiprocessing import Process, Queue
     results = Queue()
     a = Process(target=closed_form_matting, args=(img, scribbles_raw, results))
     a.start()
