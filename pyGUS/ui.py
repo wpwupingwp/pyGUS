@@ -5,7 +5,6 @@
 #    Jul 26, 2022 04:34:12 PM CST  platform: Darwin
 
 from logging import handlers
-from pkg_resources import resource_filename
 from time import time
 from tkinter import filedialog, messagebox, scrolledtext
 import logging
@@ -949,9 +948,10 @@ def open_file(title, entry, single=True):
 
 
 def checker():
-    file = resource_filename('pyGUS', '1200dpi.png')
-    messagebox.showinfo(message=file)
-    webbrowser.open('file:///'+file, new=2)
+    url = ('https://github.com/wpwupingwp/pyGUS/blob/main/'
+           'Color_checker_1200dpi.png')
+    # open in new tab
+    webbrowser.open(url, new=2)
     return
 
 
