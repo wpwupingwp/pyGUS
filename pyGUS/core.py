@@ -459,10 +459,15 @@ def split_left_right_mask(mask: np.array) -> (np.array, np.array):
     cnt_box = list(zip(big_c, box))
     # by box's x
     cnt_box.sort(key=lambda x: x[1][0])
-    start = cnt_box[0][1][0] + cnt_box[0][1][1]
+    start = cnt_box[0][1][0] + cnt_box[0][1][2]
     end = cnt_box[1][1][0]
     middle = (start + end) // 2
-    # cv2.line(img2, (middle, 0), (middle, img.shape[0]), 255, 10)
+    # if debug:
+    # for i in box:
+    #     cv2.rectangle(mask, (i[0], i[1]), (i[0]+i[2], i[1]+i[3]), (255, 255, 255), 5)
+    # cv2.line(mask, (middle, 0), (middle, mask.shape[0]), (255, 255, 0), 4)
+    # cv2.imshow('mask', mask)
+    # cv2.waitKey()
     left[:, middle:] = 0
     right[:, :middle] = 0
     return left, right
