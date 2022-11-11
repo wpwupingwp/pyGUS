@@ -268,7 +268,8 @@ def get_cfm_masks(image: np.array) -> np.array:
 
     def try_to_get():
         gray, resized = run_cfm(image)
-        gray = cv2.resize(gray, (width, height), interpolation=cv2.INTER_LANCZOS4)
+        gray = cv2.resize(gray, (width, height),
+                          interpolation=cv2.INTER_LANCZOS4)
         th, binary = cv2.threshold(
             gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
         return binary
