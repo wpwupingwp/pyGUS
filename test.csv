@@ -1,8 +1,6 @@
-A-mini-masked.png,Negative,Negative
-A-35S-masked.png,Positive,Positive
 A-H1-masked.png,A1,control
 A-H2-masked.png,A2,control
 A-H3-masked.png,A3,control
-A-L1-masked.png,B1,treat
-A-L2-masked.png,B2,treat
-A-L3-masked.png,B3,treat
+A-L1-masked.png,B1,treatment
+A-L2-masked.png,B2,treatment
+A-L3-masked.png,B3,treatment

@@ -14,15 +14,11 @@ def get_sample_info(csv_file: str) -> dict:
         # filename, sample, group
         for row in reader:
             filename, sample, group = row
-            if sample.lower() == 'negative':
-                sample = 'Negative'
-            if sample.lower() == 'positive':
-                sample = 'Positive'
             data[sample] = [filename, group]
     return data
 
 
-def get_data(filename: str, neg=0, pos=255) -> np.array:
+def get_data(filename: str) -> np.array:
     img = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
     if img is None:
         raise ValueError(f'Bad input file {filename}')
@@ -38,19 +34,11 @@ def get_data(filename: str, neg=0, pos=255) -> np.array:
 
 def main():
     info = get_sample_info(argv[1])
-    if 'negative' not in info and 'Negative' not in info:
-        raise ValueError('Please add negative reference in csv file!')
-    if 'positive' not in info and 'Positive' not in info:
-        raise ValueError('Please add positive reference in csv file!')
-    negative = get_data(info['Negative'][0])
-    positive = get_data(info['Positive'][0])
-    neg_mean = int(np.mean(negative))
-    pos_mean = int(np.mean(positive))
     data = dict()
     for sample in info:
         if sample in ('Negative', 'Positive'):
             continue
-        data[sample] = get_data(info[sample][0], neg_mean, pos_mean)
+        data[sample] = get_data(info[sample][0])
     v = plt.violinplot(list(data.values()), showmeans=False, showmedians=False,
                        showextrema=False)
     plt.yticks(np.linspace(0, 256, 9))
