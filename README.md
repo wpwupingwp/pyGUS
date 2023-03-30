@@ -41,6 +41,9 @@ Open terminal, run
     * [Photo tips](#photo-tips)
     * [Input](#input)
     * [Output](#output)
+* [Utilities](#utilities)
+    * [extract_info.py](#extractinfopy)
+    * [stats.py](#statspy)
 * [Performance](#performance)
 * [Citation](#citation)
 * [Flowchart](#flowchart)
@@ -127,7 +130,7 @@ notice the difference and make sure you use `Python 3` instead of `Python 2`.
 
 * Run
 
- ```
+ ```powershell
  # Windows
  #   mode 1
  python -m pyGUS -mode 1 -ref1 [file1] -ref2 [file2] -images [files3] [file4] ...
@@ -293,6 +296,57 @@ and <span style="color:cyan">cyan</span> is for the target region.
 yellow</span> means regions inner target but have different expression,
 <span style="color:green">green</span> means darker regions
 inner target.
+
+# Utilities
+## extract_info.py
+This program can extract the alpha channel information stored in the image
+output by pyGUS and generate a black and white image. Among them, black
+represents the background part of the original image recognized by pyGUS, gray 
+represents the plant part, and white represents the part with GUS signal 
+recognized by the program.
+
+Usage:
+```powershell
+# Windows
+python extract_info.py [image filename]
+# Linux and macOS
+python3 extract_info.py [image filename]
+```
+## stats.py
+This program is used to statistically analyze the difference in GUS signals 
+between different groups of sample photos and perform significance test (t-test). 
+Considering that users may prefer different statistical tools, this program is 
+an auxiliary tool and is not integrated into the pyGUS. The program requires the 
+user to provide a CSV format (exportable from Microsoft Excel, Notepad or any
+other text editor) list as input, with the following format:
+```text
+Filename1,Sample1,Group1
+Filename2,Sample2,Group1
+Filename3,Sample3,Group2
+Filename4,Sample4,Group2
+```
+`Filename` represents filename of pyGUS output images, `Sample1` represents 
+sample ID and `Group1` represents the group of samples. 
+
+Note that please do not contain comma or space in each column. Example:
+```text
+A1-masked.png,A1,control
+A2-masked.png,A2,control
+A3-masked.png,A3,control
+B1-masked.png,B1,treat
+B2-masked.png,B2,treat
+B3-masked.png,B3,treat
+```
+
+Usage:
+```powershell
+# Windows
+python stats.py [filename]
+# Linux and macOS
+python3 stats.py [filename]
+ #>
+```
+
 
 # Performance
 
