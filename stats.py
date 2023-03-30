@@ -27,17 +27,12 @@ def get_data(filename: str, neg=0, pos=255) -> np.array:
     if img is None:
         raise ValueError(f'Bad input file {filename}')
     b, g, r, a = cv2.split(img)
-    # exclude background
-    b[a<255] = 255
+    # revert
     b_r = 255 - b
-    # apply negative adjustment
-    # cv2.imshow('a', b_r)
-    b_r[b_r<neg] = 0
-    # cv2.waitKey()
-    # exclude negative region
-    data = b_r[a>0]
-    print(data.shape)
-    print(data.mean())
+    # apply mask
+    data = b_r[a==255]
+    if len(data) == 0:
+        data = np.array([0])
     return data
 
 
