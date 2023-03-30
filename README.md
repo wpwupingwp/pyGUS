@@ -320,16 +320,22 @@ an auxiliary tool and is not integrated into the pyGUS. The program requires the
 user to provide a CSV format (exportable from Microsoft Excel, Notepad or any
 other text editor) list as input, with the following format:
 ```text
-Filename1,Sample1,Group1
-Filename2,Sample2,Group1
-Filename3,Sample3,Group2
-Filename4,Sample4,Group2
+Filename1,Negative,Negative
+Filename2,Positive,Positive
+Filename3,Sample1,Group1
+Filename4,Sample2,Group1
+Filename5,Sample3,Group2
+Filename6,Sample4,Group2
 ```
 `Filename` represents filename of pyGUS output images, `Sample1` represents 
-sample ID and `Group1` represents the group of samples. 
+sample ID and `Group1` represents the group of samples. Sample IDs should be 
+unique. The **first two lines** are negative and positive reference images **after
+processed by pyGUS**. 
 
 Note that please do not contain comma or space in each column. Example:
 ```text
+A-mini-masked.png,Negative,Negative
+A-35S-masked.png,Positive,Positive
 A1-masked.png,A1,control
 A2-masked.png,A2,control
 A3-masked.png,A3,control
