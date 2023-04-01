@@ -8,7 +8,7 @@ FMT = '%(asctime)s %(levelname)-8s %(message)s'
 DATEFMT = '%Y-%m-%d %H:%M:%S'
 formatter = logging.Formatter(fmt=FMT, datefmt=DATEFMT)
 # todo
-debug = True
+debug = False
 if debug:
     default_level = logging.DEBUG
 else:
