@@ -49,6 +49,25 @@ def pvalue_legend(pvalue: float) -> str:
         return 'n.s.'
 
 
+def add_p_value(pair: list, group_data: dict, group_index: dict,
+                ax: plt.axes, offset=4, height=8):
+    # return height for next offset
+    a, b = pair
+    t_stat, p_value = stats.ttest_ind(group_data[a], group_data[b],
+                                      equal_var=False)
+    print(f'{t_stat=}')
+    p_value_str = pvalue_legend(p_value)
+    a_x = group_index[a]
+    b_x = group_index[b]
+    a_b_y = max(np.max(group_data[a]), np.max(group_data[b])) + offset
+    ax.plot([a_x, a_x, b_x, b_x],
+            [a_b_y, a_b_y + height, a_b_y + height, a_b_y], lw=1,
+            color='black')
+    ax.text((a_x + b_x) / 2, a_b_y + height//2, p_value_str,
+            ha='center', va='bottom', color='black')
+    return height
+
+
 def main():
     info = get_sample_info(argv[1])
     data = dict()
@@ -70,27 +89,14 @@ def main():
                       showmedians=False,
                       showextrema=False)
     # add p value
-    group_pair_pvalue = {i: 0.0 for i in combinations(group_list, 2)}
+    group_pair_p_value = {i: 0.0 for i in combinations(group_list, 2)}
     group_index = dict(zip(group_list, range(1, len(group_list) + 1)))
-    offset = 4
-    height = offset * 2
-    for group_pair in group_pair_pvalue:
-        a, b = group_pair
-        t_stat, pvalue = stats.ttest_ind(group_data[a], group_data[b],
-                                         equal_var=False)
-        # print(group_data[a], group_data[b], pvalue)
-        # print(f'{t_stat=}')
-        group_pair_pvalue[group_pair] = pvalue_legend(pvalue)
-        a_x = group_index[a]
-        b_x = group_index[b]
-        a_b_y = max(np.max(group_data[a]), np.max(group_data[b])) + offset
-        plt.plot([a_x, a_x, b_x, b_x],
-                 [a_b_y, a_b_y + height, a_b_y + height, a_b_y], lw=1,
-                 color='black')
-        plt.text((a_x + b_x) / 2, a_b_y+offset, group_pair_pvalue[group_pair],
-                 ha='center', va='bottom', color='black')
-
-    plt.yticks(np.linspace(0, 256, 9))
+    offset = 0
+    pad = 4
+    for group_pair in group_pair_p_value:
+        height = add_p_value(group_pair, group_data, group_index, ax, offset)
+        offset = offset + height + pad
+    plt.yticks(np.linspace(0, 256, 5))
     plt.xticks(range(1, len(group_list) + 1), group_list)
     plt.xlabel('Groups')
     plt.ylabel('GUS signal intensity')
