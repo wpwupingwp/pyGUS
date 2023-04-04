@@ -36,7 +36,8 @@ def get_data(filename: str) -> np.array:
     return data
 
 
-def pvalue_legengd(pvalue: float) -> str:
+def pvalue_legend(pvalue: float) -> str:
+    assert pvalue >= 0.0, f'Bad p value {pvalue}'
     if pvalue <= 1.0e-4:
         return '****'
     elif pvalue <= 1.0e-3:
@@ -46,7 +47,7 @@ def pvalue_legengd(pvalue: float) -> str:
     elif pvalue <= 5.0e-2:
         return '*'
     else:
-        return 'ns'
+        return 'n.s.'
 
 
 def main():
@@ -72,14 +73,19 @@ def main():
                                          equal_var=False)
         print(group_data[a], group_data[b], pvalue)
         print(f'{t_stat=}')
-        group_pair_pvalue[group_pair] = pvalue
+        group_pair_pvalue[group_pair] = pvalue_legend(pvalue)
 
-    v = plt.violinplot([group_data[i] for i in group_list], showmeans=False,
+    x = list(group_pair_pvalue.values())[0]
+    fig, ax = plt.subplots()
+    v = ax.violinplot([group_data[i] for i in group_list], showmeans=False,
                        showmedians=False,
                        showextrema=False)
+    print(v, dir(v))
+    print(ax.get_xticks())
+    plt.text(1.5, 140, x, ha='center', va='bottom')
     plt.yticks(np.linspace(0, 256, 9))
     plt.xticks(range(1, len(group_list) + 1), group_list)
-    plt.title(f'p value {group_pair_pvalue.popitem()[1]:.40f}')
+    plt.title(f'p value {x}')
     plt.show()
     # cv2.imshow('raw', img)
     # cv2.waitKey()
