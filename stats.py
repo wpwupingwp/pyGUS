@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 from itertools import combinations
+from pathlib import Path
 from sys import argv
 import csv
 
@@ -10,7 +11,7 @@ import cv2
 import numpy as np
 
 
-def get_sample_info(csv_file: str) -> dict:
+def get_sample_info(csv_file: Path) -> dict:
     # sample: (filename, group)
     info = dict()
     with open(csv_file, 'r', newline='') as _:
@@ -32,7 +33,7 @@ def get_data(filename: str) -> np.array:
     # apply mask
     data = b_r[a == 255]
     if len(data) == 0:
-        data = np.array([0])
+        data = np.zeros(10)
     return data
 
 
@@ -69,8 +70,9 @@ def add_p_value(pair: list, group_data: dict, group_index: dict,
     return height
 
 
-def main():
-    info = get_sample_info(argv[1])
+def analyze_GUS_value():
+    csv_file = Path(argv[1])
+    info = get_sample_info(csv_file)
     data = dict()
     for sample in info:
         if sample in ('Negative', 'Positive'):
@@ -102,11 +104,23 @@ def main():
     for group_pair in group_pair_p_value:
         height = add_p_value(group_pair, group_data, group_index, ax, offset)
         offset = offset + height + pad
-    plt.yticks(np.linspace(0, 256, 5))
-    plt.xticks(range(1, len(group_list) + 1), group_list)
-    plt.xlabel('Groups')
-    plt.ylabel('GUS signal intensity')
-    plt.show()
+    ax.set_yticks(np.linspace(0, 256, 5))
+    ax.set_xticks(range(1, len(group_list) + 1), group_list)
+    ax.set_xlabel('Groups')
+    ax.set_ylabel('GUS signal intensity')
+    out_file = csv_file.with_suffix('.pdf')
+    plt.savefig(out_file)
+    # plt.show()
+    return out_file
+
+
+def analyze_GUS_ratio():
+    return
+
+
+def main():
+    analyze_GUS_value()
+    analyze_GUS_ratio()
     return
 
 
