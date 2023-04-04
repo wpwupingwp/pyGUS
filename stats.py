@@ -117,12 +117,12 @@ def analyze_GUS_value():
         pc.set_alpha(1)
         pc.set_linewidth(0.5)
     # add p value
-    group_pair_p_value = {i: 0.0 for i in combinations(group_list, 2)}
+    group_pairs = list(combinations(group_list, 2))
     group_index = dict(zip(group_list, range(1, len(group_list) + 1)))
     offset = 4
     pad = 4
-    for group_pair in group_pair_p_value:
-        height = add_p_value(group_pair, group_data, group_index, ax, offset)
+    for pair in group_pairs:
+        height = add_p_value(pair, group_data, group_index, ax, offset)
         offset = offset + height + pad
     ax.set_yticks(np.linspace(0, 256, 5))
     ax.set_xticks(range(1, len(group_list) + 1), group_list)
@@ -157,6 +157,13 @@ def analyze_GUS_ratio():
         pc.set_alpha(1)
         pc.set_linewidth(0.5)
     # ax.set_xticks(range(1, len(group_list)+1), group_list)
+    group_pairs = list(combinations(group_list, 2))
+    group_index = dict(zip(group_list, range(1, len(group_list) + 1)))
+    offset = 0.1
+    pad = 0.1
+    for pair in group_pairs:
+        height = add_p_value(pair, group_data, group_index, ax, offset, height=0.1)
+        offset = offset + height + pad
     ax.set_yticks(np.linspace(0, 1, 6))
     ax.set_xlabel('Groups')
     ax.set_ylabel('Expression area ratio')
