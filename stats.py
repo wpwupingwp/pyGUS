@@ -1,21 +1,25 @@
 #!/usr/bin/python3
 from sys import argv
 import csv
+from itertools import combinations
+
 
 from matplotlib import pyplot as plt
 import cv2
 import numpy as np
+from scipy import stats
+
 
 def get_sample_info(csv_file: str) -> dict:
     # sample: (filename, group)
-    data = dict()
+    info = dict()
     with open(csv_file, 'r', newline='') as _:
         reader = csv.reader(_)
         # filename, sample, group
         for row in reader:
             filename, sample, group = row
-            data[sample] = [filename, group]
-    return data
+            info[sample] = [filename, group]
+    return info
 
 
 def get_data(filename: str) -> np.array:
@@ -26,10 +30,23 @@ def get_data(filename: str) -> np.array:
     # revert
     b_r = 255 - b
     # apply mask
-    data = b_r[a==255]
+    data = b_r[a == 255]
     if len(data) == 0:
         data = np.array([0])
     return data
+
+
+def pvalue_legengd(pvalue: float) -> str:
+    if pvalue <= 1.0e-4:
+        return '****'
+    elif pvalue <= 1.0e-3:
+        return '***'
+    elif pvalue <= 1.0e-2:
+        return '**'
+    elif pvalue <= 5.0e-2:
+        return '*'
+    else:
+        return 'ns'
 
 
 def main():
@@ -39,13 +56,52 @@ def main():
         if sample in ('Negative', 'Positive'):
             continue
         data[sample] = get_data(info[sample][0])
-    v = plt.violinplot(list(data.values()), showmeans=False, showmedians=False,
+    group_data = dict()
+    for sample in data:
+        group = info[sample][1]
+        if group not in group_data:
+            group_data[group] = data[sample]
+        else:
+            group_data[group] = np.concatenate([group_data[group],
+                                                data[sample]])
+    group_list = list(group_data.keys())
+    group_pair_pvalue = {i: 0.0 for i in combinations(group_list, 2)}
+    for group_pair in group_pair_pvalue:
+        a, b = group_pair
+        t_stat, pvalue = stats.ttest_ind(group_data[a], group_data[b],
+                                         equal_var=False)
+        print(group_data[a], group_data[b], pvalue)
+        print(f'{t_stat=}')
+        group_pair_pvalue[group_pair] = pvalue
+
+    v = plt.violinplot([group_data[i] for i in group_list], showmeans=False,
+                       showmedians=False,
                        showextrema=False)
     plt.yticks(np.linspace(0, 256, 9))
+    plt.xticks(range(1, len(group_list) + 1), group_list)
+    plt.title(f'p value {group_pair_pvalue.popitem()[1]:.40f}')
     plt.show()
     # cv2.imshow('raw', img)
     # cv2.waitKey()
     return
 
 
+# list2 = ('default', 'ig_iab')
+# left_pair = [((i, list2[0]), (i, list2[1])) for i in
+#              ('observed_res', 'entropy', 'pi', 'tree_res')]
+# right_pair = [((i, list2[0]), (i, list2[1])) for i in
+#               ('pd', 'pd_stem', 'pd_terminal')]
+# fig = plt.figure(figsize=(8, 8))
+# up = plt.subplot(211)
+# with sns.plotting_context(rc={"axes.labelsize": 16}):
+#     ax_up = sns.boxplot(data=data3, x='indicator', y='value',
+#                         hue='type', ax=up, hue_order=['default', 'ig_iab'])
+# # remove legend
+# up.legend_.remove()
+# ax_up.set_yticks(np.arange(0, 1.1, 0.1))
+# an = annotator(ax=ax_up, pairs=left_pair, data=data3, x='indicator',
+#                y='value', hue='type', hue_order=['default', 'ig_iab'])
+# an.configure(test='mann-whitney')
+# an.apply_test()
+# an.annotate()
 main()
