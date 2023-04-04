@@ -97,7 +97,7 @@ def main():
     # add p value
     group_pair_p_value = {i: 0.0 for i in combinations(group_list, 2)}
     group_index = dict(zip(group_list, range(1, len(group_list) + 1)))
-    offset = 0
+    offset = 4
     pad = 4
     for group_pair in group_pair_p_value:
         height = add_p_value(group_pair, group_data, group_index, ax, offset)
