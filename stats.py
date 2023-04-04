@@ -77,17 +77,19 @@ def add_p_value(pair: list, group_data: dict, group_index: dict,
                 ax: plt.axes, offset=4, height=8):
     # return height for next offset
     a, b = pair
-    t_stat, p_value = stats.ttest_ind(group_data[a], group_data[b],
-                                      equal_var=False)
-    print(f'{t_stat=}')
+    t_stat, p_value = stats.ttest_ind(group_data[a], group_data[b])
+                                      # equal_var=True)
+    # print(group_data[a], group_data[b])
+    # print(f'{t_stat=}, {p_value=}')
     p_value_str = pvalue_legend(p_value)
+    # print(p_value_str)
     a_x = group_index[a]
     b_x = group_index[b]
     a_b_y = max(np.max(group_data[a]), np.max(group_data[b])) + offset
     ax.plot([a_x, a_x, b_x, b_x],
             [a_b_y, a_b_y + height, a_b_y + height, a_b_y], lw=1,
             color='black')
-    ax.text((a_x + b_x) / 2, a_b_y + height//2, p_value_str,
+    ax.text((a_x + b_x) / 2, a_b_y + height, p_value_str,
             ha='center', va='bottom', color='black')
     return height
 
@@ -130,6 +132,7 @@ def analyze_GUS_value():
     ax.set_ylabel('GUS signal intensity')
     out_file = csv_file.with_suffix('.pdf')
     plt.savefig(out_file)
+    plt.show()
     plt.close()
     # plt.show()
     return out_file
@@ -159,10 +162,11 @@ def analyze_GUS_ratio():
     # ax.set_xticks(range(1, len(group_list)+1), group_list)
     group_pairs = list(combinations(group_list, 2))
     group_index = dict(zip(group_list, range(1, len(group_list) + 1)))
-    offset = 0.1
-    pad = 0.1
+    offset = 0.05
+    pad = 0.05
     for pair in group_pairs:
-        height = add_p_value(pair, group_data, group_index, ax, offset, height=0.1)
+        height = add_p_value(pair, group_data, group_index, ax, offset,
+                             height=0.08)
         offset = offset + height + pad
     ax.set_yticks(np.linspace(0, 1, 6))
     ax.set_xlabel('Groups')
