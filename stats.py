@@ -3,7 +3,6 @@ from sys import argv
 import csv
 from itertools import combinations
 
-
 from matplotlib import pyplot as plt
 import cv2
 import numpy as np
@@ -66,48 +65,37 @@ def main():
             group_data[group] = np.concatenate([group_data[group],
                                                 data[sample]])
     group_list = list(group_data.keys())
+    fig, ax = plt.subplots()
+    v = ax.violinplot([group_data[i] for i in group_list], showmeans=False,
+                      showmedians=False,
+                      showextrema=False)
+    # add p value
     group_pair_pvalue = {i: 0.0 for i in combinations(group_list, 2)}
+    group_index = dict(zip(group_list, range(1, len(group_list) + 1)))
+    offset = 4
+    height = offset * 2
     for group_pair in group_pair_pvalue:
         a, b = group_pair
         t_stat, pvalue = stats.ttest_ind(group_data[a], group_data[b],
                                          equal_var=False)
-        print(group_data[a], group_data[b], pvalue)
-        print(f'{t_stat=}')
+        # print(group_data[a], group_data[b], pvalue)
+        # print(f'{t_stat=}')
         group_pair_pvalue[group_pair] = pvalue_legend(pvalue)
+        a_x = group_index[a]
+        b_x = group_index[b]
+        a_b_y = max(np.max(group_data[a]), np.max(group_data[b])) + offset
+        plt.plot([a_x, a_x, b_x, b_x],
+                 [a_b_y, a_b_y + height, a_b_y + height, a_b_y], lw=1,
+                 color='black')
+        plt.text((a_x + b_x) / 2, a_b_y+offset, group_pair_pvalue[group_pair],
+                 ha='center', va='bottom', color='black')
 
-    x = list(group_pair_pvalue.values())[0]
-    fig, ax = plt.subplots()
-    v = ax.violinplot([group_data[i] for i in group_list], showmeans=False,
-                       showmedians=False,
-                       showextrema=False)
-    print(v, dir(v))
-    print(ax.get_xticks())
-    plt.text(1.5, 140, x, ha='center', va='bottom')
     plt.yticks(np.linspace(0, 256, 9))
     plt.xticks(range(1, len(group_list) + 1), group_list)
-    plt.title(f'p value {x}')
+    plt.xlabel('Groups')
+    plt.ylabel('GUS signal intensity')
     plt.show()
-    # cv2.imshow('raw', img)
-    # cv2.waitKey()
     return
 
 
-# list2 = ('default', 'ig_iab')
-# left_pair = [((i, list2[0]), (i, list2[1])) for i in
-#              ('observed_res', 'entropy', 'pi', 'tree_res')]
-# right_pair = [((i, list2[0]), (i, list2[1])) for i in
-#               ('pd', 'pd_stem', 'pd_terminal')]
-# fig = plt.figure(figsize=(8, 8))
-# up = plt.subplot(211)
-# with sns.plotting_context(rc={"axes.labelsize": 16}):
-#     ax_up = sns.boxplot(data=data3, x='indicator', y='value',
-#                         hue='type', ax=up, hue_order=['default', 'ig_iab'])
-# # remove legend
-# up.legend_.remove()
-# ax_up.set_yticks(np.arange(0, 1.1, 0.1))
-# an = annotator(ax=ax_up, pairs=left_pair, data=data3, x='indicator',
-#                y='value', hue='type', hue_order=['default', 'ig_iab'])
-# an.configure(test='mann-whitney')
-# an.apply_test()
-# an.annotate()
 main()
