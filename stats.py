@@ -1,12 +1,13 @@
 #!/usr/bin/python3
+from itertools import combinations
 from sys import argv
 import csv
-from itertools import combinations
 
 from matplotlib import pyplot as plt
+from matplotlib import colors
+from scipy import stats
 import cv2
 import numpy as np
-from scipy import stats
 
 
 def get_sample_info(csv_file: str) -> dict:
@@ -88,6 +89,11 @@ def main():
     v = ax.violinplot([group_data[i] for i in group_list], showmeans=False,
                       showmedians=False,
                       showextrema=False)
+    for pc, c in zip(v['bodies'], colors.TABLEAU_COLORS):
+        pc.set_facecolor(c)
+        pc.set_edgecolor('black')
+        pc.set_alpha(1)
+        pc.set_linewidth(0.5)
     # add p value
     group_pair_p_value = {i: 0.0 for i in combinations(group_list, 2)}
     group_index = dict(zip(group_list, range(1, len(group_list) + 1)))
