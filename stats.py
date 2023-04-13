@@ -134,9 +134,8 @@ def analyze_GUS_value():
     ax.set_xticks(range(1, len(group_list) + 1), group_list)
     ax.set_xlabel('Groups')
     ax.set_ylabel('GUS signal intensity')
-    out_file = csv_file.with_suffix('.pdf')
+    out_file = csv_file.with_suffix('.2.pdf')
     plt.savefig(out_file)
-    plt.show()
     plt.close()
     # plt.show()
     return out_file
@@ -159,13 +158,13 @@ def analyze_GUS_ratio():
     fig, ax = plt.subplots()
     b = ax.boxplot([group_data[i] for i in group_list],
                    patch_artist=True, labels=group_list)
+    for m in b['medians']:
+        m.set_color('white')
+        m.set_linewidth(1)
     for pc, c in zip(b['boxes'], colors.TABLEAU_COLORS):
         pc.set_facecolor(c)
         pc.set_alpha(1)
         pc.set_linewidth(0.5)
-    for m in b['medians']:
-        m.set_color('white')
-        m.set_linewidth(1)
 
     # ax.set_xticks(range(1, len(group_list)+1), group_list)
     group_pairs = list(combinations(group_list, 2))
@@ -179,7 +178,8 @@ def analyze_GUS_ratio():
     ax.set_yticks(np.linspace(0, 1, 6))
     ax.set_xlabel('Groups')
     ax.set_ylabel('Expression area ratio')
-    plt.show()
+    out_file = csv_file1.with_suffix('.1.pdf')
+    plt.savefig(out_file)
     return ratio_info
 
 

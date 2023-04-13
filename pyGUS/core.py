@@ -955,7 +955,7 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
     # result = (express_value, express_std, express_area, total_value,
     # total_std, total_area, express_ratio, express_flatten)
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    short_labels = [Path(i).name for i in labels]
+    short_labels = [Path(i).stem for i in labels]
     if len(labels) <= 5:
         figsize = (10, 6)
     else:
