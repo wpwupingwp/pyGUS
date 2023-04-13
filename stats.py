@@ -5,12 +5,14 @@ from sys import argv
 import csv
 
 from matplotlib import pyplot as plt
-from matplotlib import colors
+from matplotlib import colors, rc
 from scipy import stats
 import cv2
 import numpy as np
 
 
+font = dict(size='22')
+rc('font', **font)
 def get_sample_info(csv_file: Path) -> dict:
     # parse input sample csv for analyze_GUS_value
     # sample: (filename, group)
@@ -111,7 +113,7 @@ def analyze_GUS_value():
             group_data[group] = np.concatenate([group_data[group],
                                                 data[sample]])
     group_list = list(group_data.keys())
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10, 10))
     v = ax.violinplot([group_data[i] for i in group_list], showmeans=False,
                       showmedians=True,
                       showextrema=False)
@@ -135,7 +137,7 @@ def analyze_GUS_value():
     ax.set_xlabel('Groups')
     ax.set_ylabel('GUS signal intensity')
     out_file = csv_file.with_suffix('.2.pdf')
-    plt.savefig(out_file)
+    plt.savefig(out_file, bbox_inches='tight')
     plt.close()
     # plt.show()
     return out_file
@@ -155,7 +157,7 @@ def analyze_GUS_ratio():
         else:
             group_data[group].append(express_ratio)
     group_list = list(group_data.keys())
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10, 10))
     b = ax.boxplot([group_data[i] for i in group_list],
                    patch_artist=True, labels=group_list)
     for m in b['medians']:
@@ -179,7 +181,7 @@ def analyze_GUS_ratio():
     ax.set_xlabel('Groups')
     ax.set_ylabel('Expression area ratio')
     out_file = csv_file1.with_suffix('.1.pdf')
-    plt.savefig(out_file)
+    plt.savefig(out_file, bbox_inches='tight')
     return ratio_info
 
 
