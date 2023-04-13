@@ -113,13 +113,15 @@ def analyze_GUS_value():
     group_list = list(group_data.keys())
     fig, ax = plt.subplots()
     v = ax.violinplot([group_data[i] for i in group_list], showmeans=False,
-                      showmedians=False,
+                      showmedians=True,
                       showextrema=False)
     for pc, c in zip(v['bodies'], colors.TABLEAU_COLORS):
         pc.set_facecolor(c)
         pc.set_edgecolor('black')
         pc.set_alpha(1)
         pc.set_linewidth(0.5)
+    v['cmedians'].set_color('white')
+    v['cmedians'].set_linewidth(1)
     # add p value
     group_pairs = list(combinations(group_list, 2))
     group_index = dict(zip(group_list, range(1, len(group_list) + 1)))
@@ -161,6 +163,10 @@ def analyze_GUS_ratio():
         pc.set_facecolor(c)
         pc.set_alpha(1)
         pc.set_linewidth(0.5)
+    for m in b['medians']:
+        m.set_color('white')
+        m.set_linewidth(1)
+
     # ax.set_xticks(range(1, len(group_list)+1), group_list)
     group_pairs = list(combinations(group_list, 2))
     group_index = dict(zip(group_list, range(1, len(group_list) + 1)))
