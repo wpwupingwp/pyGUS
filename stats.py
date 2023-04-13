@@ -22,7 +22,10 @@ def get_sample_info(csv_file: Path) -> dict:
             filename, sample, group = row
             if sample in {'Negative', 'Positive'}:
                 continue
-            info[sample] = [filename, group]
+            name_p = Path(filename)
+            # convert name format
+            new_name = name_p.stem + '-masked' + name_p.suffix
+            info[sample] = [new_name, group]
     return info
 
 
@@ -41,7 +44,6 @@ def get_sample_info2(csv_file: Path) -> dict:
             # convert name format
             new_name = name_p.stem + '-masked' + name_p.suffix
             ratio_info[new_name] = float(exp_ratio)
-    print(ratio_info)
     return ratio_info
 
 
