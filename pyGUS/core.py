@@ -5,6 +5,7 @@ from pathlib import Path
 
 # for nuitka
 from matplotlib.backends import backend_pdf
+from matplotlib import rc
 import cv2
 import matplotlib
 import matplotlib.pyplot as plt
@@ -17,6 +18,8 @@ from pyGUS.utils import select_box, select_polygon, draw_lines, resize
 from pyGUS.utils import color_calibrate, if_exist, imshow, show_error, hex2bgr
 from pyGUS.cfm import get_cfm_masks
 
+font = dict(size='22')
+rc('font', **font)
 matplotlib.use('Agg')
 plt.set_loglevel('error')
 MANUAL = 'manual'
@@ -1012,7 +1015,7 @@ def write_image(results: tuple, labels: list, out: Path) -> Path:
     ax2.set_ylabel('Area percent')
     ax2.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
     plt.tight_layout()
-    plt.savefig(out)
+    plt.savefig(out, bbox_inches='tight')
     log.info(f'Output figure file {out}')
     return out
 
