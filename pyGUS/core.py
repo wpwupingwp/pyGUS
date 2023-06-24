@@ -955,6 +955,7 @@ def write_image(results: list, labels: list, out: Path) -> Path:
     # result = (express_value, express_std, express_area, total_value,
     # total_std, total_area, express_ratio, express_flatten)
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    width = 0.5
     short_labels = [Path(i).stem for i in labels]
     if len(labels) <= 5:
         figsize = (10, 6)
@@ -963,7 +964,6 @@ def write_image(results: list, labels: list, out: Path) -> Path:
     fig = plt.figure(figsize=figsize)
     ax1 = plt.subplot(211)
     x = np.arange(1, len(labels) + 1)
-    width = 0.3
     violin_data_raw = []
     for i in results:
         data = i[-1]
@@ -975,7 +975,7 @@ def write_image(results: list, labels: list, out: Path) -> Path:
     try:
         violin_parts = ax1.violinplot(violin_data, showmeans=True,
                                       showmedians=False, showextrema=False,
-                                      widths=0.4)
+                                      widths=width)
     except ValueError:
         show_error('Failed to plot results due to bad values.')
         return Path()
@@ -998,8 +998,7 @@ def write_image(results: list, labels: list, out: Path) -> Path:
                                                             all_area)]
     no_express_area_percent = [round(i / j, 4) for i, j in zip(no_express_area,
                                                                all_area)]
-    rects1 = ax2.bar(x, express_area_percent, width=width,
-                     alpha=0.4,
+    rects1 = ax2.bar(x, express_area_percent, width=width, alpha=0.4,
                      color='green', label='Expression region')
     rects2 = ax2.bar(x, no_express_area_percent, width=width,
                      bottom=express_area_percent, alpha=0.4,
