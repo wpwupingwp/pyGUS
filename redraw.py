@@ -57,7 +57,7 @@ def get_results(info: dict, labels: list) -> list:
     for sample in labels:
         img_file, _ = info[sample]
         img = cv2.imread(img_file, cv2.IMREAD_UNCHANGED)
-        b, g, r, alpha = img.split()
+        b, g, r, alpha = cv2.split(img)
         target_mask = alpha.copy()
         target_mask[target_mask>0] = 255
         original_image = cv2.merge([b, g, r])
