@@ -8,7 +8,7 @@ import cv2
 
 from pyGUS.core import write_image, calculate
 
-font = dict(size='22')
+font = dict(size='14')
 rc('font', **font)
 
 
@@ -63,9 +63,6 @@ def get_results(info: dict, labels: list) -> list:
         original_image = cv2.merge([b, g, r])
         result, mask = calculate(original_image, target_mask)
         target_results.append(result)
-        cv2.imshow('1', img)
-        cv2.imshow('2', original_image)
-        cv2.waitKey()
     return target_results
 
 
@@ -77,7 +74,7 @@ def main():
     target_results = get_results(sample_info, labels)
     out = Path('Results-new.pdf')
     write_image(target_results, labels, out)
-    print(sample_info, labels, out)
+    # print(sample_info, labels, out)
     return
 
 
