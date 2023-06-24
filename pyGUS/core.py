@@ -982,7 +982,6 @@ def write_image(results: list, labels: list, out: Path) -> Path:
     for pc in violin_parts['bodies']:
         pc.set_facecolor('#0d56ff')
         pc.set_edgecolor('black')
-    ax1.set_xlabel('Sample')
     ax1.set_ylabel('Expression value')
     ax1.set_yticks(np.linspace(0, 256, 5))
     ax1.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
@@ -1008,6 +1007,7 @@ def write_image(results: list, labels: list, out: Path) -> Path:
     # ax2.bar_label(rects2, label_type='center')
     ax2.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
     ax2.legend()
+    ax2.set_xlabel('Sample')
     ax2.set_ylabel('Area percent')
     ax2.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0, decimals=0))
     plt.tight_layout()

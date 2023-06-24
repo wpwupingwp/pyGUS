@@ -9,7 +9,7 @@ import cv2
 from pyGUS.core import write_image, calculate
 
 #font_settings = {'font.size': 14}
-font_settings = {'legend.fontsize': 'x-large', 'axes.labelsize': 'xx-large',
+font_settings = {'legend.fontsize': 'xx-large', 'axes.labelsize': 'xx-large',
                  'xtick.labelsize': 'xx-large', 'ytick.labelsize': 'x-large'}
 plt.rcParams.update(font_settings)
 
