@@ -3,13 +3,15 @@ from pathlib import Path
 from sys import argv
 import csv
 
-from matplotlib import rc
+from matplotlib import pyplot as plt
 import cv2
 
 from pyGUS.core import write_image, calculate
 
-font = dict(size='14')
-rc('font', **font)
+#font_settings = {'font.size': 14}
+font_settings = {'legend.fontsize': 'x-large', 'axes.labelsize': 'xx-large',
+                 'xtick.labelsize': 'xx-large', 'ytick.labelsize': 'x-large'}
+plt.rcParams.update(font_settings)
 
 
 def get_sample_info_3(csv_file: str, neg_img: str, pos_img: str) -> (dict, list):
