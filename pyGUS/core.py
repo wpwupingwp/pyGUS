@@ -941,7 +941,7 @@ def write_masks(img_raw: np.array, target_mask: np.array,
     return output
 
 
-def write_image(results: tuple, labels: list, out: Path) -> Path:
+def write_image(results: list, labels: list, out: Path) -> Path:
     """
     violin outer and inner
     or violin outer and bar inner

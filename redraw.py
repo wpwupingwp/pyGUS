@@ -1,21 +1,18 @@
 #!/usr/bin/python3
-from itertools import combinations
 from pathlib import Path
 from sys import argv
 import csv
 
-from matplotlib import pyplot as plt
-from matplotlib import colors, rc
-from scipy import stats
+from matplotlib import rc
 import cv2
-import numpy as np
 
+from pyGUS.core import write_image, calculate
 
 font = dict(size='22')
 rc('font', **font)
 
 
-def get_sample_info_3(csv_file: str, neg_img: str, pos_img: str) -> dict:
+def get_sample_info_3(csv_file: str, neg_img: str, pos_img: str) -> (dict, list):
     """
     parse input sample csv for redraw pyGUS output image
     example csv file:
@@ -55,145 +52,21 @@ def get_sample_info_3(csv_file: str, neg_img: str, pos_img: str) -> dict:
     return info, labels
 
 
-def read_results(info:dict) ->(list, list):
-    pass
-
-
-
-def get_data(filename: str) -> np.array:
-    img = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
-    if img is None:
-        raise ValueError(f'Bad input file {filename}')
-    b, g, r, a = cv2.split(img)
-    # revert
-    b_r = 255 - b
-    # apply mask
-    data = b_r[a == 255]
-    if len(data) == 0:
-        data = np.zeros(10)
-    return data
-
-
-
-def analyze_GUS_value():
-    csv_file = Path(argv[1])
-    info = get_sample_info(csv_file)
-    data = dict()
-    for sample in info:
-        data[sample] = get_data(info[sample][0])
-    group_data = dict()
-    for sample in data:
-        group = info[sample][1]
-        if group not in group_data:
-            group_data[group] = data[sample]
-        else:
-            group_data[group] = np.concatenate([group_data[group],
-                                                data[sample]])
-    group_list = list(group_data.keys())
-    fig, ax = plt.subplots(figsize=(10, 10))
-    v = ax.violinplot([group_data[i] for i in group_list], showmeans=False,
-                      showmedians=True,
-                      showextrema=False)
-    for pc, c in zip(v['bodies'], colors.TABLEAU_COLORS):
-        pc.set_facecolor(c)
-        pc.set_edgecolor('black')
-        pc.set_alpha(1)
-        pc.set_linewidth(0.5)
-    v['cmedians'].set_color('white')
-    v['cmedians'].set_linewidth(1)
-    # add p value
-    group_pairs = list(combinations(group_list, 2))
-    group_index = dict(zip(group_list, range(1, len(group_list) + 1)))
-    offset = 4
-    pad = 4
-    for pair in group_pairs:
-        height = add_p_value(pair, group_data, group_index, ax, offset)
-        offset = offset + height + pad
-    ax.set_yticks(np.linspace(0, 256, 5))
-    ax.set_xticks(range(1, len(group_list) + 1), group_list)
-    ax.set_xlabel('Groups')
-    ax.set_ylabel('GUS signal intensity')
-    out_file = csv_file.with_suffix('.2.pdf')
-    plt.savefig(out_file, bbox_inches='tight')
-    plt.close()
-    # plt.show()
-    return out_file
-
-
-def write_image(results: tuple, labels: list, out: Path) -> Path:
-    """
-    violin outer and inner
-    or violin outer and bar inner
-    Args:
-        results: calculate results
-        labels: x-axis ticks
-        out: output filename
-    Returns:
-        out: figure file
-    """
-    # result = (express_value, express_std, express_area, total_value,
-    # total_std, total_area, express_ratio, express_flatten)
-    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    short_labels = [Path(i).stem for i in labels]
-    if len(labels) <= 5:
-        figsize = (10, 6)
-    else:
-        figsize = (10 * len(labels) / 5, 6)
-    fig = plt.figure(figsize=figsize)
-    ax1 = plt.subplot(211)
-    x = np.arange(1, len(labels) + 1)
-    width = 0.3
-    violin_data_raw = []
-    for i in results:
-        data = i[-1]
-        if len(data) == 0:
-            data = [0]
-        violin_data_raw.append(data)
-    violin_data = np.array(violin_data_raw, dtype='object')
-    # violin_data = np.array([i[-1] for i in results], dtype='object')
-    try:
-        violin_parts = ax1.violinplot(violin_data, showmeans=True,
-                                      showmedians=False, showextrema=False,
-                                      widths=0.4)
-    except ValueError:
-        show_error('Failed to plot results due to bad values.')
-        return Path()
-    for pc in violin_parts['bodies']:
-        pc.set_facecolor('#0d56ff')
-        pc.set_edgecolor('black')
-    ax1.set_xlabel('Sample')
-    ax1.set_ylabel('Expression value')
-    ax1.set_yticks(np.linspace(0, 256, 9))
-    ax1.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
-    # ax2 = ax1.twinx()
-    ax2 = plt.subplot(212)
-    express_area = [i[2] for i in results]
-    # modify negative reference area
-    # express_area[-1] = 0
-    all_area = [i[-2] for i in results]
-    total_area = [i[5] for i in results]
-    no_express_area = [t - e for t, e in zip(total_area, express_area)]
-    express_area_percent = [round(i / j, 4) for i, j in zip(express_area,
-                                                            all_area)]
-    no_express_area_percent = [round(i / j, 4) for i, j in zip(no_express_area,
-                                                               all_area)]
-    rects1 = ax2.bar(x, express_area_percent, width=width,
-                     alpha=0.4,
-                     color='green', label='Expression region')
-    rects2 = ax2.bar(x, no_express_area_percent, width=width,
-                     bottom=express_area_percent, alpha=0.4,
-                     color='orange', label='No expression region')
-    # rects1 = [i * 100 for i in rects1]
-    # ax2.bar_label(rects1, label_type='center')
-    # ax2.bar_label(rects2, label_type='center')
-    ax2.set_xticks(np.arange(1, len(labels) + 1), labels=short_labels)
-    ax2.legend()
-    ax2.set_ylabel('Area percent')
-    ax2.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
-    plt.tight_layout()
-    plt.savefig(out, bbox_inches='tight')
-    log.info(f'Output figure file {out}')
-    return out
+def get_results(info: dict, labels: list) -> list:
+    target_results = list()
+    for sample in labels:
+        img_file, _ = info[sample]
+        img = cv2.imread(img_file, cv2.IMREAD_UNCHANGED)
+        b, g, r, alpha = img.split()
+        target_mask = alpha.copy()
+        target_mask[target_mask>0] = 255
+        original_image = cv2.merge([b, g, r])
+        result, mask = calculate(original_image, target_mask)
+        target_results.append(result)
+        cv2.imshow('1', img)
+        cv2.imshow('2', original_image)
+        cv2.waitKey()
+    return target_results
 
 
 def main():
@@ -201,7 +74,10 @@ def main():
     assert len(argv) == 4, ('Usage: python3 stats.py [sample info file] '
                             '[positive origin image] [negative origin image]')
     sample_info, labels = get_sample_info_3(*argv[1:])
-    print(sample_info, labels)
+    target_results = get_results(sample_info, labels)
+    out = Path('Results-new.pdf')
+    write_image(target_results, labels, out)
+    print(sample_info, labels, out)
     return
 
 
