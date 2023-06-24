@@ -48,7 +48,10 @@ def get_sample_info_3(csv_file: str, neg_img: str, pos_img: str) -> (dict, list)
             labels.append(sample)
     for img_file, ref_name in zip([neg_img, pos_img], ref):
         r_p = Path(img_file)
-        new_name = r_p.stem + '-masked' + r_p.suffix
+        if 'masked' not in r_p.name:
+            new_name = r_p.stem + '-masked' + r_p.suffix
+        else:
+            new_name = r_p.name
         info[ref_name] = [new_name, 'Ref']
         labels.append(ref_name)
     return info, labels
@@ -63,17 +66,21 @@ def get_results(info: dict, labels: list) -> list:
         target_mask = alpha.copy()
         target_mask[target_mask>0] = 255
         original_image = cv2.merge([b, g, r])
-        result, mask = calculate(original_image, target_mask)
+        result, mask = calculate(original_image, target_mask, neg_ref_value=0)
         target_results.append(result)
     return target_results
 
 
 def main():
     # python3 redraw.py stats.py list.csv A-mini.png A-35S.png
+    # should adjust neg_ref_value in calculate since this program do not handle
+    # reference value
     assert len(argv) == 4, ('Usage: python3 stats.py [sample info file] '
                             '[positive origin image] [negative origin image]')
     sample_info, labels = get_sample_info_3(*argv[1:])
     target_results = get_results(sample_info, labels)
+    # target_results[-1] = list(target_results[-1])
+    # target_results[-1][-1] = [0]
     out = Path('Results-new.pdf')
     write_image(target_results, labels, out)
     # print(sample_info, labels, out)

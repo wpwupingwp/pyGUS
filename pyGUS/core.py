@@ -1009,7 +1009,7 @@ def write_image(results: list, labels: list, out: Path) -> Path:
     ax2.legend()
     ax2.set_xlabel('Sample')
     ax2.set_ylabel('Area percent')
-    ax2.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0, decimals=0))
+    ax2.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0, decimals=1))
     plt.tight_layout()
     plt.savefig(out, bbox_inches='tight')
     log.info(f'Output figure file {out}')
