@@ -15,9 +15,9 @@ Open terminal, run
 
    ```
    # Install, using pip (recommended)
-   pip install pyGUS --user
+   pip install pyGUS_bio --user
    # Or, use conda
-   conda install -c wpwupingwp pyGUS
+   conda install -c wpwupingwp pyGUS_bio
    # Run
    # Windows
    python -m pyGUS
@@ -94,7 +94,7 @@ unpack and run.
 2. Open the command line, run
 
 ```
-pip3 install pyGUS --user
+pip3 install pyGUS_bio --user
 ```
 
 # Usage

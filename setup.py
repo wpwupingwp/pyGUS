@@ -16,7 +16,7 @@ setuptools.setup(
     license='GNU AGPL v3',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    name='pyGUS',
+    name='pyGUS_bio',
     include_package_data=True,
     package_data={'pyGUS': ['1200dpi.png', ]},
     packages=setuptools.find_packages(),
