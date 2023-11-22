@@ -49,6 +49,8 @@ def parse_arg(arg_str):
     arg.add_argument('-auto_ref', action='store_true',
                      help='auto detect objects (deprecated)')
     arg.add_argument('-images', nargs='*', help='Input images', required=True)
+    arg.add_argument('-quick', action='store_true',
+                     help='quick but rough')
     arg.add_argument('-mode', type=int, choices=(1, 2, 3, 4), required=True,
                      help=('1. Normal: single target in each image; '
                            '2. With reference: target and positive reference; '
@@ -60,7 +62,7 @@ def parse_arg(arg_str):
         return arg.parse_args(arg_str.split(' '))
 
 
-def get_input(arg) -> (str, str, list[str], bool, str):
+def get_input(arg) -> (str, str, list[str], bool, bool, str):
     message = None
     negative = None
     positive = None
@@ -83,11 +85,12 @@ def get_input(arg) -> (str, str, list[str], bool, str):
         positive = Path(arg.ref2).absolute()
         positive = if_exist(positive)
     auto_ref = bool(arg.auto_ref)
-    return negative, positive, targets, auto_ref, message
+    quick = bool(arg.quick)
+    return negative, positive, targets, auto_ref, quick, message
 
 
-def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
-        list, list, list):
+def mode_1(negative: str, positive: str, targets: list, auto_ref: bool,
+           quick: bool) -> (list, list, list):
     """
     Ignore light change
     Args:
@@ -130,8 +133,8 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
     else:
         neg_img = cv2.imread(negative)
         pos_img = cv2.imread(positive)
-        neg_mask = get_cfm_masks(neg_img)
-        pos_mask = get_cfm_masks(pos_img)
+        neg_mask = get_cfm_masks(neg_img, quick)
+        pos_mask = get_cfm_masks(pos_img, quick)
         neg_result, neg_no_yellow_mask = calculate(neg_img, neg_mask)
         neg_ref_value = neg_result[0]
         pos_result, pos_no_yellow_mask = calculate(pos_img, pos_mask,
@@ -139,7 +142,7 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
         pos_ref_value = pos_result[0]
         for target in targets:
             target_img = cv2.imread(target)
-            target_mask = get_cfm_masks(target_img)
+            target_mask = get_cfm_masks(target_img, quick)
             target_result, no_yellow_mask = calculate(
                 target_img, target_mask, neg_ref_value, pos_ref_value)
             target_results.append(target_result)
@@ -152,7 +155,7 @@ def mode_1(negative: str, positive: str, targets: list, auto_ref: bool) -> (
     return neg_result, pos_result, target_results
 
 
-def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
+def mode_2(ref1: str, _: str, targets: list, auto_ref: bool, quick: bool) -> (
         list, list, list):
     """
     use negative to calibrate positive, and then measure each target
@@ -195,7 +198,7 @@ def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
                                    simple=True, filename=target)
     else:
         ref_img = cv2.imread(negative_positive_ref)
-        ref_mask = get_cfm_masks(ref_img)
+        ref_mask = get_cfm_masks(ref_img, quick)
         neg_mask, pos_mask = split_left_right_mask(ref_mask)
         neg_result, neg_no_yellow_mask = calculate(ref_img, neg_mask)
         neg_ref_value = neg_result[0]
@@ -204,7 +207,7 @@ def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
         pos_ref_value = pos_result[0]
         for target in targets:
             target_img = cv2.imread(target)
-            mask = get_cfm_masks(target_img)
+            mask = get_cfm_masks(target_img, quick)
             target_mask, pos_mask_ = split_left_right_mask(mask)
             target_result, no_yellow_mask = calculate(
                 target_img, target_mask, neg_ref_value, pos_ref_value)
@@ -218,8 +221,8 @@ def mode_2(ref1: str, _: str, targets: list, auto_ref: bool) -> (
     return neg_result, pos_result, target_results
 
 
-def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
-        list, list, list):
+def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool, quick: bool
+           ) -> (list, list, list):
     # use color card to calibrate each image
     # first left: negative, first right: card
     # second left: positive, second right: card
@@ -267,8 +270,8 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
         # draw dots in color checker too when use cfm method
         neg_img = cv2.imread(ok_neg)
         pos_img = cv2.imread(ok_pos)
-        neg_mask_raw = get_cfm_masks(neg_img)
-        pos_mask_raw = get_cfm_masks(pos_img)
+        neg_mask_raw = get_cfm_masks(neg_img, quick)
+        pos_mask_raw = get_cfm_masks(pos_img, quick)
         neg_mask, _ = split_left_right_mask(neg_mask_raw)
         pos_mask, _ = split_left_right_mask(pos_mask_raw)
         neg_result, neg_no_yellow_mask = calculate(neg_img, neg_mask)
@@ -278,7 +281,7 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
         pos_ref_value = pos_result[0]
         for target in ok_targets:
             target_img = cv2.imread(target)
-            target_mask_raw = get_cfm_masks(target_img)
+            target_mask_raw = get_cfm_masks(target_img, quick)
             target_mask, _ = split_left_right_mask(target_mask_raw)
             target_result, no_yellow_mask = calculate(
                 target_img, target_mask, neg_ref_value, pos_ref_value)
@@ -292,7 +295,8 @@ def mode_3(ref1: str, ref2: str, targets: list, auto_ref: bool) -> (
     return neg_result, pos_result, target_results
 
 
-def mode_4(_: str, __: str, targets: list, ___: bool) -> (list, list, list):
+def mode_4(_: str, __: str, targets: list, ___: bool, ____: bool) -> (
+        list, list, list):
     """
     Select region manually
     """
@@ -1045,7 +1049,7 @@ def cli_main(arg_str=None) -> (Path, Path):
     if __name__ == '__main__':
         log.info('Welcome to pyGUS.')
     arg = parse_arg(arg_str)
-    negative, positive, targets, auto_ref, message = get_input(arg)
+    negative, positive, targets, auto_ref, quick, message = get_input(arg)
     pdf_file = None
     csv_file = None
     if message is not None:
@@ -1059,7 +1063,7 @@ def cli_main(arg_str=None) -> (Path, Path):
     run_dict = {1: mode_1, 2: mode_2, 3: mode_3, 4: mode_4}
     run = run_dict[arg.mode]
     neg_result, pos_result, target_results = run(negative, positive, targets,
-                                                 auto_ref)
+                                                 auto_ref, quick)
     neg_result = list(neg_result[:-1])
     neg_result.append([0])
     for i in neg_result, pos_result, target_results:

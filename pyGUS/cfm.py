@@ -232,15 +232,16 @@ def get_scribbles(img: np.array):
     return drawed
 
 
-def run_cfm(img: np.array):
+def run_cfm(img: np.array, quick):
     log.info('Start CFM...')
     # at least 1366x768 screen
     scribbles_raw = get_scribbles(img)
     log.info('Calculating...')
     # reduce time
-    size = (512, 512)
-    img = resize(img, *size)
-    scribbles_raw = resize(scribbles_raw, *size)
+    if quick:
+        size = (512, 512)
+        img = resize(img, *size)
+        scribbles_raw = resize(scribbles_raw, *size)
     results = Queue()
     a = Process(target=closed_form_matting, args=(img, scribbles_raw, results))
     a.start()
@@ -263,7 +264,7 @@ def run_cfm(img: np.array):
     return alpha_256, img
 
 
-def get_cfm_masks(image: np.array) -> np.array:
+def get_cfm_masks(image: np.array, quick=False) -> np.array:
     height, width = image.shape[:2]
 
     def try_to_get():
