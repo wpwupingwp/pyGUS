@@ -14,7 +14,7 @@ import scipy.sparse.linalg.interface
 from pyGUS.utils import draw_dots, draw_box, imshow, resize
 from pyGUS.global_vars import log, debug
 
-
+from numba import njit
 class SolveForeAndBack:
     # https://github.com/MarcoForte/closed-form-matting
     def __init__(self, image, alpha):
@@ -131,12 +131,14 @@ class SolveForeAndBack:
         return foreground, background
 
 
+@njit
 def _rolling_block(A, block=(3, 3)):
     shape = (A.shape[0] - block[0] + 1, A.shape[1] - block[1] + 1) + block
     strides = (A.strides[0], A.strides[1]) + A.strides
     return as_strided(A, shape=shape, strides=strides)
 
 
+@njit
 def compute_laplacian(img, mask=None, eps=10 ** (-7), win_rad=1):
     # https://github.com/MarcoForte/closed-form-matting
     win_size = (win_rad * 2 + 1) ** 2

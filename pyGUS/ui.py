@@ -141,6 +141,21 @@ class Root:
         self.Button4_tooltip = ToolTip(
             self.Button4, self.tooltip_font, 'Manually select')
 
+        self.che0 = tk.IntVar()
+        self.Checker = tk.Checkbutton(self.top)
+        self.Checker.place(relx=0.3, rely=0.66, height=30, width=120)
+        self.Checker.configure(activebackground="beige")
+        self.Checker.configure(activeforeground="#000000")
+        self.Checker.configure(background="#edf0f3")
+        self.Checker.configure(compound='left')
+        self.Checker.configure(foreground="#000000")
+        self.Checker.configure(highlightbackground="#edf0f3")
+        self.Checker.configure(highlightcolor="black")
+        self.Checker.configure(justify='left')
+        self.Checker.configure(selectcolor="#edf0f3")
+        self.Checker.configure(text='''Quick analyze''')
+        self.Checker.configure(variable=self.che0)
+
         self.Button5 = tk.Button(self.top)
         self.Button5.place(relx=0.107, rely=0.75, height=30, width=100)
         self.Button5.configure(activebackground="beige")
@@ -1002,9 +1017,13 @@ def run(mode, ref1=None, ref2=None, images=None):
                     s_list[index] = entry.get()
 
 
-        global _w1
+        # global _w1
+        is_quick = bool(_w1.che0.get())
+        log.debug(f'is quick mode: {is_quick}')
         cmd = (f'-mode {mode} -ref1 {s_list[0]} -ref2 {s_list[1]} '
                f'-images {s_list[2]}')
+        if is_quick:
+            cmd += ' -quick'
         log.info(cmd)
         # opencv imshow could only run in main thread
         from pyGUS.utils import Quit
