@@ -4,6 +4,7 @@ import io
 import os
 import sys
 
+import colour
 import cv2
 import numpy as np
 
@@ -444,6 +445,34 @@ def grab(image: np.array, mask: np.array) -> np.array:
         imshow('grab', mask2)
         cv2.waitKey()
     return mask
+
+
+def get_CCT(img: np.array, bg_range: tuple):
+    # todo: integrate, test
+    # calculate color temperature from img
+    img2 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # Convert the image to a numpy array and normalize the values
+    image_np = np.array(img2) / 255.0
+    # linearize it, assuming sRGB image
+    image_linear_rgb = colour.RGB_to_RGB(image_np,
+                                         colour.RGB_COLOURSPACES['sRGB'],
+                                         colour.RGB_COLOURSPACES['sRGB'],
+                                         chromatic_adaptation_transform='CAT02',
+                                         apply_encoding_cctf=False)
+    xyz = colour.sRGB_to_XYZ(image_linear_rgb)
+    # find a white or neutral grey area in image
+    # todo
+    # neutral_area_coordinates = bg_range
+    neutral_area_coordinates = (slice(10, 100), slice(10, 200), slice(None))
+    # Calculate the average XYZ value of the selected area
+    average_xyz = np.mean(xyz[neutral_area_coordinates], axis=(0, 1))
+    # Convert the average XYZ to xy chromaticity coordinates
+    average_xy = colour.XYZ_to_xy(average_xyz)
+    # Estimate the correlated color temperature (CCT) using the xy
+    # chromaticity coordinates
+    cct = colour.temperature.xy_to_CCT(average_xy, method='McCamy 1992')
+    log.debug(f'Estimated CCT: {cct:.0f} K')
+    return int(cct)
 
 
 if __name__ == '__main__':

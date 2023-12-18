@@ -1,3 +1,4 @@
+colour-science==0.4.4
 coloredlogs==15.0.1
 matplotlib==3.5.2
 numpy==1.24.2
