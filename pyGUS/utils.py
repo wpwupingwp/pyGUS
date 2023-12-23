@@ -447,8 +447,14 @@ def grab(image: np.array, mask: np.array) -> np.array:
     return mask
 
 
-def get_CCT(img: np.array, bg_range: tuple):
+def get_CCT(img: np.array):
     # todo: integrate, test
+    # background range: 5% of edge
+    bg_min = 0.01
+    bg_max = 0.06
+    height, width = img.shape[:2]
+    bg_range_w = slice(int(width * bg_min), int(width * bg_max))
+    # bg_range_h = slice(int(height * bg_min), int(height * bg_max))
     # calculate color temperature from img
     img2 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     # Convert the image to a numpy array and normalize the values
@@ -463,7 +469,8 @@ def get_CCT(img: np.array, bg_range: tuple):
     # find a white or neutral grey area in image
     # todo
     # neutral_area_coordinates = bg_range
-    neutral_area_coordinates = (slice(10, 100), slice(10, 200), slice(None))
+
+    neutral_area_coordinates = (slice(0, height), bg_range_w, slice(None))
     # Calculate the average XYZ value of the selected area
     average_xyz = np.mean(xyz[neutral_area_coordinates], axis=(0, 1))
     # Convert the average XYZ to xy chromaticity coordinates
