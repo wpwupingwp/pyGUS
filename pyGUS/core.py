@@ -1025,6 +1025,7 @@ def write_csv(all_result: list, targets: list, out: Path) -> Path:
     """
     Output csv
     """
+    # todo : cct
     header = ('Name,Expression value,Expression std,Expression area,'
               'Total value,Total std,Total area,Expression ratio,Figure size,'
               'Z-score,Outlier,Estimate color temperature(K)')
