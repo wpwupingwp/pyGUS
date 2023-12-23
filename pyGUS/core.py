@@ -15,6 +15,7 @@ import numpy as np
 from pyGUS.global_vars import log, debug
 from pyGUS.utils import select_box, select_polygon, draw_lines, resize
 from pyGUS.utils import color_calibrate, if_exist, imshow, show_error, hex2bgr
+from pyGUS.utils import get_CCT
 from pyGUS.cfm import get_cfm_masks
 
 matplotlib.use('Agg')
@@ -1024,9 +1025,11 @@ def write_csv(all_result: list, targets: list, out: Path) -> Path:
     """
     Output csv
     """
+    # todo : cct
     header = ('Name,Expression value,Expression std,Expression area,'
               'Total value,Total std,Total area,Expression ratio,Figure size,'
-              'Z-score,Outlier')
+              'Z-score,Outlier,Estimate color temperature(K)')
+    # use z score to find out outliers
     z_score_threshold = 3
     values = [i[0] for i in all_result]
     z_scores = get_zscore(values)
@@ -1036,11 +1039,12 @@ def write_csv(all_result: list, targets: list, out: Path) -> Path:
         writer.writerow(header.split(','))
         for name, result, z_score in zip(targets, all_result, z_scores):
             is_outlier = (np.abs(z_score) > z_score_threshold)
+            estimate_CCT = get_CCT(cv2.imread(name))
             if is_outlier:
                 log.warning(f'{name} has abnormal expression value.')
             numbers = [round(i, 4) for i in result[:-1]]
             z_score = round(z_score, 4)
-            writer.writerow([name, *numbers, z_score, is_outlier])
+            writer.writerow([name, *numbers, z_score, is_outlier, estimate_CCT])
     log.info(f'Output table file {out}')
     return out
 
