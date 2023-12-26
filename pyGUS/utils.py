@@ -210,6 +210,12 @@ def draw_box(img: np.array) -> np.array:
         elif len(points) == 2:
             cv2.rectangle(img, points[0], points[1], color=color,
                           thickness=width)
+            x_ = sorted([points[0][0], points[1][0]])
+            y_ = sorted([points[0][1], points[1][1]])
+            img[:, 0:x_[0]] = (0, 0, 0)
+            img[:, x_[1]:img.shape[1]] = (0, 0, 0)
+            img[0:y_[0], :] = (0, 0, 0)
+            img[y_[1]:img.shape[0], :] = (0, 0, 0)
         cv2.imshow(name, img)
         # Esc
         if cv2.waitKey(5) == 27:

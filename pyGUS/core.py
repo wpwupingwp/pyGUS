@@ -962,6 +962,8 @@ def write_image(results: list, labels: list, out: Path) -> Path:
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     width = 0.6
     short_labels = [Path(i).stem for i in labels]
+    short_labels[-1] = 'Negative'
+    short_labels[-2] = 'Positive'
     if len(labels) <= 5:
         figsize = (10, 6)
     else:
@@ -1079,7 +1081,7 @@ def cli_main(arg_str=None) -> (Path, Path):
     if arg.mode in (1, 3, 4):
         targets.extend((positive, negative))
     else:
-        targets.append(negative, negative)
+        targets.extend((negative, negative))
     pdf_file = Path(targets[0]).parent / 'Result.pdf'
     csv_file = pdf_file.with_suffix('.csv')
     for f in pdf_file, csv_file:
