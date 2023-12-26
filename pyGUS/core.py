@@ -1076,7 +1076,10 @@ def cli_main(arg_str=None) -> (Path, Path):
     # add ref results
     target_results.append(pos_result)
     target_results.append(neg_result)
-    targets.extend((positive, negative))
+    if arg.mode in (1, 3, 4):
+        targets.extend((positive, negative))
+    else:
+        targets.append(negative, negative)
     pdf_file = Path(targets[0]).parent / 'Result.pdf'
     csv_file = pdf_file.with_suffix('.csv')
     for f in pdf_file, csv_file:
