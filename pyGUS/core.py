@@ -1088,6 +1088,7 @@ def cli_main(arg_str=None) -> (Path, Path):
         if f.exists():
             log.warning(f'{f} exists, overwrite.')
     write_image(target_results, targets, pdf_file)
+    log.info('Finally check the images')
     write_csv(target_results, targets, csv_file)
     # wait or poll
     cv2.pollKey()
