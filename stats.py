@@ -39,7 +39,7 @@ def get_sample_info2(csv_file: Path) -> dict:
         reader = csv.reader(_)
         for row in reader:
             (name, exp_value, exp_std, exp_area, total_value, total_std,
-             total_area, exp_ratio, fig_size, zscore, outlier) = row
+             total_area, exp_ratio, fig_size, zscore, outlier, cct) = row
             if name in exclude:
                 continue
             name_p = Path(name)

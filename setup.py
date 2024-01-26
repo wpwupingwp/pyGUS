@@ -23,7 +23,7 @@ setuptools.setup(
     # f-string and Path-like
     python_requires='>=3.8',
     url='https://github.com/wpwupingwp/pyGUS',
-    version='1.5',
+    version='1.6',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Science/Research',
