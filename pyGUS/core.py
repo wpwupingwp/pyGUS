@@ -79,12 +79,15 @@ def get_input(arg) -> (str, str, list[str], bool, bool, str):
         return negative, positive, targets, message
     targets_ = [Path(i).absolute() for i in arg.images]
     targets = [if_exist(i) for i in targets_]
-    if arg.mode != 4:
+    if arg.mode in (1, 2, 3):
         negative = Path(arg.ref1).absolute()
         negative = if_exist(negative)
-    if arg.mode not in (2, 4):
+    if arg.mode in (1, 3):
         positive = Path(arg.ref2).absolute()
         positive = if_exist(positive)
+    if arg.mode == 4:
+        negative = targets[0]
+        positive = targets[0]
     auto_ref = bool(arg.auto_ref)
     quick = bool(arg.quick)
     return negative, positive, targets, auto_ref, quick, message
