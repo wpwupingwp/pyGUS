@@ -13,7 +13,6 @@ import queue
 import sys
 import tkinter as tk
 import tkinter.ttk as ttk
-import webbrowser
 
 from pyGUS import core, global_vars
 from pyGUS.utils import open_folder
@@ -965,15 +964,15 @@ def open_file(title, entry, single=True):
 
 
 def example():
-    with resources.path('pyGUS', 'data') as example_folder:
-        open_folder(example_folder)
+    with resources.path('pyGUS', 'data') as data_folder:
+        open_folder(data_folder)
     return
 
 
 def help():
-    url = 'https://github.com/wpwupingwp/pyGUS'
-    # open in new tab
-    webbrowser.open(url, new=2)
+    with resources.path('pyGUS', 'data') as data_folder:
+        manual = data_folder / 'Manual.pdf'
+        open_folder(manual)
     return
 
 

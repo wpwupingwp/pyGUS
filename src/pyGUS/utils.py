@@ -326,7 +326,7 @@ def draw_lines(img: np.array, title='', type_='fore') -> np.array:
     return img
 
 
-def draw_colorchecker(out='card.jpg') -> str:
+def draw_colorchecker(out='color_checker.jpg') -> str:
     # https://github.com/opencv/opencv_contrib/blob/4.x/modules/mcc/src/dictionary.hpp
     # default size : 2080x1400
     colors = (
