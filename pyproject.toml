@@ -1,6 +1,7 @@
 [project]
+include = ["example/*"]
 name = "pyGUS_bio"
-version = "1.7"
+version = "1.8"
 description = "Quantify GUS Stain Images"
 authors = [
     {name = "Ping Wu", email = "wpwupingwp@outlook.com"},
@@ -34,3 +35,4 @@ build-backend = "pdm.backend"
 
 [tool.pdm]
 distribution = true
+

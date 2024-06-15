@@ -4,6 +4,7 @@
 #  in conjunction with Tcl version 8.6
 #    Jul 26, 2022 04:34:12 PM CST  platform: Darwin
 
+from importlib import resources
 from logging import handlers
 from time import time
 from tkinter import filedialog, messagebox, scrolledtext
@@ -15,6 +16,7 @@ import tkinter.ttk as ttk
 import webbrowser
 
 from pyGUS import core, global_vars
+from pyGUS.utils import open_folder
 
 
 log = global_vars.log
@@ -161,12 +163,12 @@ class Root:
         self.Button5.configure(activebackground="beige")
         self.Button5.configure(activeforeground="#000000")
         self.Button5.configure(background="#edf0f3")
-        self.Button5.configure(command=checker)
+        self.Button5.configure(command=example)
         self.Button5.configure(compound='left')
         self.Button5.configure(foreground="#000000")
         self.Button5.configure(highlightbackground="#edf0f3")
         self.Button5.configure(highlightcolor="black")
-        self.Button5.configure(text='''Color checker''')
+        self.Button5.configure(text='''Example''')
         self.tooltip_font = "TkDefaultFont"
         self.Button2_tooltip = ToolTip(
             self.Button5, self.tooltip_font,
@@ -962,18 +964,15 @@ def open_file(title, entry, single=True):
     return func
 
 
-def checker():
-    url = ('https://github.com/wpwupingwp/pyGUS/blob/main/'
-           'Color_checker_1200dpi.png')
-    # open in new tab
-    messagebox.showinfo(message='Click "Download" in the page '
-                                'to get color checker file')
-    webbrowser.open(url, new=2)
+def example():
+    with resources.path('pyGUS', 'data') as example_folder:
+        open_folder(example_folder)
     return
 
 
 def help():
     url = 'https://github.com/wpwupingwp/pyGUS'
+    # open in new tab
     webbrowser.open(url, new=2)
     return
 

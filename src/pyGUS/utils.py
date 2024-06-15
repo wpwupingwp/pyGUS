@@ -2,6 +2,7 @@
 from pathlib import Path
 import io
 import os
+import platform
 import sys
 
 import colour
@@ -486,6 +487,23 @@ def get_CCT(img: np.array):
     cct = colour.temperature.xy_to_CCT(average_xy, method='McCamy 1992')
     log.debug(f'Estimated CCT: {cct:.0f} K')
     return int(cct)
+
+
+def open_folder(path: Path):
+    """
+    Opens a folder in the default file explorer.
+    Args:
+        path (str): The path to the folder to open.
+    """
+    system = platform.system()
+    if system == "Windows":
+        os.startfile(path)
+    elif system == "Darwin":  # macOS
+        os.system(f"open '{path}'")
+    elif system == "Linux":
+        os.system(f"xdg-open '{path}'")
+    else:
+        print("Unsupported operating system.")
 
 
 if __name__ == '__main__':

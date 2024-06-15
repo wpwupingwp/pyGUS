@@ -17,7 +17,7 @@ plt.rcParams.update(font_settings)
 def get_sample_info_3(csv_file: str, neg_img: str, pos_img: str) -> (dict, list):
     """
     parse input sample csv for redraw pyGUS output image
-    example csv file:
+    data csv file:
     ```
     A-H1.png,A-H1,high
     A-H2.png,A-H2,high
