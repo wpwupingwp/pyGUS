@@ -133,7 +133,8 @@ def select_box(img: np.array, text='Drag to select, then press SPACE BAR',
 
 
 def draw_dots(img: np.array) -> np.array:
-    hint = 'Left click to add points, right click to finish, Esc to reset'
+    hint = ('Left click to add points on samples, right click to finish, '
+            'Esc to reset')
     name = hint
     log.info(hint)
     color = (255, 255, 255)
@@ -180,7 +181,8 @@ def draw_box(img: np.array) -> np.array:
     img_raw = img.copy()
     color = (0, 0, 0)
     width = int(img.shape[0] * 0.02)
-    hint = 'Left click to draw, right click to finish, Esc to reset'
+    hint = ('Left click to draw box on samples, right click to finish, '
+            'Esc to reset')
     name = hint
     log.info(hint)
     done = False

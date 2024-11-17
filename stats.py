@@ -185,7 +185,7 @@ def analyze_GUS_ratio():
     return ratio_info
 
 
-def main():
+def stats_main():
     assert len(argv) == 3, ('Usage: python3 stats.py [sample info file] '
                             '[result csv file]')
     analyze_GUS_ratio()
@@ -193,4 +193,5 @@ def main():
     return
 
 
-main()
+if __name__ == '__main__':
+    stats_main()
