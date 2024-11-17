@@ -1086,6 +1086,15 @@ def cli_main(arg_str=None) -> (Path, Path):
     else:
         targets.extend((negative, negative))
     pdf_file = Path(targets[0]).parent / 'Result.pdf'
+    pdf_n = 2
+    if pdf_file.exists():
+        while True:
+            new_pdf_file = pdf_file.with_name(f'Result-{pdf_n}.pdf')
+            if not new_pdf_file.exists():
+                pdf_file = new_pdf_file.absolute()
+                break
+            else:
+                pdf_n += 1
     csv_file = pdf_file.with_suffix('.csv')
     for f in pdf_file, csv_file:
         if f.exists():
