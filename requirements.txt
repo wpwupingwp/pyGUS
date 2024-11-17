@@ -2,6 +2,6 @@ colour-science==0.4.4
 coloredlogs==15.0.1
 matplotlib==3.5.2
 numpy==1.24.2
-opencv-contrib-python==4.6.0.66
+opencv-contrib-python==4.8.1.78
 scipy==1.9.3
 tqdm==4.66.3
