@@ -10,10 +10,10 @@ dependencies = [
     "colour-science>=0.4.4",
     "coloredlogs>=15.0.1",
     "matplotlib>=3.5.2",
-    "numpy==1.24.2",
     "opencv-contrib-python>=4.8.1.78",
     "scipy>=1.11.1",
     "tqdm==4.66.3",
+    "numpy<2",
 ]
 requires-python = ">= 3.12"
 readme = "README.md"
@@ -29,10 +29,15 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/wpwupingwp/pyGUS"
+#[build-system]
+#requires = ["pdm-backend"]
+#build-backend = "pdm.backend"
+
+#[tool.pdm]
+#distribution = true
+
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
-
-[tool.pdm]
-distribution = true
-
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+[tool.hatch.build.targets.wheel]
+packages = ["src/pyGUS"]
